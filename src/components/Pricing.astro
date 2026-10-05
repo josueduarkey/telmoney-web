@@ -51,7 +51,7 @@ const linkAttrs = CTA.external ? { target: '_blank', rel: 'noopener' } : {};
           <span class="plan__per" data-per>al mes</span>
         </p>
         <p class="plan__daily num" data-daily data-monthly="$0.17 al día" data-annual="$0.14 al día">$0.17 al día</p>
-        <a class="btn btn--ink btn--block" href={CTA.href} {...linkAttrs}>{CTA.label}</a>
+        <a class="btn btn--ink btn--block" href={CTA.href} data-cursor={CTA.cursor} {...linkAttrs}>{CTA.label}</a>
         <ul class="plan__list" role="list">
           {starter.map((f) => <li>{f}</li>)}
         </ul>
@@ -70,7 +70,7 @@ const linkAttrs = CTA.external ? { target: '_blank', rel: 'noopener' } : {};
           <span class="plan__per" data-per>al mes</span>
         </p>
         <p class="plan__daily num" data-daily data-monthly="$0.33 al día" data-annual="$0.27 al día">$0.33 al día</p>
-        <a class="btn btn--block" href={CTA.href} {...linkAttrs}>{CTA.label}</a>
+        <a class="btn btn--block" href={CTA.href} data-cursor={CTA.cursor} {...linkAttrs}>{CTA.label}</a>
         <ul class="plan__list" role="list">
           {pro.map((f) => <li>{f}</li>)}
         </ul>

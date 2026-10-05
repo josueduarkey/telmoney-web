@@ -1,0 +1,135 @@
+---
+// Cursor propio con etiqueta, hecho a mano (sin librerías).
+// La flecha es el cursor del sistema con forma propia (public/cursor-arrow.svg): lo dibuja el sistema
+// operativo, así que no tiene ningún retraso. Solo la etiqueta la sigue por código, con un retraso mínimo.
+// La etiqueta dice «Tú», o lo que indique el atributo data-cursor del elemento bajo el puntero.
+// Solo con mouse o trackpad: en pantallas táctiles no aparece.
+---
+
+<span class="ucursor" aria-hidden="true" data-cursor-label>Tú</span>
+
+<script>
+  const label = document.querySelector<HTMLElement>('[data-cursor-label]');
+  const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+  if (label && finePointer) {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const FOLLOW = reduced ? 1 : 0.35; // cuánto se acerca la etiqueta al puntero en cada cuadro
+    const OFFSET_X = 22;
+    const OFFSET_Y = 26;
+    const DEFAULT = 'Tú';
+
+    const target = { x: 0, y: 0 };
+    const pos = { x: 0, y: 0 };
+    let scale = 1;
+    let raf = 0;
+    let shown = false;
+
+    document.documentElement.classList.add('has-ucursor');
+
+    // En campos de texto vuelve el cursor de texto y la etiqueta se esconde
+    const isNative = (el: Element | null) =>
+      !!el?.closest('input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), textarea, select, [contenteditable="true"]');
+
+    const place = () => {
+      label.style.transform = `translate3d(${pos.x + OFFSET_X}px, ${pos.y + OFFSET_Y}px, 0) scale(${scale})`;
+    };
+
+    const frame = () => {
+      pos.x += (target.x - pos.x) * FOLLOW;
+      pos.y += (target.y - pos.y) * FOLLOW;
+      place();
+      // el bucle duerme cuando la etiqueta ya llegó
+      raf = Math.abs(target.x - pos.x) + Math.abs(target.y - pos.y) > 0.2 ? requestAnimationFrame(frame) : 0;
+    };
+    const kick = () => {
+      if (!raf) raf = requestAnimationFrame(frame);
+    };
+
+    window.addEventListener(
+      'pointermove',
+      (e) => {
+        if (e.pointerType !== 'mouse' && e.pointerType !== 'pen') return;
+        target.x = e.clientX;
+        target.y = e.clientY;
+        if (!shown) {
+          pos.x = target.x;
+          pos.y = target.y;
+          shown = true;
+        }
+        const el = e.target as Element;
+        const native = isNative(el);
+        label.classList.toggle('is-hidden', native);
+        if (!native) {
+          const text = el.closest<HTMLElement>('[data-cursor]')?.dataset.cursor ?? DEFAULT;
+          if (label.textContent !== text) label.textContent = text;
+          label.classList.toggle('is-action', text !== DEFAULT);
+        }
+        label.classList.add('is-on');
+        kick();
+      },
+      { passive: true },
+    );
+    window.addEventListener('pointerdown', () => {
+      scale = 0.9;
+      place();
+    });
+    window.addEventListener('pointerup', () => {
+      scale = 1;
+      place();
+    });
+    document.documentElement.addEventListener('pointerleave', () => label.classList.remove('is-on'));
+    window.addEventListener('blur', () => label.classList.remove('is-on'));
+  }
+</script>
+
+<style is:global>
+  /* La flecha verde es el cursor del sistema: cero retraso */
+  html.has-ucursor,
+  html.has-ucursor * {
+    cursor:
+      url('/cursor-arrow.svg') 4 3,
+      auto !important;
+  }
+  html.has-ucursor input:not([type='checkbox']):not([type='radio']):not([type='range']),
+  html.has-ucursor textarea,
+  html.has-ucursor select {
+    cursor: text !important;
+  }
+</style>
+
+<style>
+  .ucursor {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 9999;
+    padding: 6px 13px 7px;
+    border-radius: 999px;
+    background: var(--green);
+    color: var(--black);
+    font-family: var(--font-ui);
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+    pointer-events: none;
+    box-shadow: 0 0 0 1.5px #fff;
+    transform: translate3d(-200px, -200px, 0);
+    transform-origin: 0 0;
+    will-change: transform;
+    opacity: 0;
+    transition:
+      opacity 0.2s,
+      background-color 0.25s;
+  }
+  .ucursor:global(.is-on) {
+    opacity: 1;
+  }
+  .ucursor:global(.is-hidden) {
+    opacity: 0;
+  }
+  .ucursor:global(.is-action) {
+    background: var(--white);
+  }
+</style>

@@ -83,7 +83,12 @@ const scenes: Scene[] = [
       <p class="lead">Elige una situación y mira cómo cambia con TelMoney.</p>
     </header>
 
-    <div class="ba__tabs" role="tablist" aria-label="Situaciones">
+    <div
+      class="ba__tabs"
+      role="tablist"
+      aria-label="Situaciones"
+      data-cursor="Elige una"
+    >
       {
         scenes.map((s, i) => (
           <button
@@ -140,9 +145,18 @@ const scenes: Scene[] = [
       }
     </div>
 
-    <div class="ba__switch" role="group" aria-label="Comparar">
-      <button type="button" aria-pressed="true" data-ba-mode="before">Antes</button>
-      <button type="button" aria-pressed="false" data-ba-mode="after">Con TelMoney</button>
+    <div
+      class="ba__switch"
+      role="group"
+      aria-label="Comparar"
+      data-cursor="Compara"
+    >
+      <button type="button" aria-pressed="true" data-ba-mode="before"
+        >Antes</button
+      >
+      <button type="button" aria-pressed="false" data-ba-mode="after"
+        >Con TelMoney</button
+      >
       <span class="ba__knob" aria-hidden="true"></span>
     </div>
   </div>

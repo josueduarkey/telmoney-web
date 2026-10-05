@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import { SITE } from '../config';
+import Cursor from '../components/Cursor.astro';
 
 interface Props {
   title?: string;
@@ -40,6 +41,7 @@ const canonical = new URL(Astro.url.pathname, SITE.url);
   <body>
     <a class="skip-link" href="#main">Saltar al contenido</a>
     <slot />
+    <Cursor />
     <script>
       import { initMotion } from '../scripts/motion';
       initMotion();

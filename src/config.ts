@@ -14,8 +14,8 @@ export const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=Hola%20TelMon
 export const WAITLIST_URL: string = env.PUBLIC_WAITLIST_URL ?? '';
 
 export const CTA = LAUNCHED
-  ? { label: 'Pruébalo gratis 7 días', href: WHATSAPP_URL, external: true }
-  : { label: 'Únete a la beta', href: '#beta', external: false };
+  ? { label: 'Pruébalo gratis 7 días', href: WHATSAPP_URL, external: true, cursor: 'Pruébalo' }
+  : { label: 'Únete a la beta', href: '#beta', external: false, cursor: 'Únete' };
 
 /** Apertura de la beta: 1 de noviembre de 2026, medianoche en El Salvador (UTC−6). */
 export const RELEASE_AT = '2026-11-01T00:00:00-06:00';

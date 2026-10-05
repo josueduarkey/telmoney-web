@@ -22,6 +22,7 @@ const links = [
     <a
       class="btn nav__cta"
       href={CTA.href}
+      data-cursor={CTA.cursor}
       {...CTA.external ? { target: '_blank', rel: 'noopener' } : {}}>{CTA.label}</a
     >
     <button class="nav__toggle" aria-expanded="false" aria-controls="nav-menu" data-nav-toggle>
