@@ -45,6 +45,16 @@ src/
   components/          una sección por archivo, en el orden de la página
 ```
 
+## Logo e íconos
+
+El logo oficial es `public/favicon.png` (fondo transparente). Si cambia, reemplaza ese archivo y corre:
+
+```bash
+npm run icons   # genera app-icon.png, favicon-32.png, favicon-192.png y apple-touch-icon.png
+```
+
+El pájaro tiene partes casi negras, así que en la página va sobre una baldosa blanca para verse en los dos temas.
+
 ## Modo claro y oscuro
 
 - La primera visita sigue la configuración del navegador; el botón del menú (`ThemeToggle.astro`) lo cambia y lo recuerda.
