@@ -49,6 +49,19 @@ src/
   components/          una sección por archivo, en el orden de la página
 ```
 
+## Documentación
+
+- [`docs/resumen-de-trabajo.md`](docs/resumen-de-trabajo.md): qué se hizo, en qué commits y qué queda pendiente.
+- [`docs/seo-y-redes.md`](docs/seo-y-redes.md): SEO, vistas previas al compartir y paso a paso para publicar en telmoney.app.
+
+## SEO y redes
+
+Textos para Google y redes, datos estructurados, imagen al compartir, botones de compartir y el paso a paso para publicar en telmoney.app: [`docs/seo-y-redes.md`](docs/seo-y-redes.md).
+
+```bash
+npm run og      # imágenes para compartir (1200×630 y 1080×1080) en public/og/
+```
+
 ## Logo e íconos
 
 El logo oficial es `public/favicon.png` (fondo transparente). Si cambia, reemplaza ese archivo y corre:
