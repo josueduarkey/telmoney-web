@@ -15,6 +15,13 @@ const pains = [
 <section class="beta band grain" id="beta">
   <Sticker kind="bell" size={110} class="beta__bell" data-float="2" />
 
+  {
+    !LAUNCHED && (
+      <div class="container beta__countdown">
+        <Countdown size="xl" label="La beta abre el 1 de noviembre. Faltan:" />
+      </div>
+    )
+  }
   <div class="container beta__grid">
     <div class="beta__copy">
       <h2 class="display-hero beta__title">Que tu pisto te alcance todo el mes<span class="pd">.</span></h2>
@@ -25,7 +32,6 @@ const pains = [
             : 'Abrimos la beta el 1 de noviembre. Déjanos tu WhatsApp y sé de los primeros en probarlo, con 7 días gratis de Pro.'
         }
       </p>
-      {!LAUNCHED && <Countdown class="beta__cd" label="Faltan" />}
     </div>
 
     {
@@ -139,8 +145,8 @@ const pains = [
     font-size: clamp(2.6rem, 5.4vw, 4.8rem);
     max-width: 10em;
   }
-  .beta__copy :global(.beta__cd) {
-    margin-top: var(--s-7);
+  .beta__countdown {
+    margin-bottom: var(--s-8);
   }
   .beta__copy .lead {
     margin-top: var(--s-5);

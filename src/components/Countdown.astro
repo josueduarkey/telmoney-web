@@ -6,8 +6,10 @@ import { RELEASE_AT } from '../config';
 interface Props {
   class?: string;
   label?: string;
+  /** md: en línea · lg: centrada en cajas (inicio) · xl: centrada y protagonista (beta) */
+  size?: 'md' | 'lg' | 'xl';
 }
-const { class: cls = '', label = 'La beta abre el 1 de noviembre' } = Astro.props;
+const { class: cls = '', label = 'La beta abre el 1 de noviembre', size = 'md' } = Astro.props;
 
 const left = Math.max(0, new Date(RELEASE_AT).getTime() - Date.now());
 const parts = [
@@ -19,7 +21,7 @@ const parts = [
 const pad = (n: number) => String(n).padStart(2, '0');
 ---
 
-<div class:list={['cd', cls]} data-countdown data-target={RELEASE_AT}>
+<div class:list={['cd', size !== 'md' && 'cd--boxed', `cd--${size}`, cls]} data-countdown data-target={RELEASE_AT}>
   <p class="cd__label">
     <span class="cd__dot" aria-hidden="true"></span>
     <span data-cd-label>{label}</span>
@@ -127,7 +129,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
   }
   .cd__units b {
     font-family: var(--font-ui);
-    font-size: clamp(1.6rem, 2.6vw, 2.2rem);
+    font-size: clamp(2.1rem, 3.4vw, 2.9rem);
     font-weight: 600;
     letter-spacing: -0.03em;
     line-height: 1;
@@ -143,7 +145,62 @@ const pad = (n: number) => String(n).padStart(2, '0');
     }
   }
   .cd__units span {
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     color: var(--on-dark-faint);
+  }
+
+  /* Versiones en cajas, centradas */
+  .cd--boxed {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .cd--boxed .cd__units {
+    gap: clamp(8px, 1.4vw, 14px);
+    margin-top: var(--s-4);
+  }
+  .cd--boxed .cd__units li,
+  .cd--boxed .cd__units li:first-child {
+    align-items: center;
+    min-width: clamp(66px, 8vw, 100px);
+    padding: clamp(10px, 1.2vw, 14px) clamp(8px, 1.2vw, 14px);
+    border: 0;
+    border-radius: var(--r-xl);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02)),
+      rgba(4, 30, 22, 0.92);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      inset 0 0 0 1px var(--hairline-dark);
+  }
+  .cd--boxed .cd__units b {
+    font-size: clamp(2rem, 3.6vw, 3rem);
+    font-weight: 600;
+    letter-spacing: -0.05em;
+  }
+  .cd--boxed .cd__units span {
+    margin-top: 4px;
+    font-size: clamp(0.68rem, 1vw, 0.8rem);
+  }
+
+  /* xl: la cuenta regresiva como protagonista */
+  .cd--xl .cd__label {
+    font-size: 1rem;
+  }
+  .cd--xl .cd__units {
+    margin-top: var(--s-5);
+  }
+  .cd--xl .cd__units li,
+  .cd--xl .cd__units li:first-child {
+    min-width: clamp(72px, 13vw, 150px);
+    padding: clamp(14px, 2.4vw, 26px) clamp(8px, 1.6vw, 18px);
+  }
+  .cd--xl .cd__units b {
+    font-size: clamp(2.4rem, 7vw, 5.6rem);
+  }
+  .cd--xl .cd__units span {
+    margin-top: 6px;
+    font-size: clamp(0.7rem, 1.1vw, 0.85rem);
   }
 </style>

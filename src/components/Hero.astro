@@ -2,7 +2,6 @@
 import Phone from './Phone.astro';
 import Chat from './Chat.astro';
 import Sticker from './Sticker.astro';
-import Countdown from './Countdown.astro';
 import { heroScript } from '../data/chats';
 import { CTA, LAUNCHED } from '../config';
 
@@ -22,19 +21,16 @@ const phrases = ['en orden,', 'sin sorpresas,', 'bajo control,'];
     <div class="vignette"></div>
   </div>
 
+  {
+    LAUNCHED && (
+      <p class="hero__open container" data-hero-in>
+        Ya está abierto en El Salvador
+      </p>
+    )
+  }
+
   <div class="hero__grid container">
     <div class="hero__copy">
-      {
-        LAUNCHED ? (
-          <p class="hero__open" data-hero-in>
-            Ya está abierto en El Salvador
-          </p>
-        ) : (
-          <div data-hero-in>
-            <Countdown />
-          </div>
-        )
-      }
 
       <h1 class="display-hero" data-hero-title aria-label={`Tu pisto ${phrases[0]} por WhatsApp.`}>
         <span class="hl" aria-hidden="true"><span class="hl__in">Tu pisto</span></span>
@@ -121,7 +117,7 @@ const phrases = ['en orden,', 'sin sorpresas,', 'bajo control,'];
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding-block: 120px 80px;
+    padding-block: 108px 72px;
     overflow: hidden;
     isolation: isolate;
     background: var(--black);
@@ -232,11 +228,9 @@ const phrases = ['en orden,', 'sin sorpresas,', 'bajo control,'];
     align-items: center;
     gap: var(--s-8);
   }
-  .hero__copy :global(.cd) {
-    margin-bottom: var(--s-6);
-  }
   .hero__open {
-    margin-bottom: var(--s-5);
+    margin-bottom: var(--s-6);
+    text-align: center;
     color: var(--on-dark-muted);
   }
   .hero h1 {
