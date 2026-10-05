@@ -89,19 +89,19 @@ const front = (x: number) => 70 + 12 * t(x, 2, 0.6) + 6 * t(x, 3, 1.9);
         <ShareButtons class="footer__share" label="Comparte TelMoney" />
       </div>
       <nav aria-label="Producto">
-        <h2>Producto</h2>
+        <p class="footer__label">Producto</p>
         <a href="#como-funciona">Cómo funciona</a>
         <a href="#funciones">Qué hace</a>
         <a href="#planes">Planes</a>
         <a href="#preguntas">Preguntas</a>
       </nav>
       <nav aria-label="Legal">
-        <h2>Legal</h2>
+        <p class="footer__label">Legal</p>
         <a href="/privacidad">Política de privacidad</a>
         <a href="/terminos">Términos y condiciones</a>
       </nav>
       <nav aria-label="Contacto">
-        <h2>Contacto</h2>
+        <p class="footer__label">Contacto</p>
         <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
         <a href={SITE.instagram} target="_blank" rel="noopener">Instagram</a>
         <a href={SITE.tiktok} target="_blank" rel="noopener">TikTok</a>
@@ -273,7 +273,8 @@ const front = (x: number) => 70 + 12 * t(x, 2, 0.6) + 6 * t(x, 3, 1.9);
     flex-direction: column;
     gap: var(--s-3);
   }
-  .footer nav h2 {
+  /* etiqueta visual del grupo de links (el <nav> ya tiene su aria-label: no hace falta un título) */
+  .footer__label {
     font-size: var(--fs-small);
     font-weight: 600;
     color: var(--text-faint);
