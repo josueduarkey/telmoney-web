@@ -513,3 +513,19 @@ html.motion [data-hero-phone] {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* ───────────────────────── Cambio de tema ─────────────────────────
+   El cambio se anima con View Transitions (un círculo que crece desde el botón).
+   Se desactivan las animaciones por defecto del navegador: el círculo lo maneja el script. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* Mientras cambia el tema, ningún componente anima sus colores (ver ThemeToggle.astro) */
+.theme-switching *,
+.theme-switching *::before,
+.theme-switching *::after {
+  transition: none !important;
+}

@@ -32,10 +32,26 @@ const canonical = new URL(Astro.url.pathname, SITE.url);
     <meta name="twitter:card" content="summary_large_image" />
 
     <script is:inline>
-      // Antes de pintar: si hay JS y el usuario acepta movimiento, ocultamos lo que GSAP va a revelar.
-      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        document.documentElement.classList.add('motion');
-      }
+      // Antes de pintar:
+      // 1) el tema: lo que la persona eligió (localStorage) o, si no eligió, lo de su navegador;
+      // 2) si acepta movimiento, ocultamos lo que GSAP va a revelar.
+      (function () {
+        var root = document.documentElement;
+        var saved = null;
+        try {
+          saved = localStorage.getItem('tm-theme');
+        } catch (e) {}
+        var theme =
+          saved === 'light' || saved === 'dark'
+            ? saved
+            : window.matchMedia('(prefers-color-scheme: light)').matches
+              ? 'light'
+              : 'dark';
+        root.dataset.theme = theme;
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', theme === 'light' ? '#ffffff' : '#000000');
+        if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) root.classList.add('motion');
+      })();
     </script>
   </head>
   <body>
