@@ -1,0 +1,22 @@
+---
+// Rosetón de billete. El dibujo vive en /guilloche.svg (src/lib/guilloche.ts) y se usa como máscara,
+// así toma el color de `color` y se descarga una sola vez para toda la página.
+interface Props {
+  class?: string;
+  [key: `data-${string}`]: string | undefined;
+}
+const { class: cls = '', ...rest } = Astro.props;
+---
+
+<span class:list={['guilloche', cls]} aria-hidden="true" {...rest}></span>
+
+<style>
+  .guilloche {
+    display: block;
+    aspect-ratio: 1;
+    pointer-events: none;
+    background-color: currentColor;
+    -webkit-mask: url('/guilloche.svg') center / contain no-repeat;
+    mask: url('/guilloche.svg') center / contain no-repeat;
+  }
+</style>

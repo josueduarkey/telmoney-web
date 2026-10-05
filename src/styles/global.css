@@ -1,0 +1,367 @@
+@import '@fontsource-variable/plus-jakarta-sans';
+@import '@fontsource-variable/inter';
+
+/* ───────────────────────── Tokens ─────────────────────────
+   Paleta de marca (docs/marca.md del bot) aplicada con la lógica de DESIGN.md:
+   dos polaridades (Tinta oscuro / Menta claro), un chip de palabra clave,
+   un solo CTA dominante por bloque. */
+:root {
+  /* Marca */
+  --green: #0e9f6e; /* Verde Quincena */
+  --green-deep: #057a55; /* Verde Profundo */
+  --green-glow: #3ddc97; /* solo luz/realces sobre oscuro, nunca texto chico */
+  --ink: #12263f; /* Azul Noche (secundario) */
+  --gold: #f5b83d; /* Oro: ahorro, metas y «Pro», nada más */
+  --mint: #ecfdf5;
+  --coral: #f26b5b;
+  --cloud: #f4f6f5;
+  --white: #ffffff;
+
+  /* Superficies */
+  /* El negro manda; Azul Noche queda para superficies destacadas y luz */
+  --black: #000000;
+  --canvas-dark: var(--black);
+  --night: #080b11; /* tarjetas sobre negro: un respiro de azul noche */
+  --vault: #12263f; /* banda y tarjeta destacadas (Azul Noche) */
+  --silver: #c9d6e6; /* grabado y filetes sobre oscuro */
+  --hairline-dark: rgba(255, 255, 255, 0.1);
+  --hairline-dark-strong: rgba(255, 255, 255, 0.18);
+  --canvas-light: #ffffff;
+  --hairline-light: #dde3ea;
+
+  /* Texto */
+  --on-dark: #ffffff;
+  --on-dark-muted: rgba(255, 255, 255, 0.72);
+  --on-dark-faint: rgba(255, 255, 255, 0.5);
+  --on-light: var(--ink);
+  --on-light-muted: #4b5b70;
+
+  /* Chat: azul noche, para que no se confunda con WhatsApp (nada de verdes de burbuja) */
+  --chat-bg: #070a10;
+  --chat-in: #18263a;
+  --chat-out: #24456e;
+  --chat-meta: rgba(255, 255, 255, 0.55);
+
+  /* Tipografía */
+  --font-display: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-ui: 'Inter Variable', 'Inter', -apple-system, system-ui, 'Segoe UI', Helvetica, Arial, sans-serif;
+
+  --fs-hero: clamp(2.7rem, 6vw, 5.4rem);
+  --fs-display: clamp(2.3rem, 5.2vw, 4.4rem);
+  --fs-h3: clamp(1.35rem, 2vw, 1.7rem);
+  --fs-lead: clamp(1.05rem, 1.35vw, 1.22rem);
+  --fs-body: 1rem;
+  --fs-small: 0.875rem;
+
+  /* Espacio (base 8) */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --s-8: 64px;
+  --section: clamp(80px, 12vw, 160px);
+  --container: 1200px;
+  --gutter: clamp(16px, 4vw, 40px);
+
+  /* Forma */
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-xl: 16px;
+  --r-xxl: 28px;
+  --r-full: 9999px;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ───────────────────────── Base ───────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+body {
+  margin: 0;
+  background: var(--canvas-dark);
+  color: var(--on-dark);
+  font-family: var(--font-ui);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  font-feature-settings: 'cv11', 'ss01';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: clip;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+  margin: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--silver);
+  outline-offset: 3px;
+  border-radius: var(--r-xs);
+}
+
+::selection {
+  background: var(--green);
+  color: var(--white);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  left: var(--s-4);
+  top: -100px;
+  z-index: 100;
+  background: var(--white);
+  color: var(--ink);
+  padding: var(--s-2) var(--s-4);
+  border-radius: var(--r-md);
+  font-weight: 600;
+}
+.skip-link:focus {
+  top: var(--s-4);
+}
+
+/* ───────────────────────── Layout ───────────────────────── */
+.container {
+  width: 100%;
+  max-width: calc(var(--container) + var(--gutter) * 2);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.band {
+  position: relative;
+  padding-block: var(--section);
+}
+
+.band--light {
+  background: var(--canvas-light);
+  color: var(--on-light);
+}
+
+.band--mint {
+  background: var(--mint);
+  color: var(--on-light);
+}
+
+/* ───────────────────────── Tipografía ───────────────────────── */
+.display-hero,
+.display,
+.h3 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  text-wrap: balance;
+}
+
+.display-hero {
+  font-size: var(--fs-hero);
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+}
+
+.display {
+  font-size: var(--fs-display);
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+}
+
+.h3 {
+  font-size: var(--fs-h3);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+.lead {
+  font-size: var(--fs-lead);
+  line-height: 1.7;
+  color: var(--on-dark-muted);
+  max-width: 34em;
+  text-wrap: pretty;
+}
+
+.band--light .lead,
+.band--mint .lead {
+  color: var(--on-light-muted);
+}
+
+.kicker {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--green-glow);
+  margin-bottom: var(--s-4);
+}
+
+.band--light .kicker,
+.band--mint .kicker {
+  color: var(--green-deep);
+}
+
+/* El punto de Plus Jakarta en 800 trae mucho aire a la izquierda; en titulares se acerca a la letra */
+.pd {
+  margin-left: -0.05em;
+}
+
+/* El chip de palabra clave: la firma de DESIGN.md, ahora en Verde Quincena.
+   Uno por pantalla, como máximo. */
+.chip {
+  display: inline-block;
+  background: linear-gradient(var(--green), var(--green)) no-repeat 0 0 / 100% 100%;
+  color: var(--ink);
+  padding: 0 0.18em;
+  margin-inline: -0.02em;
+  border-radius: 0.12em;
+  line-height: 1.02;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+/* ───────────────────────── Botones ───────────────────────── */
+.btn {
+  --btn-bg: var(--white);
+  --btn-fg: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  min-height: 48px;
+  padding: 14px 22px;
+  border: 0;
+  border-radius: var(--r-md);
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  font-family: var(--font-ui);
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform 0.4s var(--ease-out),
+    background-color 0.25s,
+    box-shadow 0.4s var(--ease-out);
+  will-change: transform;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+/* CTA dominante sobre oscuro: blanco con halo del propio lienzo (nivel 3 de DESIGN.md) + brillo verde */
+.btn--primary {
+  box-shadow:
+    0 0 0 6px var(--canvas-dark),
+    0 18px 40px -12px rgba(0, 0, 0, 0.5);
+}
+.btn--primary:hover {
+  box-shadow:
+    0 0 0 6px var(--canvas-dark),
+    0 0 48px 6px rgba(255, 255, 255, 0.16);
+}
+
+.btn--ink {
+  --btn-bg: var(--ink);
+  --btn-fg: var(--white);
+}
+.btn--ink:hover {
+  --btn-bg: var(--green-deep);
+}
+
+.btn--ghost {
+  --btn-bg: rgba(255, 255, 255, 0.08);
+  --btn-fg: var(--white);
+  box-shadow: inset 0 0 0 1px var(--hairline-dark-strong);
+}
+.btn--ghost:hover {
+  --btn-bg: rgba(255, 255, 255, 0.14);
+}
+
+.btn--block {
+  width: 100%;
+}
+
+/* ───────────────────────── Textura ───────────────────────── */
+.grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.07;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Estado inicial de lo que anima GSAP (solo si hay JS y movimiento permitido) */
+html.motion [data-hero-title],
+html.motion [data-hero-in],
+html.motion [data-hero-phone] {
+  visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

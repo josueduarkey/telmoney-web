@@ -1,0 +1,339 @@
+---
+import { PLANS, CTA } from '../config';
+
+const both = [
+  'Anota por texto, foto y audio',
+  'Cuentas, metas, límites y deudas',
+  'Cuánto puedes gastar hoy',
+  'Reporte de cada noche',
+];
+const starter = [...both, '5 preguntas libres al día'];
+const pro = [
+  'Todo lo de Starter',
+  'Puntaje de salud financiera y análisis con IA',
+  'Cobros a quien te debe, por correo o WhatsApp',
+  'Avisos de pagos fijos y de tu tarjeta',
+  'Excel, PDF y gráficas',
+  'Preguntas libres sin límite',
+];
+const usd = (n: number) => n.toFixed(2);
+const linkAttrs = CTA.external ? { target: '_blank', rel: 'noopener' } : {};
+---
+
+<section class="pricing band band--light" id="planes" data-pricing>
+  <div class="container">
+    <header class="pricing__head">
+      <h2 class="display">Menos que un café al día<span class="pd">.</span></h2>
+      <p class="lead">
+        Empiezas con 7 días de Pro, gratis y sin tarjeta. Después eliges. Lo que te ahorra un solo pago
+        atrasado de la tarjeta paga el año.
+      </p>
+    </header>
+
+    <div class="period" role="radiogroup" aria-label="Forma de pago">
+      <button type="button" role="radio" aria-checked="true" data-period="monthly">Mensual</button>
+      <button type="button" role="radio" aria-checked="false" data-period="annual">
+        Anual <span class="period__save">2 meses gratis</span>
+      </button>
+      <span class="period__pill" aria-hidden="true"></span>
+    </div>
+
+    <div class="plans">
+      <article class="plan">
+        <h3 class="plan__name">Starter</h3>
+        <p class="plan__for">Para anotar todo y saber cuánto puedes gastar.</p>
+        <p class="plan__price num">
+          <span class="plan__cur">$</span><span
+            data-price
+            data-monthly={usd(PLANS.starter.monthly)}
+            data-annual={usd(PLANS.starter.annual)}>{usd(PLANS.starter.monthly)}</span
+          >
+          <span class="plan__per" data-per>al mes</span>
+        </p>
+        <p class="plan__daily num" data-daily data-monthly="$0.17 al día" data-annual="$0.14 al día">$0.17 al día</p>
+        <a class="btn btn--ink btn--block" href={CTA.href} {...linkAttrs}>{CTA.label}</a>
+        <ul class="plan__list" role="list">
+          {starter.map((f) => <li>{f}</li>)}
+        </ul>
+      </article>
+
+      <article class="plan plan--pro">
+        <span class="plan__badge">El más completo</span>
+        <h3 class="plan__name">Pro</h3>
+        <p class="plan__for">Para que no se te pase un pago ni un cobro.</p>
+        <p class="plan__price num">
+          <span class="plan__cur">$</span><span
+            data-price
+            data-monthly={usd(PLANS.pro.monthly)}
+            data-annual={usd(PLANS.pro.annual)}>{usd(PLANS.pro.monthly)}</span
+          >
+          <span class="plan__per" data-per>al mes</span>
+        </p>
+        <p class="plan__daily num" data-daily data-monthly="$0.33 al día" data-annual="$0.27 al día">$0.33 al día</p>
+        <a class="btn btn--block" href={CTA.href} {...linkAttrs}>{CTA.label}</a>
+        <ul class="plan__list" role="list">
+          {pro.map((f) => <li>{f}</li>)}
+        </ul>
+      </article>
+    </div>
+
+    <p class="pricing__fine">
+      Pagas con tarjeta de crédito o débito, o con Puntos Agrícola, por Wompi. Sin contratos: si no
+      renuevas, tus datos quedan guardados para cuando vuelvas.
+    </p>
+  </div>
+</section>
+
+<script>
+  import { gsap } from 'gsap';
+  const root = document.querySelector<HTMLElement>('[data-pricing]');
+  if (root) {
+    const radios = root.querySelectorAll<HTMLButtonElement>('[data-period]');
+    const prices = root.querySelectorAll<HTMLElement>('[data-price]');
+    const pers = root.querySelectorAll<HTMLElement>('[data-per]');
+    const dailies = root.querySelectorAll<HTMLElement>('[data-daily]');
+    const group = root.querySelector<HTMLElement>('.period')!;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const pill = group.querySelector<HTMLElement>('.period__pill')!;
+    const movePill = () => {
+      const active = group.querySelector<HTMLElement>('[aria-checked="true"]')!;
+      pill.style.setProperty('--w', `${active.offsetWidth}px`);
+      pill.style.transform = `translateX(${active.offsetLeft - 5}px)`;
+    };
+    window.addEventListener('resize', movePill);
+    document.fonts?.ready.then(movePill);
+
+    const select = (period: 'monthly' | 'annual') => {
+      group.dataset.active = period;
+      radios.forEach((r) => {
+        const on = r.dataset.period === period;
+        r.setAttribute('aria-checked', String(on));
+        r.tabIndex = on ? 0 : -1;
+      });
+      movePill();
+      prices.forEach((el) => {
+        const to = Number(el.dataset[period]);
+        if (reduced) {
+          el.textContent = to.toFixed(2);
+          return;
+        }
+        const obj = { v: Number(el.textContent) };
+        gsap.to(obj, {
+          v: to,
+          duration: 0.7,
+          ease: 'power3.out',
+          onUpdate: () => (el.textContent = obj.v.toFixed(2)),
+        });
+      });
+      pers.forEach((el) => (el.textContent = period === 'annual' ? 'al año' : 'al mes'));
+      dailies.forEach((el) => (el.textContent = el.dataset[period]!));
+    };
+
+    radios.forEach((r) => {
+      r.addEventListener('click', () => select(r.dataset.period as 'monthly' | 'annual'));
+      r.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+          const next = r.dataset.period === 'monthly' ? 'annual' : 'monthly';
+          select(next);
+          root.querySelector<HTMLButtonElement>(`[data-period="${next}"]`)!.focus();
+        }
+      });
+    });
+    select('monthly');
+  }
+</script>
+
+<style>
+  .pricing__head {
+    max-width: 760px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  .pricing__head .lead {
+    margin: var(--s-5) auto 0;
+  }
+
+  .period {
+    position: relative;
+    display: flex;
+    width: fit-content;
+    margin: var(--s-7) auto 0;
+    padding: 5px;
+    border-radius: var(--r-full);
+    background: var(--cloud);
+    box-shadow: inset 0 0 0 1px var(--hairline-light);
+  }
+  .period button {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 8px 20px;
+    border: 0;
+    border-radius: var(--r-full);
+    background: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: color 0.3s;
+  }
+  .period button[aria-checked='true'] {
+    color: var(--white);
+  }
+  .period__save {
+    padding: 2px 8px;
+    border-radius: var(--r-full);
+    background: var(--gold);
+    color: var(--ink);
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+  .period__pill {
+    position: absolute;
+    top: 5px;
+    bottom: 5px;
+    left: 5px;
+    width: var(--w, 106px);
+    border-radius: var(--r-full);
+    background: var(--ink);
+    transition:
+      transform 0.5s var(--ease-out),
+      width 0.5s var(--ease-out);
+  }
+
+  .plans {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--s-5);
+    max-width: 920px;
+    margin: var(--s-7) auto 0;
+  }
+  .plan {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: clamp(28px, 4vw, 40px);
+    border-radius: var(--r-xxl);
+    background: var(--white);
+    box-shadow: inset 0 0 0 1px var(--hairline-light);
+  }
+  .plan--pro {
+    background:
+      radial-gradient(90% 60% at 100% 0%, rgba(120, 160, 220, 0.28), transparent 60%),
+      var(--ink);
+    color: var(--white);
+    box-shadow: 0 40px 80px -30px rgba(11, 31, 23, 0.6);
+  }
+  .plan__badge {
+    position: absolute;
+    top: 28px;
+    right: 28px;
+    padding: 4px 12px;
+    border-radius: var(--r-full);
+    background: var(--gold);
+    color: var(--ink);
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+  .plan__name {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+  }
+  .plan__for {
+    margin-top: var(--s-2);
+    color: var(--on-light-muted);
+  }
+  .plan--pro .plan__for,
+  .plan--pro .plan__daily {
+    color: var(--on-dark-muted);
+  }
+  .plan__price {
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+    margin-top: var(--s-6);
+    font-family: var(--font-ui);
+    font-size: clamp(3.2rem, 6vw, 4.4rem);
+    font-weight: 800;
+    letter-spacing: -0.05em;
+    line-height: 1;
+  }
+  .plan__cur {
+    font-size: 0.5em;
+    align-self: flex-start;
+    margin-top: 0.2em;
+  }
+  .plan__per {
+    margin-left: 8px;
+    font-family: var(--font-ui);
+    font-size: 1rem;
+    font-weight: 500;
+    letter-spacing: 0;
+    color: var(--on-light-muted);
+  }
+  .plan--pro .plan__per {
+    color: var(--on-dark-muted);
+  }
+  .plan__daily {
+    margin: var(--s-2) 0 var(--s-6);
+    color: var(--on-light-muted);
+    font-size: var(--fs-small);
+  }
+  .plan__list {
+    list-style: none;
+    margin: var(--s-6) 0 0;
+    padding: var(--s-5) 0 0;
+    border-top: 1px solid var(--hairline-light);
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+  }
+  .plan--pro .plan__list {
+    border-color: var(--hairline-dark-strong);
+  }
+  .plan__list li {
+    position: relative;
+    padding-left: 30px;
+    line-height: 1.5;
+  }
+  .plan__list li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--mint)
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='m6 10.5 2.5 2.5L14 7.5' fill='none' stroke='%23057a55' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+      center / 100% no-repeat;
+  }
+  .plan--pro .plan__list li::before {
+    background-color: rgba(61, 220, 151, 0.16);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='m6 10.5 2.5 2.5L14 7.5' fill='none' stroke='%233ddc97' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  }
+  .plan--pro .btn {
+    box-shadow: 0 0 40px 4px rgba(255, 255, 255, 0.1);
+  }
+
+  .pricing__fine {
+    max-width: 640px;
+    margin: var(--s-6) auto 0;
+    text-align: center;
+    font-size: var(--fs-small);
+    color: var(--on-light-muted);
+  }
+
+  @media (max-width: 767px) {
+    .plans {
+      grid-template-columns: 1fr;
+    }
+    .plan--pro {
+      order: -1;
+    }
+  }
+</style>

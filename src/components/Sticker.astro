@@ -1,0 +1,80 @@
+---
+// Calcomanías planas (la capa de «mascotas» de DESIGN.md).
+// Van sueltas sobre el lienzo, cruzando bordes de sección; nunca dentro de tarjetas.
+interface Props {
+  kind: 'coin' | 'piggy' | 'bell';
+  size?: number;
+  class?: string;
+  style?: string;
+  [key: `data-${string}`]: string | undefined;
+}
+const { kind, size = 110, class: cls = '', style, ...rest } = Astro.props;
+const ink = '#12263f';
+---
+
+<span class:list={['sticker', cls]} style={style} data-sticker aria-hidden="true" {...rest}>
+  <svg width={size} height={size} viewBox="0 0 120 120">
+    {
+      kind === 'coin' && (
+        <g stroke={ink} stroke-width="3.5" stroke-linejoin="round">
+          <ellipse cx="62" cy="64" rx="44" ry="44" fill="#c98f1f" />
+          <circle cx="58" cy="60" r="44" fill="#f5b83d" />
+          <circle cx="58" cy="60" r="33" fill="none" stroke-dasharray="2 6" stroke-width="2.5" />
+          <path
+            d="M70 46c-2-5-7-7-12-7-7 0-12 4-12 9 0 12 25 7 25 20 0 6-6 10-13 10-6 0-11-3-13-8M58 32v56"
+            fill="none"
+            stroke-width="5"
+            stroke-linecap="round"
+          />
+        </g>
+      )
+    }
+    {
+      kind === 'piggy' && (
+        <g stroke={ink} stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round">
+          <path d="M18 66c-8 0-10-8-4-10" fill="none" />
+          <rect x="34" y="86" width="12" height="18" rx="4" fill="#057a55" />
+          <rect x="70" y="86" width="12" height="18" rx="4" fill="#057a55" />
+          <ellipse cx="58" cy="66" rx="42" ry="32" fill="#0e9f6e" />
+          <path d="M40 40 44 22l14 14z" fill="#0e9f6e" />
+          <ellipse cx="100" cy="66" rx="10" ry="12" fill="#3ddc97" />
+          <circle cx="98" cy="62" r="1.6" fill={ink} stroke="none" />
+          <circle cx="98" cy="70" r="1.6" fill={ink} stroke="none" />
+          <circle cx="80" cy="54" r="3" fill={ink} stroke="none" />
+          <rect x="46" y="36" width="22" height="6" rx="3" fill={ink} />
+          <circle cx="57" cy="22" r="13" fill="#f5b83d" />
+          <path d="M57 15v14" />
+        </g>
+      )
+    }
+    {
+      kind === 'bell' && (
+        <g stroke={ink} stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round">
+          <path
+            d="M60 18c-17 0-28 13-28 30v18L22 82h76L88 66V48c0-17-11-30-28-30Z"
+            fill="#ffffff"
+          />
+          <path d="M48 90c2 8 7 12 12 12s10-4 12-12" fill="#ffffff" />
+          <circle cx="92" cy="26" r="13" fill="#f26b5b" />
+          <path d="M92 20v8M92 32v.5" stroke="#fff" />
+        </g>
+      )
+    }
+  </svg>
+</span>
+
+<style>
+  .sticker {
+    position: absolute;
+    display: block;
+    z-index: 2;
+    pointer-events: none;
+    filter: drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 2px 0 #fff)
+      drop-shadow(0 -2px 0 #fff) drop-shadow(0 18px 24px rgba(0, 0, 0, 0.35));
+  }
+  @media (max-width: 575px) {
+    .sticker {
+      display: none;
+    }
+  }
+</style>

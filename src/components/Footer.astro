@@ -1,0 +1,112 @@
+---
+import Logo from './Logo.astro';
+import { SITE } from '../config';
+
+// Borde de billete: la «línea ondulada» de DESIGN.md hecha con dos senos entrelazados.
+const W = 1200;
+const wave = (phase: number, amp: number) => {
+  const pts: string[] = [];
+  for (let x = 0; x <= W; x += 4) {
+    const y = 14 + amp * Math.sin((x / W) * Math.PI * 2 * 24 + phase);
+    pts.push(`${x},${y.toFixed(2)}`);
+  }
+  return `M${pts.join('L')}`;
+};
+---
+
+<footer class="footer">
+  <svg class="footer__wave" viewBox={`0 0 ${W} 28`} preserveAspectRatio="none" aria-hidden="true">
+    <path d={wave(0, 9)}></path>
+    <path d={wave(Math.PI, 9)}></path>
+    <path d={wave(Math.PI / 2, 5)}></path>
+  </svg>
+
+  <div class="container footer__grid">
+    <div class="footer__brand">
+      <Logo size={36} />
+      <p>Tu pisto en orden, por WhatsApp.<br />Hecho en El Salvador.</p>
+    </div>
+    <nav aria-label="Producto">
+      <h2>Producto</h2>
+      <a href="#como-funciona">Cómo funciona</a>
+      <a href="#funciones">Qué hace</a>
+      <a href="#planes">Planes</a>
+      <a href="#preguntas">Preguntas</a>
+    </nav>
+    <nav aria-label="Legal">
+      <h2>Legal</h2>
+      <a href="/privacidad">Política de privacidad</a>
+      <a href="/terminos">Términos y condiciones</a>
+    </nav>
+    <nav aria-label="Contacto">
+      <h2>Contacto</h2>
+      <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
+      <a href={SITE.instagram} target="_blank" rel="noopener">Instagram</a>
+      <a href={SITE.tiktok} target="_blank" rel="noopener">TikTok</a>
+    </nav>
+  </div>
+
+</footer>
+
+<style>
+  .footer {
+    background: var(--night);
+    padding-bottom: var(--s-6);
+  }
+  .footer__wave {
+    display: block;
+    width: 100%;
+    height: 28px;
+  }
+  .footer__wave path {
+    fill: none;
+    stroke: var(--green);
+    stroke-width: 1.4;
+    vector-effect: non-scaling-stroke;
+  }
+  .footer__wave path:last-child {
+    stroke: var(--silver);
+    opacity: 0.5;
+  }
+  .footer__grid {
+    display: grid;
+    grid-template-columns: 1.6fr repeat(3, 1fr);
+    gap: var(--s-6);
+    padding-block: var(--s-8);
+  }
+  .footer__brand p {
+    margin-top: var(--s-4);
+    color: var(--on-dark-muted);
+    font-size: var(--fs-small);
+    line-height: 1.7;
+  }
+  .footer nav {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+  }
+  .footer h2 {
+    font-size: var(--fs-small);
+    font-weight: 600;
+    color: var(--on-dark-faint);
+    margin-bottom: var(--s-1);
+  }
+  .footer nav a {
+    width: fit-content;
+    color: var(--on-dark-muted);
+    text-decoration: none;
+    font-size: 0.95rem;
+  }
+  .footer nav a:hover {
+    color: var(--white);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  @media (max-width: 767px) {
+    .footer__grid {
+      grid-template-columns: 1fr 1fr;
+    }
+    .footer__brand {
+      grid-column: 1 / -1;
+    }
+  </style>

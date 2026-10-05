@@ -1,0 +1,238 @@
+---
+import Phone from './Phone.astro';
+import Chat from './Chat.astro';
+import { almuerzo, reporte, type Msg } from '../data/chats';
+
+const hola: Msg[] = [{ from: 'me', text: 'hola', time: '07:30' }];
+const cuentale: Msg[] = [
+  almuerzo[0],
+  { from: 'me', voice: '0:06', time: '12:44' },
+  { from: 'me', receipt: { merchant: 'SÚPER SELECTOS', total: '$27.35' }, time: '12:45' },
+  almuerzo[1],
+];
+const onboarding = ['Tu nombre', 'Cuánto ganas y qué días te pagan', 'Tu meta de ahorro', 'Qué % quieres ahorrar'];
+
+const steps = [
+  {
+    title: 'Escríbele «hola»',
+    body: 'Un minuto de bienvenida: el aviso de privacidad y cuatro preguntas que puedes saltar. Nada que descargar, ningún formulario.',
+    chat: hola,
+  },
+  {
+    title: 'Cuéntale como hablas',
+    body: '«Gasté 3.50 en el almuerzo», un audio desde el bus o la foto del recibo del súper. Entiende «me cayó la quincena» o «gasté 1.20 de n1co». Cada respuesta trae botones con lo siguiente.',
+    chat: cuentale,
+  },
+  {
+    title: 'Recibe tu noche financiera',
+    body: 'A las 8:30 pm (o a la hora que elijas) te llega cómo te fue: en qué gastaste, cuánto tienes para mañana, cómo va tu meta y tu salud financiera de 0 a 100.',
+    chat: reporte,
+  },
+];
+---
+
+<section class="how band" id="como-funciona" data-how>
+  <div class="container">
+    <header class="how__head">
+      <h2 class="display">Así de simple<span class="pd">.</span><br />Tres pasos y ya<span class="pd">.</span></h2>
+    </header>
+
+    <div class="how__grid">
+      <ol class="how__steps" role="list">
+        <span class="how__rail" aria-hidden="true"><span data-how-progress></span></span>
+        {
+          steps.map((s, i) => (
+            <li class="how__step" data-how-step={i}>
+              <span class="how__n num" aria-hidden="true">
+                {i + 1}
+              </span>
+              <h3 class="h3">{s.title}</h3>
+              <p>{s.body}</p>
+              {i === 0 && (
+                <ul class="how__onboarding" role="list">
+                  {onboarding.map((q) => (
+                    <li>{q}</li>
+                  ))}
+                </ul>
+              )}
+              <div class="how__mobile">
+                <Chat messages={s.chat} compact />
+              </div>
+            </li>
+          ))
+        }
+      </ol>
+
+      <div class="how__sticky" aria-hidden="true">
+        <Phone>
+          <div class="how__screens">
+            {
+              steps.map((s, i) => (
+                <div class="how__screen" data-how-screen={i}>
+                  <Chat messages={s.chat} />
+                </div>
+              ))
+            }
+          </div>
+        </Phone>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .how {
+    background: var(--night);
+  }
+  .how__head {
+    margin-bottom: var(--s-8);
+  }
+  .how__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--s-8);
+  }
+  .how__steps {
+    position: relative;
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0 64px;
+  }
+  .how__rail {
+    position: absolute;
+    left: 19px;
+    top: 8px;
+    bottom: 30vh;
+    width: 2px;
+    background: var(--hairline-dark);
+  }
+  .how__rail span {
+    position: absolute;
+    inset: 0;
+    background: var(--green);
+    transform-origin: top;
+    transform: scaleY(0);
+  }
+  .how__step {
+    position: relative;
+    min-height: 72vh;
+    padding-top: 4px;
+  }
+  .how__step:last-child {
+    min-height: 60vh;
+  }
+  .how__n {
+    position: absolute;
+    left: -64px;
+    top: 0;
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--night);
+    box-shadow: inset 0 0 0 1.5px var(--hairline-dark-strong);
+    font-family: var(--font-display);
+    font-weight: 800;
+    transition:
+      background-color 0.4s,
+      color 0.4s,
+      box-shadow 0.4s;
+  }
+  .how__step.is-active .how__n {
+    background: var(--green);
+    color: var(--ink);
+    box-shadow: 0 0 0 6px rgba(14, 159, 110, 0.18);
+  }
+  .how__step h3 {
+    font-size: clamp(1.8rem, 3.2vw, 2.6rem);
+    letter-spacing: -0.035em;
+    font-weight: 800;
+    margin-bottom: var(--s-4);
+  }
+  .how__step > p {
+    max-width: 30em;
+    font-size: var(--fs-lead);
+    line-height: 1.7;
+    color: var(--on-dark-muted);
+  }
+  .how__onboarding {
+    list-style: none;
+    margin: var(--s-5) 0 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2);
+  }
+  .how__onboarding li {
+    padding: 8px 14px;
+    border-radius: var(--r-full);
+    box-shadow: inset 0 0 0 1px var(--hairline-dark-strong);
+    font-size: var(--fs-small);
+    color: var(--on-dark-muted);
+  }
+  .how__mobile {
+    display: none;
+  }
+
+  .how__sticky {
+    position: sticky;
+    top: calc(50vh - 330px);
+    height: fit-content;
+    display: flex;
+    justify-content: center;
+  }
+  .how__sticky :global(.phone) {
+    --w: 320px;
+  }
+  .how__screens {
+    position: relative;
+    flex: 1;
+  }
+  .how__screen {
+    position: absolute;
+    inset: auto 0 0;
+    opacity: 0;
+    transform: translateY(24px);
+    transition:
+      opacity 0.5s var(--ease-out),
+      transform 0.6s var(--ease-out);
+  }
+  .how__screen.is-active {
+    opacity: 1;
+    transform: none;
+  }
+
+  @media (max-width: 991px) {
+    .how__grid {
+      grid-template-columns: 1fr;
+    }
+    .how__sticky {
+      display: none;
+    }
+    .how__step,
+    .how__step:last-child {
+      min-height: 0;
+      padding-bottom: var(--s-8);
+    }
+    .how__rail {
+      bottom: 0;
+    }
+    .how__mobile {
+      display: block;
+      margin-top: var(--s-5);
+      padding: var(--s-4);
+      border-radius: var(--r-xl);
+      background: var(--chat-bg);
+      box-shadow: inset 0 0 0 1px var(--hairline-dark);
+    }
+  }
+  @media (max-width: 575px) {
+    .how__steps {
+      padding-left: 52px;
+    }
+    .how__n {
+      left: -52px;
+    }
+  }
+</style>

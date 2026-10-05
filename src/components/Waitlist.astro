@@ -1,0 +1,365 @@
+---
+import Guilloche from './Guilloche.astro';
+import Sticker from './Sticker.astro';
+import Countdown from './Countdown.astro';
+import { LAUNCHED, WHATSAPP_URL, WAITLIST_URL } from '../config';
+
+const pains = [
+  'Saber en qué se me va',
+  'Llegar a fin de mes con pisto',
+  'Acordarme de los pagos',
+  'Cobrar lo que me deben',
+  'Ahorrar',
+];
+---
+
+<section class="beta band grain" id="beta">
+  <Guilloche class="beta__rosette" />
+  <Sticker kind="bell" size={110} class="beta__bell" data-float="2" />
+
+  <div class="container beta__grid">
+    <div class="beta__copy">
+      <h2 class="display-hero beta__title">Que tu pisto te alcance todo el mes<span class="pd">.</span></h2>
+      <p class="lead">
+        {
+          LAUNCHED
+            ? 'Escríbele «hola» y en un minuto ya estás anotando. 7 días gratis con todo lo de Pro.'
+            : 'Abrimos la beta el 1 de noviembre. Déjanos tu WhatsApp y sé de los primeros en probarlo, con 7 días gratis de Pro.'
+        }
+      </p>
+      {!LAUNCHED && <Countdown class="beta__cd" label="Faltan" />}
+    </div>
+
+    {
+      LAUNCHED ? (
+        <div class="beta__card beta__card--launch">
+          <a class="btn btn--primary btn--block" href={WHATSAPP_URL} target="_blank" rel="noopener">
+            Pruébalo gratis 7 días
+          </a>
+          <p class="beta__fine">Se abre WhatsApp con el mensaje «Hola TelMoney» listo para mandar.</p>
+        </div>
+      ) : (
+        <form class="beta__card" data-waitlist data-endpoint={WAITLIST_URL} novalidate>
+          <div class="field">
+            <label for="wl-name">Tu nombre</label>
+            <input id="wl-name" name="name" autocomplete="given-name" required maxlength="80" />
+            <span class="field__err" data-err-for="name" />
+          </div>
+          <div class="field">
+            <label for="wl-phone">Tu WhatsApp</label>
+            <div class="field__phone">
+              <span aria-hidden="true">+503</span>
+              <input
+                id="wl-phone"
+                name="whatsapp"
+                type="tel"
+                inputmode="tel"
+                autocomplete="tel-national"
+                placeholder="7000 0000"
+                required
+                aria-describedby="wl-phone-hint"
+              />
+            </div>
+            <span class="field__hint" id="wl-phone-hint">
+              Por ahí te avisamos. ¿Número de otro país? Escríbelo con su código, ej. +1.
+            </span>
+            <span class="field__err" data-err-for="whatsapp" />
+          </div>
+          <div class="field">
+            <label for="wl-email">
+              Correo <span class="opt">(opcional)</span>
+            </label>
+            <input id="wl-email" name="email" type="email" autocomplete="email" />
+            <span class="field__err" data-err-for="email" />
+          </div>
+          <fieldset class="field">
+            <legend>
+              ¿Qué es lo que más te cuesta con tu pisto? <span class="opt">(opcional)</span>
+            </legend>
+            <div class="pains">
+              {pains.map((p, i) => (
+                <label class="pain">
+                  <input type="radio" name="pain" value={p} />
+                  <span>{p}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <input class="hp" name="company" tabindex="-1" autocomplete="off" aria-hidden="true" />
+
+          <button class="btn btn--primary btn--block" type="submit" data-submit>
+            Unirme a la beta
+          </button>
+          <p class="beta__fine">Solo te escribimos por WhatsApp para avisarte de la beta. Nada de spam.</p>
+          <p class="beta__status" role="status" aria-live="polite" data-status />
+        </form>
+      )
+    }
+    {
+      !LAUNCHED && (
+        <div class="beta__card beta__done" hidden tabindex="-1" data-done>
+          <span class="beta__check" aria-hidden="true">
+            <svg viewBox="0 0 52 52" width="64" height="64">
+              <circle cx="26" cy="26" r="24" />
+              <path d="m15 27 7 7 15-16" />
+            </svg>
+          </span>
+          <p class="h3">¡Listo! Te escribimos por WhatsApp cuando abra la beta.</p>
+          <p class="beta__fine">Mientras tanto, cuéntale a quien siempre pregunta en qué se le fue el pisto.</p>
+        </div>
+      )
+    }
+  </div>
+</section>
+
+<script>
+  import { initWaitlist } from '../scripts/waitlist';
+  const form = document.querySelector<HTMLFormElement>('[data-waitlist]');
+  if (form) initWaitlist(form);
+</script>
+
+<style>
+  .beta {
+    overflow: hidden;
+    isolation: isolate;
+    background:
+      radial-gradient(60% 70% at 15% 100%, rgba(36, 72, 128, 0.55), transparent 70%),
+      var(--black);
+  }
+  .beta :global(.beta__rosette) {
+    position: absolute;
+    left: -10%;
+    top: 50%;
+    width: 900px;
+    height: auto;
+    translate: 0 -50%;
+    color: var(--silver);
+    opacity: 0.12;
+    z-index: -1;
+    animation: spin 260s linear infinite;
+  }
+  @keyframes spin {
+    to {
+      rotate: 360deg;
+    }
+  }
+  .beta :global(.beta__bell) {
+    right: 6%;
+    top: -50px;
+    rotate: 14deg;
+  }
+  .beta__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    gap: var(--s-8);
+    align-items: center;
+  }
+  .beta__title {
+    font-size: clamp(2.6rem, 5.4vw, 4.8rem);
+    max-width: 10em;
+  }
+  .beta__copy :global(.beta__cd) {
+    margin-top: var(--s-7);
+  }
+  .beta__copy .lead {
+    margin-top: var(--s-5);
+  }
+
+  .beta__card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-5);
+    padding: clamp(24px, 4vw, 40px);
+    border-radius: var(--r-xxl);
+    background: rgba(11, 26, 45, 0.75);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: inset 0 0 0 1px var(--hairline-dark-strong);
+  }
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+  }
+  .field label,
+  .field legend {
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 0;
+  }
+  .field legend {
+    margin-bottom: var(--s-2);
+  }
+  .opt {
+    font-weight: 400;
+    color: var(--on-dark-faint);
+  }
+  .field input:not([type='radio']) {
+    width: 100%;
+    min-height: 50px;
+    padding: 12px 14px;
+    border: 0;
+    border-radius: var(--r-md);
+    background: rgba(255, 255, 255, 0.06);
+    box-shadow: inset 0 0 0 1px var(--hairline-dark-strong);
+    font-size: 1rem;
+    transition:
+      box-shadow 0.2s,
+      background-color 0.2s;
+  }
+  .field input:not([type='radio']):focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.09);
+    box-shadow:
+      inset 0 0 0 1.5px var(--green-glow),
+      0 0 0 4px rgba(61, 220, 151, 0.15);
+  }
+  .field input[aria-invalid='true'] {
+    box-shadow: inset 0 0 0 1.5px var(--coral) !important;
+  }
+  .field__phone {
+    display: flex;
+    align-items: stretch;
+  }
+  .field__phone span {
+    display: grid;
+    place-items: center;
+    padding: 0 14px;
+    border-radius: var(--r-md) 0 0 var(--r-md);
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: inset 0 0 0 1px var(--hairline-dark-strong);
+    color: var(--on-dark-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .field__phone input {
+    border-radius: 0 var(--r-md) var(--r-md) 0 !important;
+  }
+  .field__hint {
+    font-size: 0.8rem;
+    color: var(--on-dark-faint);
+  }
+  .field__err {
+    font-size: 0.85rem;
+    color: #ff9a8d;
+  }
+  .field__err:empty {
+    display: none;
+  }
+
+  .pains {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2);
+  }
+  .pain {
+    position: relative;
+    cursor: pointer;
+  }
+  .pain input {
+    position: absolute;
+    opacity: 0;
+    inset: 0;
+    margin: 0;
+    cursor: pointer;
+  }
+  .pain span {
+    display: block;
+    padding: 9px 14px;
+    border-radius: var(--r-full);
+    box-shadow: inset 0 0 0 1px var(--hairline-dark-strong);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--on-dark-muted);
+    transition:
+      background-color 0.2s,
+      color 0.2s;
+  }
+  .pain:hover span {
+    background: rgba(255, 255, 255, 0.06);
+  }
+  .pain input:checked + span {
+    background: var(--green);
+    color: var(--ink);
+    box-shadow: none;
+    font-weight: 600;
+  }
+  .pain input:focus-visible + span {
+    outline: 2px solid var(--green-glow);
+    outline-offset: 2px;
+  }
+  .hp {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+  }
+  .beta__card .btn {
+    margin-top: var(--s-2);
+  }
+  .beta__card .btn--primary {
+    box-shadow: 0 0 40px 4px rgba(255, 255, 255, 0.1);
+  }
+  .beta__card .btn[disabled] {
+    opacity: 0.6;
+    cursor: progress;
+  }
+  .beta__fine {
+    font-size: 0.8rem;
+    color: var(--on-dark-faint);
+    text-align: center;
+  }
+  .beta__status:empty {
+    display: none;
+  }
+  .beta__status {
+    padding: 14px 16px;
+    border-radius: var(--r-md);
+    background: rgba(255, 154, 141, 0.1);
+    color: #ffb3a8;
+    font-size: 0.95rem;
+  }
+
+  .beta__done {
+    align-items: center;
+    text-align: center;
+    padding-block: var(--s-8);
+  }
+  .beta__done[hidden] {
+    display: none;
+  }
+  .beta__done:focus {
+    outline: none;
+  }
+  .beta__check svg {
+    fill: none;
+    stroke: var(--green-glow);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .beta__check circle {
+    stroke-dasharray: 151;
+    stroke-dashoffset: 151;
+    animation: draw 0.8s var(--ease-out) forwards;
+  }
+  .beta__check path {
+    stroke-dasharray: 40;
+    stroke-dashoffset: 40;
+    animation: draw 0.5s 0.5s var(--ease-out) forwards;
+  }
+  @keyframes draw {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @media (max-width: 991px) {
+    .beta__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

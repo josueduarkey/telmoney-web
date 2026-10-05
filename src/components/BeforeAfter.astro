@@ -1,0 +1,501 @@
+---
+// Antes y después: la misma situación sin TelMoney (notificaciones sueltas, dudas)
+// y con TelMoney (la respuesta del bot). Ejemplos en lugar de explicaciones.
+import Chat from './Chat.astro';
+import { salario, tenis, alquiler, juan, reporte, type Msg } from '../data/chats';
+
+type Note = { app: string; title: string; body: string; time: string; alert?: boolean };
+type Scene = {
+  id: string;
+  tab: string;
+  before: { say: string; notes: Note[] };
+  after: { say: string; chat: Msg[] };
+};
+
+const scenes: Scene[] = [
+  {
+    id: 'pago',
+    tab: 'Día de pago',
+    before: {
+      say: 'Te pagan y no sabes cuánto puedes gastar.',
+      notes: [
+        { app: 'Banco', title: 'Depósito recibido', body: 'Salario: $650.00', time: '7:48' },
+        { app: 'Notas', title: 'Presupuesto de octubre', body: 'Pendiente…', time: 'ayer' },
+      ],
+    },
+    after: { say: 'Sabes cuánto tienes por día hasta tu próximo pago.', chat: salario },
+  },
+  {
+    id: 'compra',
+    tab: '¿Lo compro?',
+    before: {
+      say: 'Compras por impulso y a mitad de mes ya no alcanza.',
+      notes: [
+        { app: 'Banco', title: 'Compra aprobada', body: 'Tienda deportiva: $80.00', time: '18:20' },
+        { app: 'Banco', title: 'Saldo disponible', body: '$9.40 (día 12)', time: 'jue', alert: true },
+      ],
+    },
+    after: { say: 'Antes de comprar, sabes cómo te deja el resto del mes.', chat: tenis },
+  },
+  {
+    id: 'fijos',
+    tab: 'Pagos fijos',
+    before: {
+      say: 'Se te pasa una fecha y terminas pagando recargos.',
+      notes: [
+        { app: 'Tarjeta', title: 'Cargo por pago tardío', body: '$15.00', time: '9:00', alert: true },
+        { app: 'Tarjeta', title: 'Intereses del período', body: '$8.30', time: '9:00', alert: true },
+      ],
+    },
+    after: { say: 'Te avisa 2 días antes y lo marcas como pagado.', chat: alquiler },
+  },
+  {
+    id: 'deudas',
+    tab: 'Te deben',
+    before: {
+      say: 'Te deben y te da pena cobrar.',
+      notes: [
+        { app: 'Mensajes', title: 'Borrador para Juan', body: 'Oye, lo de la pizza… mejor no.', time: '19:28' },
+        { app: 'Notas', title: 'Me deben', body: 'Juan $12.50, Ana $20, ¿alguien más?', time: 'lun' },
+      ],
+    },
+    after: { say: 'Te arma un mensaje amable y lo mandas con un toque.', chat: juan },
+  },
+  {
+    id: 'mes',
+    tab: 'Fin de mes',
+    before: {
+      say: 'Llega fin de mes y no sabes en qué se fue tu pisto.',
+      notes: [
+        { app: 'Banco', title: 'Saldo disponible', body: '$23.10', time: '20:30', alert: true },
+        { app: 'Notas', title: 'Gastos', body: 'súper, gasolina, ¿?, ¿?…', time: 'dom' },
+      ],
+    },
+    after: { say: 'Cada noche sabes cómo te fue y cuánto tienes para mañana.', chat: reporte },
+  },
+];
+---
+
+<section class="ba band" id="antes-y-despues" data-ba>
+  <div class="container">
+    <header class="ba__head">
+      <h2 class="display">El mismo sueldo.<br />Otro fin de mes<span class="pd">.</span></h2>
+      <p class="lead">Elige una situación y mira cómo cambia con TelMoney.</p>
+    </header>
+
+    <div class="ba__tabs" role="tablist" aria-label="Situaciones">
+      {
+        scenes.map((s, i) => (
+          <button
+            type="button"
+            role="tab"
+            id={`ba-tab-${s.id}`}
+            aria-controls={`ba-panel-${s.id}`}
+            aria-selected={i === 0 ? 'true' : 'false'}
+            tabindex={i === 0 ? 0 : -1}
+            data-ba-tab={i}>
+            {s.tab}
+          </button>
+        ))
+      }
+    </div>
+
+    <div class="ba__stage" data-state="before" data-ba-stage>
+      {
+        scenes.map((s, i) => (
+          <div
+            class="ba__panel"
+            role="tabpanel"
+            id={`ba-panel-${s.id}`}
+            aria-labelledby={`ba-tab-${s.id}`}
+            hidden={i !== 0}
+            data-ba-panel={i}>
+            <div class="ba__side ba__side--before">
+              <p class="ba__tag">Sin TelMoney</p>
+              <p class="ba__say">{s.before.say}</p>
+              <div class="ba__screen ba__screen--lock">
+                <p class="lock__time num">10:24</p>
+                <ul class="lock__notes" role="list">
+                  {s.before.notes.map((n) => (
+                    <li class:list={['note', { 'note--alert': n.alert }]}>
+                      <span class="note__app">{n.app}</span>
+                      <span class="note__time">{n.time}</span>
+                      <b class="note__title">{n.title}</b>
+                      <span class="note__body num">{n.body}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <div class="ba__side ba__side--after">
+              <p class="ba__tag">Con TelMoney</p>
+              <p class="ba__say">{s.after.say}</p>
+              <div class="ba__screen ba__screen--chat">
+                <Chat messages={s.after.chat} compact />
+              </div>
+            </div>
+          </div>
+        ))
+      }
+    </div>
+
+    <div class="ba__switch" role="group" aria-label="Comparar">
+      <button type="button" aria-pressed="true" data-ba-mode="before">Antes</button>
+      <button type="button" aria-pressed="false" data-ba-mode="after">Con TelMoney</button>
+      <span class="ba__knob" aria-hidden="true"></span>
+    </div>
+  </div>
+</section>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-ba]');
+  if (root) {
+    const stage = root.querySelector<HTMLElement>('[data-ba-stage]')!;
+    const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-ba-tab]'));
+    const panels = Array.from(root.querySelectorAll<HTMLElement>('[data-ba-panel]'));
+    const modes = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-ba-mode]'));
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let touched = false;
+    let timer = 0;
+
+    const setMode = (mode: 'before' | 'after') => {
+      stage.dataset.state = mode;
+      modes.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.baMode === mode)));
+    };
+
+    // Cada situación se muestra primero «antes» y, tras un momento, se transforma sola
+    const autoplay = () => {
+      clearTimeout(timer);
+      if (touched || reduced) return;
+      setMode('before');
+      timer = window.setTimeout(() => setMode('after'), 1800);
+    };
+
+    const select = (i: number, focus = false) => {
+      tabs.forEach((t, k) => {
+        t.setAttribute('aria-selected', String(k === i));
+        t.tabIndex = k === i ? 0 : -1;
+      });
+      panels.forEach((p, k) => (p.hidden = k !== i));
+      if (focus) tabs[i].focus();
+      autoplay();
+    };
+
+    tabs.forEach((t, i) => {
+      t.addEventListener('click', () => select(i));
+      t.addEventListener('keydown', (e) => {
+        const dir = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+        if (dir) select((i + dir + tabs.length) % tabs.length, true);
+      });
+    });
+    modes.forEach((b) =>
+      b.addEventListener('click', () => {
+        touched = true;
+        clearTimeout(timer);
+        setMode(b.dataset.baMode as 'before' | 'after');
+      }),
+    );
+
+    if (reduced) setMode('after');
+    else
+      new IntersectionObserver(
+        ([e], io) => {
+          if (e.isIntersecting) {
+            autoplay();
+            io.disconnect();
+          }
+        },
+        { threshold: 0.45 },
+      ).observe(stage);
+  }
+</script>
+
+<style>
+  .ba {
+    background: var(--black);
+  }
+  .ba__head {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+    gap: var(--s-7);
+    align-items: end;
+  }
+
+  .ba__tabs {
+    display: flex;
+    gap: var(--s-2);
+    margin-top: var(--s-7);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .ba__tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .ba__tabs button {
+    flex: none;
+    min-height: 44px;
+    padding: 10px 18px;
+    border: 0;
+    border-radius: var(--r-full);
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--hairline-dark-strong);
+    color: var(--on-dark-muted);
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      background-color 0.3s,
+      color 0.3s;
+  }
+  .ba__tabs button:hover {
+    color: var(--white);
+  }
+  .ba__tabs button[aria-selected='true'] {
+    background: var(--white);
+    color: var(--black);
+    box-shadow: none;
+  }
+
+  /* El escenario: «antes» y «después» ocupan el mismo lugar y se reemplazan con un barrido */
+  .ba__stage {
+    position: relative;
+    margin-top: var(--s-5);
+    border-radius: var(--r-xxl);
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px var(--hairline-dark);
+  }
+  .ba__panel {
+    display: grid;
+  }
+  .ba__panel[hidden] {
+    display: none;
+  }
+  .ba__side {
+    grid-area: 1 / 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 360px);
+    grid-template-rows: auto 1fr;
+    column-gap: var(--s-8);
+    align-items: center;
+    padding: clamp(28px, 5vw, 64px);
+    min-height: 560px;
+  }
+  .ba__side--before {
+    background:
+      radial-gradient(70% 90% at 80% 50%, rgba(255, 255, 255, 0.05), transparent 70%),
+      #0a0a0a;
+  }
+  .ba__side--after {
+    background:
+      radial-gradient(70% 90% at 80% 50%, rgba(36, 72, 128, 0.55), transparent 70%),
+      radial-gradient(50% 60% at 10% 100%, rgba(14, 159, 110, 0.22), transparent 70%),
+      var(--vault);
+    clip-path: circle(0% at 75% 100%);
+    transition: clip-path 1.1s var(--ease-out);
+  }
+  [data-state='after'] .ba__side--after {
+    clip-path: circle(150% at 75% 100%);
+  }
+  .ba__tag {
+    grid-column: 1;
+    align-self: end;
+    font-size: var(--fs-small);
+    font-weight: 600;
+    color: var(--on-dark-faint);
+  }
+  .ba__side--after .ba__tag {
+    color: var(--green-glow);
+  }
+  .ba__say {
+    grid-column: 1;
+    align-self: start;
+    margin-top: var(--s-3);
+    font-family: var(--font-display);
+    font-size: clamp(1.8rem, 3.6vw, 3.2rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.035em;
+    text-wrap: balance;
+  }
+  .ba__side--before .ba__say {
+    color: rgba(255, 255, 255, 0.5);
+  }
+  .ba__screen {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    width: 100%;
+    min-height: 420px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 18px 14px;
+    border-radius: 34px;
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+      0 40px 80px -30px rgba(0, 0, 0, 0.9);
+  }
+
+  /* Antes: pantalla bloqueada llena de avisos sueltos */
+  .ba__screen--lock {
+    justify-content: flex-start;
+    background: linear-gradient(180deg, #1a1a1a, #0d0d0d);
+    filter: grayscale(1);
+  }
+  .lock__time {
+    margin: 18px 0 26px;
+    text-align: center;
+    font-family: var(--font-ui);
+    font-size: 4rem;
+    font-weight: 300;
+    letter-spacing: -0.04em;
+    color: rgba(255, 255, 255, 0.85);
+  }
+  .lock__notes {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .note {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2px 8px;
+    padding: 12px 14px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px);
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.85);
+  }
+  .note__app {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(255, 255, 255, 0.5);
+  }
+  .note__time {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.45);
+  }
+  .note__title {
+    grid-column: 1 / -1;
+    font-weight: 600;
+  }
+  .note__body {
+    grid-column: 1 / -1;
+    color: rgba(255, 255, 255, 0.7);
+  }
+  .note--alert .note__body {
+    color: #fff;
+    font-weight: 600;
+  }
+  [data-state='before'] .note {
+    animation: note-in 0.6s var(--ease-out) both;
+  }
+  [data-state='before'] .note:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+  @keyframes note-in {
+    from {
+      opacity: 0;
+      transform: translateY(-14px) scale(0.96);
+    }
+  }
+
+  /* Después: la conversación con TelMoney */
+  .ba__screen--chat {
+    background: var(--chat-bg);
+  }
+  [data-state='after'] .ba__screen--chat :global(.msg) {
+    animation: msg-in 0.6s var(--ease-out) both;
+  }
+  [data-state='after'] .ba__screen--chat :global(.msg:nth-child(2)) {
+    animation-delay: 0.35s;
+  }
+  [data-state='after'] .ba__screen--chat :global(.msg:nth-child(3)) {
+    animation-delay: 0.6s;
+  }
+  @keyframes msg-in {
+    from {
+      opacity: 0;
+      transform: translateY(16px) scale(0.97);
+    }
+  }
+
+  /* Interruptor Antes / Con TelMoney */
+  .ba__switch {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: fit-content;
+    margin: var(--s-5) auto 0;
+    padding: 5px;
+    border-radius: var(--r-full);
+    background: var(--night);
+    box-shadow: inset 0 0 0 1px var(--hairline-dark-strong);
+  }
+  .ba__switch button {
+    position: relative;
+    z-index: 1;
+    min-width: 150px;
+    min-height: 46px;
+    padding: 10px 22px;
+    border: 0;
+    border-radius: var(--r-full);
+    background: none;
+    color: var(--on-dark-muted);
+    font-weight: 600;
+    cursor: pointer;
+    transition: color 0.4s;
+  }
+  .ba__switch button[aria-pressed='true'] {
+    color: var(--black);
+  }
+  .ba__knob {
+    position: absolute;
+    top: 5px;
+    bottom: 5px;
+    left: 5px;
+    width: calc(50% - 5px);
+    border-radius: var(--r-full);
+    background: rgba(255, 255, 255, 0.55);
+    transition:
+      transform 0.6s var(--ease-out),
+      background-color 0.6s;
+  }
+  [data-state='after'] ~ .ba__switch .ba__knob {
+    transform: translateX(100%);
+    background: var(--white);
+  }
+
+  @media (max-width: 991px) {
+    .ba__head {
+      grid-template-columns: 1fr;
+    }
+    .ba__side {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto auto;
+      row-gap: var(--s-5);
+      min-height: 0;
+    }
+    .ba__screen {
+      grid-column: 1;
+      grid-row: auto;
+      min-height: 380px;
+    }
+    .ba__side--after {
+      clip-path: circle(0% at 50% 100%);
+    }
+    [data-state='after'] .ba__side--after {
+      clip-path: circle(150% at 50% 100%);
+    }
+  }
+  @media (max-width: 575px) {
+    .ba__switch button {
+      min-width: 0;
+      padding-inline: 16px;
+    }
+  }
+</style>

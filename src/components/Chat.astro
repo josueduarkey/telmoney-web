@@ -1,0 +1,192 @@
+---
+import type { Msg } from '../data/chats';
+import { wa } from '../lib/wa';
+
+interface Props {
+  messages: Msg[];
+  /** Marca cada burbuja con data-step para que un script la anime */
+  scripted?: boolean;
+  compact?: boolean;
+}
+const { messages, scripted = false, compact = false } = Astro.props;
+---
+
+<ol class:list={['chat', { 'chat--compact': compact }]} role="list">
+  {
+    messages.map((m, i) => (
+      <li class:list={['msg', `msg--${m.from}`]} data-step={scripted ? i : undefined}>
+        <div class="bubble">
+          {m.voice && (
+            <span class="voice" aria-label={`Nota de voz de ${m.voice}`}>
+              <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                <path d="M8 5v14l11-7z" fill="currentColor" />
+              </svg>
+              <span class="voice__wave" aria-hidden="true">
+                {Array.from({ length: 26 }, (_, k) => (
+                  <i style={`--h:${0.25 + Math.abs(Math.sin(k * 1.7)) * 0.75}`} />
+                ))}
+              </span>
+              <span class="voice__len num">{m.voice}</span>
+            </span>
+          )}
+          {m.receipt && (
+            <span class="receipt" aria-label={`Foto de recibo de ${m.receipt.merchant}`}>
+              <span class="receipt__paper">
+                <b>{m.receipt.merchant}</b>
+                <span />
+                <span />
+                <span />
+                <b class="num">TOTAL {m.receipt.total}</b>
+              </span>
+            </span>
+          )}
+          {m.text && <span class="text" set:html={wa(m.text)} />}
+          {m.time && <span class="time num">{m.time}{m.from === 'me' && <span aria-hidden="true"> ✓✓</span>}</span>}
+        </div>
+        {m.buttons && (
+          <div class="quick" aria-label="Botones">
+            {m.buttons.map((b) => (
+              <span class="quick__btn">{b}</span>
+            ))}
+          </div>
+        )}
+      </li>
+    ))
+  }
+</ol>
+
+<style>
+  .chat {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-family: var(--font-ui);
+    font-size: 0.86rem;
+    line-height: 1.42;
+    color: #eaf1fa;
+  }
+  .chat--compact {
+    font-size: 0.8rem;
+  }
+  .msg {
+    display: flex;
+    flex-direction: column;
+    max-width: 88%;
+  }
+  .msg--me {
+    align-self: flex-end;
+    align-items: flex-end;
+  }
+  .msg--bot {
+    align-self: flex-start;
+  }
+  .bubble {
+    position: relative;
+    padding: 7px 10px 6px;
+    border-radius: 10px;
+    background: var(--chat-in);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+  }
+  .msg--me .bubble {
+    background: var(--chat-out);
+    border-top-right-radius: 3px;
+  }
+  .msg--bot .bubble {
+    border-top-left-radius: 3px;
+  }
+  .text {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .text :global(strong) {
+    font-weight: 650;
+    color: #fff;
+  }
+  .text :global(em) {
+    color: rgba(234, 241, 250, 0.85);
+  }
+  .time {
+    float: right;
+    margin: 6px 0 -2px 10px;
+    font-size: 0.66rem;
+    color: var(--chat-meta);
+  }
+  .msg--me .time span {
+    color: #9dbce6;
+  }
+  .quick {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+    width: 100%;
+  }
+  .quick__btn {
+    flex: 1 1 auto;
+    text-align: center;
+    padding: 7px 10px;
+    border-radius: 9px;
+    background: var(--chat-in);
+    color: #9dbce6;
+    font-weight: 600;
+    font-size: 0.92em;
+    white-space: nowrap;
+  }
+
+  .voice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 190px;
+    color: #d4e2f4;
+  }
+  .voice__wave {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    height: 22px;
+    flex: 1;
+  }
+  .voice__wave i {
+    width: 2.5px;
+    height: calc(var(--h) * 100%);
+    border-radius: 2px;
+    background: currentColor;
+    opacity: 0.8;
+  }
+  .voice__len {
+    font-size: 0.72rem;
+    color: var(--chat-meta);
+  }
+
+  .receipt {
+    display: block;
+    padding: 10px;
+    margin: -3px -6px 4px;
+    border-radius: 7px;
+    background: #d9e2dc;
+  }
+  .receipt__paper {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    width: 150px;
+    padding: 10px;
+    background: #fff;
+    color: #222;
+    font-size: 0.7rem;
+    transform: rotate(-2deg);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  }
+  .receipt__paper span {
+    height: 4px;
+    background: #ddd;
+    border-radius: 2px;
+  }
+  .receipt__paper span:nth-of-type(2) {
+    width: 70%;
+  }
+</style>

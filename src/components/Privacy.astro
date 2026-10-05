@@ -1,0 +1,77 @@
+---
+const items = [
+  {
+    cmd: 'Sin claves del banco',
+    d: 'TelMoney no se conecta a tu banco ni te pide contraseñas. Tú le cuentas tus movimientos o le mandas la foto del recibo.',
+  },
+  { cmd: '«borrar mis datos»', d: 'Escribes eso y se eliminan todos. Sin formularios ni correos de por medio.' },
+  { cmd: '«exportar»', d: 'Te llegan todos tus movimientos en un CSV que abres en Excel.' },
+];
+---
+
+<section class="privacy band" id="privacidad">
+  <div class="container privacy__grid">
+    <div>
+      <h2 class="display">Tus datos son tuyos<span class="pd">.</span></h2>
+      <p class="lead privacy__lead">Solo tú los ves. Los descargas o los borras cuando quieras.</p>
+    </div>
+    <ul class="privacy__list" role="list">
+      {
+        items.map((i) => (
+          <li>
+            <h3>{i.cmd}</h3>
+            <p>{i.d}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<style>
+  .privacy__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: var(--s-8);
+  }
+  .privacy__lead {
+    margin-top: var(--s-5);
+  }
+  .privacy__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .privacy__list li {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: var(--s-5);
+    padding: var(--s-5) 0;
+    border-top: 1px solid var(--hairline-dark-strong);
+  }
+  .privacy__list li:last-child {
+    border-bottom: 1px solid var(--hairline-dark-strong);
+  }
+  .privacy__list h3 {
+    font-family: var(--font-display);
+    font-size: clamp(1.2rem, 2vw, 1.5rem);
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    color: var(--white);
+  }
+  .privacy__list p {
+    color: var(--on-dark-muted);
+  }
+  .privacy {
+    background: var(--black);
+  }
+  @media (max-width: 991px) {
+    .privacy__grid,
+    .privacy__list li {
+      grid-template-columns: 1fr;
+    }
+    .privacy__list li {
+      gap: var(--s-2);
+    }
+  }
+</style>

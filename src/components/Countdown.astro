@@ -1,0 +1,149 @@
+---
+// Cuenta regresiva a la apertura de la beta (RELEASE_AT en config.ts).
+// Se pinta con los valores del momento del build y el script la corrige al cargar.
+import { RELEASE_AT } from '../config';
+
+interface Props {
+  class?: string;
+  label?: string;
+}
+const { class: cls = '', label = 'La beta abre el 1 de noviembre' } = Astro.props;
+
+const left = Math.max(0, new Date(RELEASE_AT).getTime() - Date.now());
+const parts = [
+  { k: 'd', v: Math.floor(left / 864e5), u: 'días' },
+  { k: 'h', v: Math.floor(left / 36e5) % 24, u: 'horas' },
+  { k: 'm', v: Math.floor(left / 6e4) % 60, u: 'min' },
+  { k: 's', v: Math.floor(left / 1e3) % 60, u: 'seg' },
+];
+const pad = (n: number) => String(n).padStart(2, '0');
+---
+
+<div class:list={['cd', cls]} data-countdown data-target={RELEASE_AT}>
+  <p class="cd__label">
+    <span class="cd__dot" aria-hidden="true"></span>
+    <span data-cd-label>{label}</span>
+  </p>
+  <ol class="cd__units num" role="list" aria-hidden="true" data-cd-units>
+    {
+      parts.map((p) => (
+        <li>
+          <b data-cd={p.k}>{pad(p.v)}</b>
+          <span>{p.u}</span>
+        </li>
+      ))
+    }
+  </ol>
+  <p class="sr-only" aria-live="off" data-cd-sr></p>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-countdown]').forEach((root) => {
+    const target = new Date(root.dataset.target!).getTime();
+    const units = root.querySelector<HTMLElement>('[data-cd-units]')!;
+    const label = root.querySelector<HTMLElement>('[data-cd-label]')!;
+    const sr = root.querySelector<HTMLElement>('[data-cd-sr]')!;
+    const el = (k: string) => root.querySelector<HTMLElement>(`[data-cd="${k}"]`)!;
+    const pad = (n: number) => String(n).padStart(2, '0');
+
+    const tick = () => {
+      const left = target - Date.now();
+      if (left <= 0) {
+        units.hidden = true;
+        label.textContent = 'La beta ya está abierta';
+        return false;
+      }
+      const d = Math.floor(left / 864e5);
+      const h = Math.floor(left / 36e5) % 24;
+      const m = Math.floor(left / 6e4) % 60;
+      const s = Math.floor(left / 1e3) % 60;
+      const set = (k: string, v: number) => {
+        const node = el(k);
+        const txt = pad(v);
+        if (node.textContent !== txt) {
+          node.textContent = txt;
+          node.classList.remove('is-tick');
+          void node.offsetWidth;
+          node.classList.add('is-tick');
+        }
+      };
+      set('d', d);
+      set('h', h);
+      set('m', m);
+      set('s', s);
+      sr.textContent = `Faltan ${d} días y ${h} horas.`;
+      return true;
+    };
+    if (tick()) {
+      const id = setInterval(() => tick() || clearInterval(id), 1000);
+    }
+  });
+</script>
+
+<style>
+  .cd__label {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.875rem;
+    color: var(--on-dark-muted);
+  }
+  .cd__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 0 0 rgba(14, 159, 110, 0.6);
+    animation: cd-pulse 2.4s infinite;
+  }
+  @keyframes cd-pulse {
+    70% {
+      box-shadow: 0 0 0 9px rgba(14, 159, 110, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(14, 159, 110, 0);
+    }
+  }
+  .cd__units {
+    display: flex;
+    margin: 12px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .cd__units[hidden] {
+    display: none;
+  }
+  .cd__units li {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 0 22px;
+    border-left: 1px solid var(--hairline-dark-strong);
+  }
+  .cd__units li:first-child {
+    padding-left: 0;
+    border-left: 0;
+  }
+  .cd__units b {
+    font-family: var(--font-ui);
+    font-size: clamp(1.6rem, 2.6vw, 2.2rem);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    color: var(--white);
+  }
+  .cd__units b.is-tick {
+    animation: cd-tick 0.5s var(--ease-out);
+  }
+  @keyframes cd-tick {
+    from {
+      opacity: 0.3;
+      transform: translateY(-6px);
+    }
+  }
+  .cd__units span {
+    font-size: 0.72rem;
+    color: var(--on-dark-faint);
+  }
+</style>

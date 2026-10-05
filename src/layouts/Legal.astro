@@ -1,0 +1,37 @@
+---
+import Base from './Base.astro';
+import Logo from '../components/Logo.astro';
+
+interface Props {
+  title: string;
+}
+const { title } = Astro.props;
+---
+
+<Base title={`${title} · TelMoney`}>
+  <main id="main" class="legal container">
+    <a href="/" class="legal__home" aria-label="Volver al inicio"><Logo /></a>
+    <h1 class="display">{title}</h1>
+    <slot />
+  </main>
+</Base>
+
+<style>
+  .legal {
+    max-width: 760px;
+    padding-block: 64px 120px;
+  }
+  .legal__home {
+    display: inline-block;
+    margin-bottom: 64px;
+    text-decoration: none;
+  }
+  .legal h1 {
+    margin-bottom: 32px;
+  }
+  .legal :global(p) {
+    color: var(--on-dark-muted);
+    font-size: 1.05rem;
+    line-height: 1.75;
+  }
+</style>

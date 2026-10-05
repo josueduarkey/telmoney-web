@@ -1,0 +1,189 @@
+---
+import Logo from './Logo.astro';
+import { CTA } from '../config';
+
+const links = [
+  { href: '#antes-y-despues', label: 'Antes y después' },
+  { href: '#como-funciona', label: 'Cómo funciona' },
+  { href: '#funciones', label: 'Qué hace' },
+  { href: '#planes', label: 'Planes' },
+  { href: '#preguntas', label: 'Preguntas' },
+];
+---
+
+<header class="nav" data-nav>
+  <div class="nav__inner container">
+    <a href="#top" class="nav__brand" aria-label="TelMoney, inicio">
+      <Logo />
+    </a>
+    <nav class="nav__links" aria-label="Principal">
+      {links.map((l) => <a href={l.href}>{l.label}</a>)}
+    </nav>
+    <a
+      class="btn nav__cta"
+      href={CTA.href}
+      {...CTA.external ? { target: '_blank', rel: 'noopener' } : {}}>{CTA.label}</a
+    >
+    <button class="nav__toggle" aria-expanded="false" aria-controls="nav-menu" data-nav-toggle>
+      <span class="sr-only">Abrir menú</span>
+      <i></i><i></i>
+    </button>
+  </div>
+  <div class="nav__menu" id="nav-menu" hidden data-nav-menu>
+    {links.map((l) => <a href={l.href}>{l.label}</a>)}
+    <a class="btn btn--block" href={CTA.href}>{CTA.label}</a>
+  </div>
+</header>
+
+<script>
+  const nav = document.querySelector<HTMLElement>('[data-nav]')!;
+  const toggle = nav.querySelector<HTMLButtonElement>('[data-nav-toggle]')!;
+  const menu = nav.querySelector<HTMLElement>('[data-nav-menu]')!;
+
+  const onScroll = () => nav.classList.toggle('is-scrolled', window.scrollY > 24);
+  onScroll();
+  window.addEventListener('scroll', onScroll, { passive: true });
+
+  const setOpen = (open: boolean) => {
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.querySelector('.sr-only')!.textContent = open ? 'Cerrar menú' : 'Abrir menú';
+    menu.hidden = !open;
+    nav.classList.toggle('is-open', open);
+  };
+  toggle.addEventListener('click', () => setOpen(menu.hidden));
+  menu.addEventListener('click', (e) => {
+    if ((e.target as HTMLElement).closest('a')) setOpen(false);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !menu.hidden) {
+      setOpen(false);
+      toggle.focus();
+    }
+  });
+</script>
+
+<style>
+  .nav {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 50;
+    transition:
+      background-color 0.4s,
+      box-shadow 0.4s;
+  }
+  .nav.is-scrolled,
+  .nav.is-open {
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    box-shadow: 0 1px 0 var(--hairline-dark);
+  }
+  .nav__inner {
+    display: flex;
+    align-items: center;
+    gap: var(--s-6);
+    height: 72px;
+  }
+  .nav__brand {
+    text-decoration: none;
+    margin-right: auto;
+  }
+  .nav__links {
+    display: flex;
+    gap: var(--s-6);
+  }
+  .nav__links a {
+    position: relative;
+    color: var(--on-dark-muted);
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+  .nav__links a::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -6px;
+    height: 1px;
+    background: var(--white);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s var(--ease-out);
+  }
+  .nav__links a:hover {
+    color: var(--white);
+  }
+  .nav__links a:hover::after {
+    transform: scaleX(1);
+  }
+  .nav__cta {
+    min-height: 42px;
+    padding: 10px 18px;
+  }
+  .nav__toggle {
+    display: none;
+    position: relative;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: var(--r-md);
+    background: rgba(255, 255, 255, 0.08);
+    cursor: pointer;
+  }
+  .nav__toggle i {
+    position: absolute;
+    left: 13px;
+    right: 13px;
+    height: 2px;
+    background: var(--white);
+    transition: transform 0.3s var(--ease-out);
+  }
+  .nav__toggle i:first-of-type {
+    top: 17px;
+  }
+  .nav__toggle i:last-of-type {
+    top: 25px;
+  }
+  .nav.is-open .nav__toggle i:first-of-type {
+    transform: translateY(4px) rotate(45deg);
+  }
+  .nav.is-open .nav__toggle i:last-of-type {
+    transform: translateY(-4px) rotate(-45deg);
+  }
+  .nav__menu {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+    padding: var(--s-2) var(--gutter) var(--s-5);
+  }
+  .nav__menu[hidden] {
+    display: none;
+  }
+  .nav__menu a:not(.btn) {
+    padding: var(--s-3) 0;
+    font-size: 1.15rem;
+    font-weight: 600;
+    text-decoration: none;
+    border-bottom: 1px solid var(--hairline-dark);
+  }
+  .nav__menu .btn {
+    margin-top: var(--s-4);
+  }
+
+  @media (max-width: 860px) {
+    .nav__links,
+    .nav__cta {
+      display: none;
+    }
+    .nav__toggle {
+      display: block;
+    }
+  }
+  @media (min-width: 861px) {
+    .nav__menu {
+      display: none !important;
+    }
+  }
+</style>

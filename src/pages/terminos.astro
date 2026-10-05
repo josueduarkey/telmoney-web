@@ -1,0 +1,12 @@
+---
+import Legal from '../layouts/Legal.astro';
+import { SITE } from '../config';
+---
+
+<!-- TODO: reemplazar por los términos aprobados antes del lanzamiento. -->
+<Legal title="Términos y condiciones">
+  <p>
+    Los términos y condiciones se publican aquí antes de abrir la beta. Si tienes una pregunta, escríbenos a
+    <a href={`mailto:${SITE.email}`}>{SITE.email}</a>.
+  </p>
+</Legal>

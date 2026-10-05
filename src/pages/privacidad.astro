@@ -1,0 +1,12 @@
+---
+import Legal from '../layouts/Legal.astro';
+import { SITE } from '../config';
+---
+
+<!-- TODO: reemplazar por el aviso de privacidad aprobado antes del lanzamiento. -->
+<Legal title="Política de privacidad">
+  <p>
+    Estamos terminando el aviso de privacidad completo; se publica aquí antes de abrir la beta. Mientras
+    tanto, si tienes una duda sobre tus datos, escríbenos a <a href={`mailto:${SITE.email}`}>{SITE.email}</a>.
+  </p>
+</Legal>

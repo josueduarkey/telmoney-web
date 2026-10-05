@@ -1,0 +1,55 @@
+---
+// PROVISIONAL hasta tener el logo final (marca.md §6):
+// cuadrado redondeado verde con colita de chat abajo a la derecha (nunca un círculo)
+// y una «t» blanca cuyo tallo sube en flecha. «tel» medio en Azul Noche, «money» negrita en verde.
+// Sobre fondo oscuro «tel» va en blanco (versión invertida).
+interface Props {
+  size?: number;
+  wordmark?: boolean;
+  class?: string;
+}
+const { size = 32, wordmark = true, class: cls = '' } = Astro.props;
+---
+
+<span class:list={['logo', cls]}>
+  <svg width={size} height={size} viewBox="0 0 36 36" aria-hidden="true">
+    <path
+      d="M8 1h18a7 7 0 0 1 7 7v17c0 3 .9 6 2.6 8.6-3.2.3-6.3-.6-8.6-2.4-.5.1-1 .1-1.5.1H8a7 7 0 0 1-7-7V8a7 7 0 0 1 7-7Z"
+      fill="#0e9f6e"></path>
+    <g fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M16 21.5V7.5M11.6 11.8 16 7.4l4.4 4.4M10.5 15.5h11"></path>
+      <path d="M16 21.5c0 2.6 1.4 4 3.8 4h1.7"></path>
+    </g>
+  </svg>
+  {
+    wordmark && (
+      <span class="logo__word">
+        <span class="logo__tel">tel</span>
+        <b>money</b>
+      </span>
+    )
+  }
+</span>
+
+<style>
+  .logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo__word {
+    display: inline-flex;
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+  .logo__tel {
+    font-weight: 500;
+    color: var(--logo-tel, currentColor);
+  }
+  .logo__word b {
+    font-weight: 800;
+    color: var(--green);
+  }
+</style>
