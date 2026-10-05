@@ -53,4 +53,4 @@ src/
 - [ ] Dominio definitivo en `astro.config.mjs` y `SITE.url` (`src/config.ts`).
 - [ ] Cuentas de Instagram/TikTok y correo de contacto en `SITE`.
 - [ ] Imagen para compartir (Open Graph) de 1200×630.
-- [ ] Decidir si se mantiene `public/whatsapp-fondo.png` (es el fondo de chat de WhatsApp, propiedad de Meta) o se reemplaza por uno propio.
+- [ ] Decidir si se mantiene `public/whatsapp-fondo.jpg` (es el fondo de chat de WhatsApp, propiedad de Meta) o se reemplaza por uno propio.
