@@ -4,7 +4,9 @@
 // - public/app-icon.png         el dibujo recortado y cuadrado (transparente) para el logo del sitio
 // - public/favicon-32.png       pestaña del navegador
 // - public/favicon-192.png      Android / accesos directos
+// - public/favicon-512.png      logo para Google (datos estructurados) y el manifiesto
 // - public/apple-touch-icon.png iPhone (iOS redondea las esquinas solo y no admite transparencia)
+// - public/maskable-512.png     Android: ícono que el sistema recorta con su propia forma
 //
 // El pájaro tiene partes casi negras: en los íconos va sobre una baldosa blanca para verse
 // igual en pestañas claras y oscuras.
@@ -45,6 +47,9 @@ const tile = async (size, { radius, inset, file }) => {
 
 await tile(32, { radius: 0.22, inset: 0.08, file: 'public/favicon-32.png' });
 await tile(192, { radius: 0.22, inset: 0.12, file: 'public/favicon-192.png' });
+await tile(512, { radius: 0.22, inset: 0.12, file: 'public/favicon-512.png' });
 await tile(180, { radius: 0, inset: 0.14, file: 'public/apple-touch-icon.png' });
+// «maskable»: Android lo recorta en círculo o gota; el dibujo queda dentro de la zona segura (80 %)
+await tile(512, { radius: 0, inset: 0.2, file: 'public/maskable-512.png' });
 
 console.log('Íconos generados desde', SRC);
