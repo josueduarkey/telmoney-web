@@ -1,78 +1,261 @@
 ---
 import Logo from './Logo.astro';
-import { SITE } from '../config';
+import { SITE, PLAY_STORE_URL, APP_STORE_URL } from '../config';
 
-// Borde de billete: la «línea ondulada» de DESIGN.md hecha con dos senos entrelazados.
-const W = 1200;
-const wave = (phase: number, amp: number) => {
+// Separación: dos olas suaves que se superponen y una línea verde en la cresta.
+// Cada ola se repite exacto cada 1440 unidades (ciclos enteros), así se puede desplazar en bucle sin cortes.
+const W = 1440;
+const H = 120;
+const wave = (fn: (x: number) => number, closed = true) => {
   const pts: string[] = [];
-  for (let x = 0; x <= W; x += 4) {
-    const y = 14 + amp * Math.sin((x / W) * Math.PI * 2 * 24 + phase);
-    pts.push(`${x},${y.toFixed(2)}`);
-  }
-  return `M${pts.join('L')}`;
+  for (let x = 0; x <= W * 2; x += 12) pts.push(`${x},${fn(x).toFixed(1)}`);
+  return `M${pts.join('L')}` + (closed ? `L${W * 2},${H}L0,${H}Z` : '');
 };
+const t = (x: number, cycles: number, phase: number) => Math.sin((x / W) * Math.PI * 2 * cycles + phase);
+const back = (x: number) => 54 + 15 * t(x, 1, 2.4) + 7 * t(x, 2, 0.3);
+const front = (x: number) => 70 + 12 * t(x, 2, 0.6) + 6 * t(x, 3, 1.9);
 ---
 
-<footer class="footer">
-  <svg class="footer__wave" viewBox={`0 0 ${W} 28`} preserveAspectRatio="none" aria-hidden="true">
-    <path d={wave(0, 9)}></path>
-    <path d={wave(Math.PI, 9)}></path>
-    <path d={wave(Math.PI / 2, 5)}></path>
+<footer class="footer" data-footer>
+  <svg class="footer__wave" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true">
+    <defs>
+      <linearGradient id="crest" x1="0" x2="1" y1="0" y2="0">
+        <stop offset="0" style="stop-color: var(--accent-graphic); stop-opacity: 0"></stop>
+        <stop offset="0.5" style="stop-color: var(--accent-graphic); stop-opacity: 1"></stop>
+        <stop offset="1" style="stop-color: var(--accent-graphic); stop-opacity: 0"></stop>
+      </linearGradient>
+    </defs>
+    <g class="wave wave--back"><path d={wave(back)}></path></g>
+    <g class="wave wave--front">
+      <path d={wave(front)}></path>
+      <path class="wave__glow" d={wave(front, false)}></path>
+      <path class="wave__crest" d={wave(front, false)}></path>
+    </g>
   </svg>
 
-  <div class="container footer__grid">
-    <div class="footer__brand">
-      <Logo size={36} />
-      <p>Tu pisto en orden, por WhatsApp.<br />Hecho en El Salvador.</p>
-    </div>
-    <nav aria-label="Producto">
-      <h2>Producto</h2>
-      <a href="#como-funciona">Cómo funciona</a>
-      <a href="#funciones">Qué hace</a>
-      <a href="#planes">Planes</a>
-      <a href="#preguntas">Preguntas</a>
-    </nav>
-    <nav aria-label="Legal">
-      <h2>Legal</h2>
-      <a href="/privacidad">Política de privacidad</a>
-      <a href="/terminos">Términos y condiciones</a>
-    </nav>
-    <nav aria-label="Contacto">
-      <h2>Contacto</h2>
-      <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
-      <a href={SITE.instagram} target="_blank" rel="noopener">Instagram</a>
-      <a href={SITE.tiktok} target="_blank" rel="noopener">TikTok</a>
-    </nav>
-  </div>
+  <div class="footer__body">
+    <section class="container footer__app" aria-labelledby="app-title">
+      <span class="app__icon">
+        <img src="/app-icon.png" alt="" width="56" height="56" loading="lazy" decoding="async" />
+      </span>
+      <div class="app__copy">
+        <h2 class="app__title" id="app-title">¿Prefieres una app?</h2>
+        <p>Todo funciona por WhatsApp. Si quieres, también puedes descargar la app de TelMoney; es opcional.</p>
+      </div>
+      <div class="app__stores">
+        <a class="store" href={PLAY_STORE_URL} target="_blank" rel="noopener" data-cursor="Descárgala">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+            <path d="M6 3.6v16.8a.9.9 0 0 0 1.37.77l13.7-8.4a.9.9 0 0 0 0-1.54L7.37 2.83A.9.9 0 0 0 6 3.6Z" fill="currentColor"></path>
+          </svg>
+          <span><small>Descárgala en</small><b>Google Play</b></span>
+        </a>
+        {
+          APP_STORE_URL ? (
+            <a class="store" href={APP_STORE_URL} target="_blank" rel="noopener" data-cursor="Descárgala">
+              <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                <path
+                  d="M16.4 12.6c0-2.4 2-3.6 2.1-3.7-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.7.9-.8 0-1.9-.9-3.2-.8-1.6 0-3.2 1-4 2.4-1.7 3-.4 7.4 1.2 9.8.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8 1.5 0 1.9.8 3.2.8 1.3 0 2.1-1.2 2.9-2.4.9-1.4 1.3-2.7 1.3-2.8 0 0-2.4-1-2.4-3.9ZM14 5.5c.7-.8 1.1-1.9 1-3-1 0-2.1.7-2.8 1.5-.6.7-1.2 1.8-1 2.9 1.1.1 2.1-.6 2.8-1.4Z"
+                  fill="currentColor"
+                />
+              </svg>
+              <span>
+                <small>Descárgala en</small>
+                <b>App Store</b>
+              </span>
+            </a>
+          ) : (
+            <span class="store store--soon" aria-label="App Store: muy pronto">
+              <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                <path
+                  d="M16.4 12.6c0-2.4 2-3.6 2.1-3.7-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.7.9-.8 0-1.9-.9-3.2-.8-1.6 0-3.2 1-4 2.4-1.7 3-.4 7.4 1.2 9.8.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8 1.5 0 1.9.8 3.2.8 1.3 0 2.1-1.2 2.9-2.4.9-1.4 1.3-2.7 1.3-2.8 0 0-2.4-1-2.4-3.9ZM14 5.5c.7-.8 1.1-1.9 1-3-1 0-2.1.7-2.8 1.5-.6.7-1.2 1.8-1 2.9 1.1.1 2.1-.6 2.8-1.4Z"
+                  fill="currentColor"
+                />
+              </svg>
+              <span aria-hidden="true">
+                <small>Muy pronto en</small>
+                <b>App Store</b>
+              </span>
+            </span>
+          )
+        }
+      </div>
+    </section>
 
+    <div class="container footer__grid">
+      <div class="footer__brand">
+        <Logo size={36} />
+        <p>Tu pisto en orden, por WhatsApp.</p>
+      </div>
+      <nav aria-label="Producto">
+        <h2>Producto</h2>
+        <a href="#como-funciona">Cómo funciona</a>
+        <a href="#funciones">Qué hace</a>
+        <a href="#planes">Planes</a>
+        <a href="#preguntas">Preguntas</a>
+      </nav>
+      <nav aria-label="Legal">
+        <h2>Legal</h2>
+        <a href="/privacidad">Política de privacidad</a>
+        <a href="/terminos">Términos y condiciones</a>
+      </nav>
+      <nav aria-label="Contacto">
+        <h2>Contacto</h2>
+        <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
+        <a href={SITE.instagram} target="_blank" rel="noopener">Instagram</a>
+        <a href={SITE.tiktok} target="_blank" rel="noopener">TikTok</a>
+      </nav>
+    </div>
+  </div>
 </footer>
+
+<script>
+  // Las olas solo se mueven mientras el footer está en pantalla
+  const footer = document.querySelector<HTMLElement>('[data-footer]');
+  if (footer) {
+    new IntersectionObserver(([e]) => footer.classList.toggle('is-visible', e.isIntersecting)).observe(footer);
+  }
+</script>
 
 <style>
   .footer {
-    background: var(--bg-alt);
-    padding-bottom: var(--s-6);
+    position: relative;
+    /* la ola se monta sobre el final de la sección de arriba */
+    margin-top: -96px;
   }
   .footer__wave {
     display: block;
     width: 100%;
-    height: 28px;
+    height: 120px;
+    overflow: hidden;
+    pointer-events: none; /* no tapa clics de la sección de arriba */
   }
-  .footer__wave path {
+  .wave {
+    animation: wave-drift 46s linear infinite;
+    animation-play-state: paused;
+  }
+  .wave--front {
+    animation-duration: 32s;
+    animation-direction: reverse;
+  }
+  .footer:global(.is-visible) .wave {
+    animation-play-state: running;
+  }
+  @keyframes wave-drift {
+    to {
+      transform: translateX(-1440px);
+    }
+  }
+  .wave--back path {
+    fill: var(--bg-alt);
+    opacity: 0.55;
+  }
+  .wave--front path {
+    fill: var(--bg-alt);
+  }
+  .wave--front .wave__crest,
+  .wave--front .wave__glow {
     fill: none;
-    stroke: var(--green);
-    stroke-width: 1.4;
+    stroke: url(#crest);
     vector-effect: non-scaling-stroke;
   }
-  .footer__wave path:last-child {
-    stroke: var(--text-faint);
-    opacity: 0.5;
+  .wave__crest {
+    stroke-width: 1.6;
   }
+  .wave__glow {
+    stroke-width: 8;
+    opacity: 0.18;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .wave {
+      animation: none;
+    }
+  }
+
+  .footer__body {
+    background: var(--bg-alt);
+    padding-bottom: var(--s-6);
+  }
+
+  /* La app (opcional) */
+  .footer__app {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--s-5);
+    padding-block: var(--s-6) var(--s-7);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .app__icon {
+    display: grid;
+    place-items: center;
+    width: 72px;
+    height: 72px;
+    border-radius: 18px;
+    background: #ffffff;
+    box-shadow:
+      inset 0 0 0 1px rgba(0, 0, 0, 0.08),
+      0 10px 24px -12px var(--shadow);
+  }
+  .app__title {
+    font-family: var(--font-display);
+    font-size: clamp(1.2rem, 2vw, 1.5rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .app__copy p {
+    margin-top: var(--s-1);
+    max-width: 46ch;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+  }
+  .app__stores {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-3);
+  }
+  /* Botones de tienda: negros como los oficiales, iguales en los dos temas */
+  .store {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 52px;
+    padding: 8px 18px 8px 14px;
+    border-radius: 12px;
+    background: #000000;
+    color: #ffffff;
+    box-shadow: inset 0 0 0 1px #a6a6a6;
+    text-decoration: none;
+    transition: transform 0.3s var(--ease-out);
+  }
+  a.store:hover {
+    transform: translateY(-2px);
+  }
+  .store span {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+  }
+  .store small {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.82);
+  }
+  .store b {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .store--soon {
+    box-shadow: none;
+    outline: 1px dashed #a6a6a6;
+    outline-offset: -1px;
+  }
+
   .footer__grid {
     display: grid;
     grid-template-columns: 1.6fr repeat(3, 1fr);
     gap: var(--s-6);
-    padding-block: var(--s-8);
+    padding-block: var(--s-7) var(--s-8);
   }
   .footer__brand p {
     margin-top: var(--s-4);
@@ -85,7 +268,7 @@ const wave = (phase: number, amp: number) => {
     flex-direction: column;
     gap: var(--s-3);
   }
-  .footer h2 {
+  .footer nav h2 {
     font-size: var(--fs-small);
     font-weight: 600;
     color: var(--text-faint);
@@ -102,11 +285,27 @@ const wave = (phase: number, amp: number) => {
     text-decoration: underline;
     text-underline-offset: 4px;
   }
+
+  @media (max-width: 991px) {
+    .footer__app {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+    .app__stores {
+      grid-column: 1 / -1;
+    }
+  }
   @media (max-width: 767px) {
+    .footer {
+      margin-top: -64px;
+    }
+    .footer__wave {
+      height: 80px;
+    }
     .footer__grid {
       grid-template-columns: 1fr 1fr;
     }
     .footer__brand {
       grid-column: 1 / -1;
     }
-  </style>
+  }
+</style>

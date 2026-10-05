@@ -19,6 +19,8 @@ npm run build      # estático en dist/
 |---|---|
 | `PUBLIC_WHATSAPP_NUMBER` | Vacío = pre-lanzamiento: los botones dicen «Unite a la beta» y llevan al formulario. Con número (ej. `50370000000`), dicen «Probalo gratis 7 días» y abren `wa.me` con «Hola TelMoney». |
 | `RELEASE_AT` (en `src/config.ts`) | Fecha de apertura de la beta para la cuenta regresiva (hoy: 1/11/2026, 00:00 de El Salvador). |
+| `PUBLIC_PLAY_STORE_URL` | Ficha de la app en Google Play. Vacío = el botón lleva a la búsqueda de «TelMoney» en Google Play. |
+| `PUBLIC_APP_STORE_URL` | Ficha en App Store. Vacío = el botón dice «Muy pronto» y no es un enlace. |
 | `PUBLIC_WAITLIST_URL` | Endpoint que recibe el formulario de la beta. Vacío = modo demo (no envía nada y lo imprime en la consola). |
 
 El formulario manda `POST` con JSON:
@@ -69,4 +71,5 @@ El pájaro tiene partes casi negras, así que en la página va sobre una baldosa
 - [ ] Dominio definitivo en `astro.config.mjs` y `SITE.url` (`src/config.ts`).
 - [ ] Cuentas de Instagram/TikTok y correo de contacto en `SITE`.
 - [ ] Imagen para compartir (Open Graph) de 1200×630.
+- [ ] Links reales de la app en Google Play y App Store, y cambiar los botones por las insignias oficiales de cada tienda.
 - [ ] Decidir si se mantiene `public/whatsapp-fondo.jpg` (es el fondo de chat de WhatsApp, propiedad de Meta) o se reemplaza por uno propio.

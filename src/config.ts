@@ -10,6 +10,13 @@ export const LAUNCHED = WHATSAPP_NUMBER.length > 0;
 
 export const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=Hola%20TelMoney`;
 
+/** App de TelMoney (opcional: todo funciona por WhatsApp).
+ *  Google Play: la ficha de la app en PUBLIC_PLAY_STORE_URL; mientras no exista, lleva a la búsqueda de «TelMoney».
+ *  App Store: todavía no está; se muestra «Muy pronto» hasta que haya PUBLIC_APP_STORE_URL. */
+export const PLAY_STORE_URL: string =
+  env.PUBLIC_PLAY_STORE_URL || 'https://play.google.com/store/search?q=TelMoney&c=apps';
+export const APP_STORE_URL: string = env.PUBLIC_APP_STORE_URL ?? '';
+
 /** Endpoint que recibe el formulario de la beta (POST JSON). Vacío = modo demo. */
 export const WAITLIST_URL: string = env.PUBLIC_WAITLIST_URL ?? '';
 
