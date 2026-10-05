@@ -36,11 +36,13 @@
   --on-light: var(--ink);
   --on-light-muted: #4f5754;
 
-  /* Chat: azul noche, para que no se confunda con WhatsApp (nada de verdes de burbuja) */
-  --chat-bg: #070a10;
-  --chat-in: #18263a;
-  --chat-out: #24456e;
-  --chat-meta: rgba(255, 255, 255, 0.55);
+  /* Chat: modo oscuro de WhatsApp (sin su verde de marca #25D366) */
+  --chat-bg: #0b141a;
+  --chat-in: #202c33;
+  --chat-out: #005c4b;
+  --chat-meta: rgba(233, 237, 239, 0.6);
+  --chat-head: #1f2c34;
+  --chat-tick: #53bdeb;
 
   /* Tipografía */
   --font-display: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', system-ui, sans-serif;

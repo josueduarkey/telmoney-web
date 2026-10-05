@@ -19,13 +19,16 @@ function whenVisible(el: Element) {
   });
 }
 
-type Options = { loop?: boolean; startDelay?: number };
+type Options = { loop?: boolean; startDelay?: number; signal?: AbortSignal };
 
 /**
  * Reproduce una conversación de <Chat scripted> dentro de un <Phone typing>:
  * los mensajes propios aparecen como enviados; los del bot, después de «escribiendo…».
  */
-export async function playChat(root: HTMLElement, { loop = false, startDelay = 400 }: Options = {}) {
+export async function playChat(
+  root: HTMLElement,
+  { loop = false, startDelay = 400, signal }: Options = {},
+) {
   const steps = Array.from(root.querySelectorAll<HTMLElement>('[data-step]'));
   const typing = root.querySelector<HTMLElement>('[data-typing]');
   const presence = root.querySelector<HTMLElement>('[data-presence]');
@@ -38,11 +41,14 @@ export async function playChat(root: HTMLElement, { loop = false, startDelay = 4
   };
 
   hideAll();
+  // Si la persona empieza a escribir, el guion se detiene: lo ya mostrado se queda, el resto no aparece
+  signal?.addEventListener('abort', () => setTyping(false));
   await wait(startDelay);
 
   do {
     await whenVisible(root);
     for (const step of steps) {
+      if (signal?.aborted) return;
       const fromBot = step.classList.contains('msg--bot');
       const len = step.textContent?.length ?? 20;
 
@@ -50,6 +56,7 @@ export async function playChat(root: HTMLElement, { loop = false, startDelay = 4
         setTyping(true);
         gsap.fromTo(typing, { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.25 });
         await wait(900 + Math.min(len * 6, 900));
+        if (signal?.aborted) return;
         setTyping(false);
       } else {
         await wait(650);
@@ -68,7 +75,7 @@ export async function playChat(root: HTMLElement, { loop = false, startDelay = 4
       await wait(fromBot ? 1300 + Math.min(len * 22, 2600) : 500);
     }
 
-    if (!loop) break;
+    if (!loop || signal?.aborted) break;
     await wait(2600);
     await gsap.to(steps, { opacity: 0, y: -12, duration: 0.45, stagger: 0.04 });
     hideAll();

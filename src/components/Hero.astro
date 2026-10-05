@@ -69,9 +69,20 @@ const phrases = ['en orden,', 'sin sorpresas,', 'bajo control,'];
     </div>
 
     <div class="hero__stage" data-hero-phone>
-      <Phone typing label="TelMoney anotando un almuerzo, una nota de voz y una consulta de compra">
+      <Phone
+        typing
+        interactive
+        label="Demo de TelMoney: anota un almuerzo y una nota de voz; después puedes escribirle tú">
         <Chat messages={heroScript} scripted />
       </Phone>
+      <p class="hero__try" aria-hidden="true">
+        <span>Pruébalo, escríbele</span>
+        <svg viewBox="0 0 60 40" width="60" height="40"
+          ><path d="M4 6c18 0 34 6 46 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          ></path><path d="M41 28l9 3 1-10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+          ></path></svg
+        >
+      </p>
       <Sticker kind="coin" size={92} class="hero__coin" data-float="2" />
     </div>
   </div>
@@ -86,8 +97,15 @@ const phrases = ['en orden,', 'sin sorpresas,', 'bajo control,'];
   import { typewriter } from '../scripts/typewriter';
   import { heroBackground } from '../scripts/hero-bg';
 
+  import { demoBot } from '../scripts/demo-bot';
+
   const stage = document.querySelector<HTMLElement>('[data-hero-phone]');
-  if (stage) playChat(stage, { loop: true, startDelay: 1400 });
+  if (stage) {
+    // El guion se reproduce una vez; en cuanto la persona toca o escribe, la conversación es suya
+    const script = new AbortController();
+    playChat(stage, { startDelay: 1400, signal: script.signal });
+    demoBot(stage, { onFirstInteraction: () => script.abort() });
+  }
 
   const type = document.querySelector<HTMLElement>('[data-type]');
   if (type) typewriter(type, { startDelay: 2600 });
@@ -268,12 +286,42 @@ const phrases = ['en orden,', 'sin sorpresas,', 'bajo control,'];
   }
 
   .hero__stage {
+    --pw: 364px; /* ancho del teléfono: la etiqueta «Pruébalo» se ubica respecto a él */
     position: relative;
     display: flex;
     justify-content: center;
   }
   .hero__stage :global(.phone) {
+    --w: var(--pw);
     rotate: 3deg;
+  }
+  .hero__try {
+    position: absolute;
+    align-items: flex-start;
+    /* justo a la izquierda del teléfono, apuntando al campo de texto */
+    right: calc(50% + var(--pw) / 2 - 30px);
+    bottom: 10%;
+    z-index: 3;
+    white-space: nowrap;
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+    color: var(--green-glow);
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    transform: rotate(-6deg);
+    pointer-events: none;
+    transition: opacity 0.5s;
+  }
+  .hero__try svg {
+    flex: none;
+    max-width: none;
+    margin-top: 10px;
+  }
+  .hero__stage:global(.is-live) .hero__try {
+    opacity: 0;
   }
   .hero :global(.hero__coin) {
     right: -2%;
@@ -324,9 +372,25 @@ const phrases = ['en orden,', 'sin sorpresas,', 'bajo control,'];
       grid-template-columns: 1fr;
       gap: var(--s-7);
     }
+    .hero__stage {
+      flex-direction: column;
+      align-items: center;
+    }
+    .hero__stage {
+      --pw: 336px;
+    }
     .hero__stage :global(.phone) {
       --w: 290px;
       rotate: 0deg;
+    }
+    .hero__try {
+      position: static;
+      order: -1;
+      margin-bottom: var(--s-3);
+      transform: none;
+    }
+    .hero__try svg {
+      rotate: 60deg;
     }
     .hero__scroll {
       display: none;

@@ -1,6 +1,7 @@
 ---
 import type { Msg } from '../data/chats';
 import { wa } from '../lib/wa';
+import { TICKS_SVG } from '../lib/ticks';
 
 interface Props {
   messages: Msg[];
@@ -41,7 +42,7 @@ const { messages, scripted = false, compact = false } = Astro.props;
             </span>
           )}
           {m.text && <span class="text" set:html={wa(m.text)} />}
-          {m.time && <span class="time num">{m.time}{m.from === 'me' && <span aria-hidden="true"> ✓✓</span>}</span>}
+          {m.time && <span class="time num">{m.time}{m.from === 'me' && <Fragment set:html={TICKS_SVG} />}</span>}
         </div>
         {m.buttons && (
           <div class="quick" aria-label="Botones">
@@ -55,7 +56,8 @@ const { messages, scripted = false, compact = false } = Astro.props;
   }
 </ol>
 
-<style>
+<style is:global>
+  /* Global a propósito: la demo del inicio crea mensajes en vivo con estas mismas clases. */
   .chat {
     list-style: none;
     margin: 0;
@@ -66,110 +68,136 @@ const { messages, scripted = false, compact = false } = Astro.props;
     font-family: var(--font-ui);
     font-size: 0.86rem;
     line-height: 1.42;
-    color: #eaf1fa;
+    color: #e9edef;
   }
   .chat--compact {
     font-size: 0.8rem;
   }
-  .msg {
+  .chat .msg {
     display: flex;
     flex-direction: column;
-    max-width: 88%;
+    max-width: 86%;
   }
-  .msg--me {
+  .chat .msg--me {
+    margin-right: 8px;
+  }
+  .chat .msg--bot {
+    margin-left: 8px;
+  }
+  .chat .msg--me {
     align-self: flex-end;
     align-items: flex-end;
   }
-  .msg--bot {
+  .chat .msg--bot {
     align-self: flex-start;
   }
-  .bubble {
+  .chat .bubble {
     position: relative;
-    padding: 7px 10px 6px;
-    border-radius: 10px;
+    padding: 6px 9px 5px;
+    border-radius: 8px;
     background: var(--chat-in);
-    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+    box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.3);
   }
-  .msg--me .bubble {
+  /* La colita de la burbuja, como en WhatsApp */
+  .chat .bubble::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    width: 8px;
+    height: 13px;
+    background: inherit;
+  }
+  .chat .msg--me .bubble {
     background: var(--chat-out);
-    border-top-right-radius: 3px;
+    border-top-right-radius: 0;
   }
-  .msg--bot .bubble {
-    border-top-left-radius: 3px;
+  .chat .msg--me .bubble::before {
+    right: -8px;
+    clip-path: polygon(0 0, 100% 0, 0 100%);
   }
-  .text {
+  .chat .msg--bot .bubble {
+    border-top-left-radius: 0;
+  }
+  .chat .msg--bot .bubble::before {
+    left: -8px;
+    clip-path: polygon(0 0, 100% 0, 100% 100%);
+  }
+  .chat .text {
     white-space: normal;
     overflow-wrap: anywhere;
   }
-  .text :global(strong) {
+  .chat .text strong {
     font-weight: 650;
     color: #fff;
   }
-  .text :global(em) {
-    color: rgba(234, 241, 250, 0.85);
+  .chat .text em {
+    color: rgba(233, 237, 239, 0.85);
   }
-  .time {
+  .chat .time {
     float: right;
     margin: 6px 0 -2px 10px;
     font-size: 0.66rem;
     color: var(--chat-meta);
   }
-  .msg--me .time span {
-    color: #9dbce6;
+  .chat .ticks {
+    display: inline-block;
+    margin-left: 3px;
+    vertical-align: -1px;
+    color: var(--chat-tick);
   }
-  .quick {
+  .chat .quick {
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
     margin-top: 4px;
     width: 100%;
   }
-  .quick__btn {
+  .chat .quick__btn {
     flex: 1 1 auto;
     text-align: center;
     padding: 7px 10px;
     border-radius: 9px;
     background: var(--chat-in);
-    color: #9dbce6;
+    color: #00a884;
     font-weight: 600;
     font-size: 0.92em;
     white-space: nowrap;
   }
 
-  .voice {
+  .chat .voice {
     display: flex;
     align-items: center;
     gap: 8px;
     min-width: 190px;
-    color: #d4e2f4;
+    color: #d1d7db;
   }
-  .voice__wave {
+  .chat .voice__wave {
     display: flex;
     align-items: center;
     gap: 2px;
     height: 22px;
     flex: 1;
   }
-  .voice__wave i {
+  .chat .voice__wave i {
     width: 2.5px;
     height: calc(var(--h) * 100%);
     border-radius: 2px;
     background: currentColor;
     opacity: 0.8;
   }
-  .voice__len {
+  .chat .voice__len {
     font-size: 0.72rem;
     color: var(--chat-meta);
   }
 
-  .receipt {
+  .chat .receipt {
     display: block;
     padding: 10px;
     margin: -3px -6px 4px;
     border-radius: 7px;
     background: #d9e2dc;
   }
-  .receipt__paper {
+  .chat .receipt__paper {
     display: flex;
     flex-direction: column;
     gap: 5px;
@@ -181,12 +209,12 @@ const { messages, scripted = false, compact = false } = Astro.props;
     transform: rotate(-2deg);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
   }
-  .receipt__paper span {
+  .chat .receipt__paper span {
     height: 4px;
     background: #ddd;
     border-radius: 2px;
   }
-  .receipt__paper span:nth-of-type(2) {
+  .chat .receipt__paper span:nth-of-type(2) {
     width: 70%;
   }
 </style>
