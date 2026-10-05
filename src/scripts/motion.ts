@@ -32,7 +32,7 @@ export function initMotion() {
 
 /* Scroll suave, sincronizado con ScrollTrigger, y anclas con compensación del menú fijo */
 function smoothScroll() {
-  const lenis = new Lenis({ lerp: 0.1, wheelMultiplier: 0.95 });
+  const lenis = new Lenis({ lerp: 0.13, wheelMultiplier: 1 });
   lenis.on('scroll', ScrollTrigger.update);
   gsap.ticker.add((t) => lenis.raf(t * 1000));
   gsap.ticker.lagSmoothing(0);
