@@ -1,6 +1,7 @@
 ---
 import Sticker from './Sticker.astro';
 import Countdown from './Countdown.astro';
+import ShareButtons from './ShareButtons.astro';
 import { LAUNCHED, WHATSAPP_URL, WAITLIST_URL } from '../config';
 
 const pains = [
@@ -110,7 +111,7 @@ const pains = [
             </svg>
           </span>
           <p class="h3">¡Listo! Te escribimos por WhatsApp cuando abra la beta.</p>
-          <p class="beta__fine">Mientras tanto, cuéntale a quien siempre pregunta en qué se le fue el pisto.</p>
+          <ShareButtons class="beta__share" label="Mientras tanto, pásaselo a quien siempre pregunta en qué se le fue el pisto:" />
         </div>
       )
     }
@@ -313,6 +314,15 @@ const pains = [
     align-items: center;
     text-align: center;
     padding-block: var(--s-8);
+  }
+  .beta__done :global(.beta__share) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .beta__done :global(.beta__share ul) {
+    justify-content: center;
   }
   .beta__done[hidden] {
     display: none;

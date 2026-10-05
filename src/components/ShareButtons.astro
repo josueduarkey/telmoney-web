@@ -1,0 +1,147 @@
+---
+// Botones para compartir TelMoney. Mensajes y links (con utm_*) en seo/share.ts.
+// En celular, si el navegador tiene el menú nativo de compartir, el primer botón lo abre
+// (WhatsApp, Instagram, lo que la persona use); los demás quedan como atajos directos.
+import { shareHref, shareText, shareUrl } from '../seo/share';
+
+interface Props {
+  /** Texto corto encima de los botones */
+  label?: string;
+  class?: string;
+}
+const { label = 'Compártelo', class: cls = '' } = Astro.props;
+
+const networks = [
+  { id: 'whatsapp', name: 'WhatsApp', href: shareHref('whatsapp') },
+  { id: 'telegram', name: 'Telegram', href: shareHref('telegram') },
+  { id: 'facebook', name: 'Facebook', href: shareHref('facebook') },
+  { id: 'x', name: 'X', href: shareHref('x') },
+  { id: 'linkedin', name: 'LinkedIn', href: shareHref('linkedin') },
+  { id: 'email', name: 'Correo', href: shareHref('email') },
+] as const;
+
+// Íconos simples de una tinta (no son los logos oficiales a color)
+const icons: Record<string, string> = {
+  whatsapp: 'M12 2.2A9.8 9.8 0 0 0 3.6 17l-1.3 4.8 4.9-1.3A9.8 9.8 0 1 0 12 2.2Zm0 17.9a8.1 8.1 0 0 1-4.1-1.1l-.3-.2-2.9.8.8-2.8-.2-.3A8.1 8.1 0 1 1 12 20.1Zm4.5-6c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.6 6.6 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.3.8 3.2.7.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.2-.2-.4-.3Z',
+  telegram: 'M21.6 4.1 18.4 19c-.2 1-.8 1.3-1.7.8l-4.6-3.4-2.2 2.1c-.3.3-.5.5-1 .5l.3-4.7L17.8 6.6c.4-.3-.1-.5-.6-.2L6.6 13.1 2 11.7c-1-.3-1-1 .2-1.5l18-6.9c.8-.3 1.6.2 1.4 1.8Z',
+  facebook: 'M13.5 21.8v-7.9h2.7l.4-3.1h-3.1v-2c0-.9.3-1.5 1.6-1.5h1.7V4.5a22 22 0 0 0-2.4-.1c-2.4 0-4 1.4-4 4.1v2.3H7.6v3.1h2.8v7.9h3.1Z',
+  x: 'M17.8 3h3.1l-6.8 7.7 8 10.6h-6.3l-4.9-6.4L5.3 21.3H2.2l7.3-8.3L1.8 3h6.4l4.4 5.9L17.8 3Zm-1.1 16.4h1.7L7.4 4.8H5.6l11.1 14.6Z',
+  linkedin: 'M4.9 3a2 2 0 1 1 0 4 2 2 0 0 1 0-4ZM3.2 8.6h3.4V21H3.2V8.6Zm5.5 0H12v1.7c.5-.9 1.6-2 3.4-2 3.6 0 4.3 2.4 4.3 5.4V21h-3.4v-6.6c0-1.6 0-3.6-2.2-3.6s-2.5 1.7-2.5 3.5V21H8.7V8.6Z',
+  email: 'M3 5h18a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm9 7.2L4 7.3V17h16V7.3l-8 4.9ZM5.2 7 12 11.1 18.8 7H5.2Z',
+  link: 'M10.6 13.4a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1.3 1.3 1.4 1.4 1.3-1.3a2 2 0 1 1 2.9 2.9l-3 3a2 2 0 0 1-2.9 0l-1.4 1.4Zm2.8-2.8a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.3-1.3-1.4-1.4-1.3 1.3a2 2 0 1 1-2.9-2.9l3-3a2 2 0 0 1 2.9 0l1.4-1.4Z',
+  share: 'M18 16.1a2.9 2.9 0 0 0-2 .8l-7.1-4.1a3.2 3.2 0 0 0 0-1.6l7-4.1A3 3 0 1 0 15 5a3.2 3.2 0 0 0 .1.8L8 9.9a3 3 0 1 0 0 4.2l7.1 4.2a2.8 2.8 0 0 0-.1.7 3 3 0 1 0 3-2.9Z',
+};
+---
+
+<div class:list={['share', cls]} data-share data-text={shareText.chat} data-url={shareUrl('copy')} data-native-url={shareUrl('nativo')}>
+  <p class="share__label">{label}</p>
+  <ul class="share__list" role="list">
+    <li class="share__native" hidden data-share-native-item>
+      <button type="button" class="share__btn" data-share-native aria-label="Compartir TelMoney">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d={icons.share} fill="currentColor"></path></svg>
+      </button>
+    </li>
+    {
+      networks.map((n) => (
+        <li>
+          <a
+            class="share__btn"
+            href={n.href}
+            target={n.id === 'email' ? undefined : '_blank'}
+            rel="noopener"
+            aria-label={`Compartir en ${n.name}`}
+            data-cursor={n.name}>
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+              <path d={icons[n.id]} fill="currentColor" />
+            </svg>
+          </a>
+        </li>
+      ))
+    }
+    <li>
+      <button type="button" class="share__btn" data-share-copy aria-label="Copiar el link" data-cursor="Copiar">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d={icons.link} fill="currentColor"></path></svg>
+      </button>
+    </li>
+  </ul>
+  <p class="share__status" role="status" aria-live="polite" data-share-status></p>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-share]').forEach((root) => {
+    const text = root.dataset.text ?? '';
+    const status = root.querySelector<HTMLElement>('[data-share-status]')!;
+    const say = (msg: string) => {
+      status.textContent = msg;
+      window.setTimeout(() => (status.textContent = ''), 2600);
+    };
+
+    // Menú nativo de compartir (sobre todo en celular)
+    const nativeItem = root.querySelector<HTMLElement>('[data-share-native-item]');
+    if (nativeItem && typeof navigator.share === 'function') {
+      nativeItem.hidden = false;
+      root.querySelector('[data-share-native]')?.addEventListener('click', async () => {
+        try {
+          await navigator.share({ title: 'TelMoney', text, url: root.dataset.nativeUrl });
+        } catch {
+          /* la persona cerró el menú: no pasa nada */
+        }
+      });
+    }
+
+    root.querySelector('[data-share-copy]')?.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(root.dataset.url ?? location.href);
+        say('Link copiado. Pégalo donde quieras.');
+      } catch {
+        say('No se pudo copiar. Mantén presionado el link de la barra de direcciones para copiarlo.');
+      }
+    });
+  });
+</script>
+
+<style>
+  .share__label {
+    font-size: var(--fs-small);
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+  .share__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2);
+    margin: var(--s-3) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .share__native[hidden] {
+    display: none;
+  }
+  .share__btn {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--fill-strong);
+    box-shadow: inset 0 0 0 1px var(--hairline-strong);
+    color: var(--text);
+    cursor: pointer;
+    transition:
+      background-color 0.25s,
+      color 0.25s,
+      transform 0.3s var(--ease-out);
+  }
+  .share__btn:hover {
+    background: var(--green);
+    color: var(--black);
+    transform: translateY(-2px);
+  }
+  .share__status {
+    min-height: 1.4em;
+    margin-top: var(--s-2);
+    font-size: var(--fs-small);
+    color: var(--accent);
+  }
+</style>

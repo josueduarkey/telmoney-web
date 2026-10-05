@@ -1,5 +1,6 @@
 ---
 import Logo from './Logo.astro';
+import ShareButtons from './ShareButtons.astro';
 import { SITE, PLAY_STORE_URL, APP_STORE_URL } from '../config';
 
 // Separación: dos olas suaves que se superponen y una línea verde en la cresta.
@@ -85,6 +86,7 @@ const front = (x: number) => 70 + 12 * t(x, 2, 0.6) + 6 * t(x, 3, 1.9);
       <div class="footer__brand">
         <Logo size={36} />
         <p>Tu pisto en orden, por WhatsApp.</p>
+        <ShareButtons class="footer__share" label="Comparte TelMoney" />
       </div>
       <nav aria-label="Producto">
         <h2>Producto</h2>
@@ -262,6 +264,9 @@ const front = (x: number) => 70 + 12 * t(x, 2, 0.6) + 6 * t(x, 3, 1.9);
     color: var(--text-muted);
     font-size: var(--fs-small);
     line-height: 1.7;
+  }
+  .footer__brand :global(.footer__share) {
+    margin-top: var(--s-5);
   }
   .footer nav {
     display: flex;
