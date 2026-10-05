@@ -1,41 +1,51 @@
-// Fondo del inicio: las luces y el grabado siguen al cursor con suavidad.
-// En pantallas táctiles (sin cursor) la luz recorre sola el fondo. Se detiene fuera de pantalla.
+// Fondo del inicio: el foco de luz sigue al cursor y las luces se desplazan un poco (paralaje).
+// Todo se mueve con transform (lo resuelve la GPU sin repintar). El bucle duerme cuando no hay movimiento.
+// Sin cursor (pantallas táctiles), el foco pasea solo con una animación CSS.
 export function heroBackground(hero: HTMLElement) {
   const bg = hero.querySelector<HTMLElement>('[data-hero-bg]');
-  if (!bg || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const spot = bg?.querySelector<HTMLElement>('.spot');
+  const aurora = bg?.querySelector<HTMLElement>('.aurora');
+  if (!bg || !spot || !aurora) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
 
-  const hasCursor = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-  const target = { x: 0.68, y: 0.38 };
-  const pos = { ...target };
-  let lastMove = 0;
+  const SPOT = 380; // mitad del tamaño del foco
+  const target = { x: 0, y: 0 };
+  const pos = { x: 0, y: 0 };
+  let w = hero.clientWidth;
+  let h = hero.clientHeight;
   let raf = 0;
-  let visible = true;
+  let started = false;
 
-  hero.addEventListener('pointermove', (e) => {
-    const r = hero.getBoundingClientRect();
-    target.x = (e.clientX - r.left) / r.width;
-    target.y = (e.clientY - r.top) / r.height;
-    lastMove = performance.now();
+  window.addEventListener('resize', () => {
+    w = hero.clientWidth;
+    h = hero.clientHeight;
   });
 
-  const frame = (t: number) => {
-    // Sin cursor reciente: la luz da vueltas lentas sobre el lado del teléfono
-    if (!hasCursor || t - lastMove > 4000) {
-      target.x = 0.62 + Math.sin(t / 5200) * 0.22;
-      target.y = 0.45 + Math.sin(t / 3700) * 0.25;
-    }
-    pos.x += (target.x - pos.x) * 0.06;
-    pos.y += (target.y - pos.y) * 0.06;
-    bg.style.setProperty('--mx', `${(pos.x * 100).toFixed(2)}%`);
-    bg.style.setProperty('--my', `${(pos.y * 100).toFixed(2)}%`);
-    bg.style.setProperty('--px', (pos.x - 0.5).toFixed(3));
-    bg.style.setProperty('--py', (pos.y - 0.5).toFixed(3));
-    if (visible) raf = requestAnimationFrame(frame);
+  const frame = () => {
+    pos.x += (target.x - pos.x) * 0.12;
+    pos.y += (target.y - pos.y) * 0.12;
+    spot.style.transform = `translate3d(${pos.x - SPOT}px, ${pos.y - SPOT}px, 0)`;
+    aurora.style.transform = `translate3d(${(pos.x / w - 0.5) * 40}px, ${(pos.y / h - 0.5) * 30}px, 0)`;
+    raf = Math.abs(target.x - pos.x) + Math.abs(target.y - pos.y) > 0.3 ? requestAnimationFrame(frame) : 0;
   };
 
-  new IntersectionObserver(([entry]) => {
-    visible = entry.isIntersecting;
-    cancelAnimationFrame(raf);
-    if (visible) raf = requestAnimationFrame(frame);
-  }).observe(hero);
+  hero.addEventListener(
+    'pointermove',
+    (e) => {
+      if (e.pointerType !== 'mouse') return;
+      const r = hero.getBoundingClientRect();
+      target.x = e.clientX - r.left;
+      target.y = e.clientY - r.top;
+      if (!started) {
+        // el foco deja de pasear solo y empieza desde donde está el cursor
+        started = true;
+        pos.x = target.x;
+        pos.y = target.y;
+        bg.classList.add('has-pointer');
+      }
+      if (!raf) raf = requestAnimationFrame(frame);
+    },
+    { passive: true },
+  );
 }
