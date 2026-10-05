@@ -1,38 +1,25 @@
 ---
 import '../styles/global.css';
-import { SITE } from '../config';
 import Cursor from '../components/Cursor.astro';
+import SeoHead from '../components/seo/SeoHead.astro';
+import { SEO } from '../seo/meta';
 
 interface Props {
   title?: string;
   description?: string;
+  noindex?: boolean;
 }
-const { title = SITE.title, description = SITE.description } = Astro.props;
-const canonical = new URL(Astro.url.pathname, SITE.url);
+const { title, description, noindex } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="es-SV">
+<html lang={SEO.lang}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title}</title>
-    <meta name="description" content={description} />
-    <link rel="canonical" href={canonical} />
-    <!-- Logo oficial (public/favicon.png); los tamaños se generan con «npm run icons» -->
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
-    <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="theme-color" content="#000000" />
     <meta name="color-scheme" content="dark light" />
-
-    <meta property="og:type" content="website" />
-    <meta property="og:locale" content="es_SV" />
-    <meta property="og:site_name" content={SITE.name} />
-    <meta property="og:title" content={title} />
-    <meta property="og:description" content={description} />
-    <meta property="og:url" content={canonical} />
-    <meta name="twitter:card" content="summary_large_image" />
+    <SeoHead title={title} description={description} noindex={noindex} />
 
     <script is:inline>
       // Antes de pintar:

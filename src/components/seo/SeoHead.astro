@@ -1,0 +1,65 @@
+---
+// Todo lo que buscadores y redes leen del <head>. Los bots de las redes no ejecutan JavaScript:
+// estas etiquetas tienen que estar en el HTML tal cual sale del servidor (Astro las genera estáticas).
+//
+// Fuentes: textos en seo/meta.ts, datos estructurados en seo/schema.ts.
+import { SITE } from '../../config';
+import { SEO, absolute } from '../../seo/meta';
+import { pageSchema } from '../../seo/schema';
+import jakartaLatin from '@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-wght-normal.woff2?url';
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** Páginas que todavía no deben aparecer en Google (por ejemplo, textos legales provisionales) */
+  noindex?: boolean;
+}
+const { title = SEO.title, description = SEO.description, noindex = false } = Astro.props;
+const path = Astro.url.pathname;
+const canonical = absolute(path);
+const isHome = path === '/';
+const ogTitle = isHome ? SEO.ogTitle : title;
+const ogDescription = isHome ? SEO.ogDescription : description;
+const image = absolute(SEO.image.path);
+---
+
+<title>{title}</title>
+<meta name="description" content={description} />
+<link rel="canonical" href={canonical} />
+{noindex && <meta name="robots" content="noindex, follow" />}
+
+<!-- Íconos y manifiesto (logo oficial; tamaños generados con «npm run icons») -->
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<link rel="manifest" href="/site.webmanifest" />
+<meta name="application-name" content={SITE.name} />
+<meta name="apple-mobile-web-app-title" content={SITE.name} />
+
+<!-- La fuente del título principal llega antes: es lo primero que se pinta -->
+<link rel="preload" href={jakartaLatin} as="font" type="font/woff2" crossorigin />
+
+<!-- Open Graph: WhatsApp, Facebook, LinkedIn, Telegram, iMessage, Slack, Discord -->
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content={SITE.name} />
+<meta property="og:locale" content={SEO.ogLocale} />
+<meta property="og:url" content={canonical} />
+<meta property="og:title" content={ogTitle} />
+<meta property="og:description" content={ogDescription} />
+<meta property="og:image" content={image} />
+<meta property="og:image:secure_url" content={image} />
+<meta property="og:image:type" content={SEO.image.type} />
+<meta property="og:image:width" content={String(SEO.image.width)} />
+<meta property="og:image:height" content={String(SEO.image.height)} />
+<meta property="og:image:alt" content={SEO.image.alt} />
+
+<!-- X (Twitter): tarjeta grande con la misma imagen -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={ogTitle} />
+<meta name="twitter:description" content={ogDescription} />
+<meta name="twitter:image" content={image} />
+<meta name="twitter:image:alt" content={SEO.image.alt} />
+{SITE.x && <meta name="twitter:site" content={`@${SITE.x}`} />}
+
+<!-- Datos estructurados: empresa, sitio, página, app con precios y preguntas frecuentes -->
+<script type="application/ld+json" set:html={JSON.stringify(pageSchema(path, { title, description }))} />

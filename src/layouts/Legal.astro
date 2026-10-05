@@ -4,11 +4,14 @@ import Logo from '../components/Logo.astro';
 
 interface Props {
   title: string;
+  description: string;
+  /** Texto provisional: no se indexa en Google ni entra al sitemap hasta que esté el definitivo */
+  draft?: boolean;
 }
-const { title } = Astro.props;
+const { title, description, draft = false } = Astro.props;
 ---
 
-<Base title={`${title} · TelMoney`}>
+<Base title={`${title} · TelMoney`} description={description} noindex={draft}>
   <main id="main" class="legal container">
     <a href="/" class="legal__home" aria-label="Volver al inicio"><Logo /></a>
     <h1 class="display">{title}</h1>

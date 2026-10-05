@@ -27,14 +27,16 @@ export const CTA = LAUNCHED
 /** Apertura de la beta: 1 de noviembre de 2026, medianoche en El Salvador (UTC−6). */
 export const RELEASE_AT = '2026-11-01T00:00:00-06:00';
 
+/** Datos fijos de la marca. Los textos para buscadores y redes viven en src/seo/meta.ts. */
 export const SITE = {
   name: 'TelMoney',
-  url: 'https://telmoney.app',
-  title: 'TelMoney · Tu pisto en orden, por WhatsApp',
-  description:
-    'Cuéntale tus gastos por WhatsApp como a un amigo. TelMoney anota todo, te dice cuánto puedes gastar hoy y te avisa antes de cada pago. Sin apps, sin Excel.',
+  /** Dominio público (sin «/» final). Las imágenes para compartir necesitan URLs absolutas. */
+  url: (env.PUBLIC_SITE_URL || 'https://telmoney.app').replace(/\/$/, ''),
+  tagline: 'Tu pisto en orden, por WhatsApp.',
   instagram: 'https://instagram.com/telmoney.sv',
   tiktok: 'https://tiktok.com/@telmoney.sv',
+  /** Usuario de X sin «@». Vacío = no se publica twitter:site. */
+  x: env.PUBLIC_X_HANDLE ?? '',
   email: 'hola@telmoney.app',
 };
 

@@ -21,6 +21,8 @@ npm run build      # estático en dist/
 | `RELEASE_AT` (en `src/config.ts`) | Fecha de apertura de la beta para la cuenta regresiva (hoy: 1/11/2026, 00:00 de El Salvador). |
 | `PUBLIC_PLAY_STORE_URL` | Ficha de la app en Google Play. Vacío = el botón lleva a la búsqueda de «TelMoney» en Google Play. |
 | `PUBLIC_APP_STORE_URL` | Ficha en App Store. Vacío = el botón dice «Muy pronto» y no es un enlace. |
+| `PUBLIC_SITE_URL` | Dominio público (`https://telmoney.app`). Lo usan las URLs absolutas para redes, el sitemap y robots.txt. |
+| `PUBLIC_X_HANDLE` | Usuario de X sin «@» para la tarjeta de X (opcional). |
 | `PUBLIC_WAITLIST_URL` | Endpoint que recibe el formulario de la beta. Vacío = modo demo (no envía nada y lo imprime en la consola). |
 
 El formulario manda `POST` con JSON:
