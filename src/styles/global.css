@@ -10,7 +10,7 @@
   --green: #0e9f6e; /* Verde Quincena */
   --green-deep: #057a55; /* Verde Profundo */
   --green-glow: #3ddc97; /* solo luz/realces sobre oscuro, nunca texto chico */
-  --ink: #12263f; /* Azul Noche (secundario) */
+  --ink: #000000; /* texto sobre claro y «tel» del logo (el azul salió de la marca) */
   --gold: #f5b83d; /* Oro: ahorro, metas y «Pro», nada más */
   --mint: #ecfdf5;
   --coral: #f26b5b;
@@ -18,12 +18,12 @@
   --white: #ffffff;
 
   /* Superficies */
-  /* El negro manda; Azul Noche queda para superficies destacadas y luz */
+  /* El negro manda; Verde Noche queda para superficies destacadas y luz */
   --black: #000000;
   --canvas-dark: var(--black);
-  --night: #080b11; /* tarjetas sobre negro: un respiro de azul noche */
-  --vault: #12263f; /* banda y tarjeta destacadas (Azul Noche) */
-  --silver: #c9d6e6; /* grabado y filetes sobre oscuro */
+  --night: #070b09; /* tarjetas sobre negro, apenas verdosas */
+  --vault: #04231a; /* Verde Noche: banda y tarjetas destacadas (el azul recordaba a Telegram) */
+  --silver: #d6dbd8; /* filetes y brillos neutros sobre negro */
   --hairline-dark: rgba(255, 255, 255, 0.1);
   --hairline-dark-strong: rgba(255, 255, 255, 0.18);
   --canvas-light: #ffffff;
@@ -34,7 +34,7 @@
   --on-dark-muted: rgba(255, 255, 255, 0.72);
   --on-dark-faint: rgba(255, 255, 255, 0.5);
   --on-light: var(--ink);
-  --on-light-muted: #4b5b70;
+  --on-light-muted: #4f5754;
 
   /* Chat: azul noche, para que no se confunda con WhatsApp (nada de verdes de burbuja) */
   --chat-bg: #070a10;
@@ -264,7 +264,7 @@ p {
 .chip {
   display: inline-block;
   background: linear-gradient(var(--green), var(--green)) no-repeat 0 0 / 100% 100%;
-  color: var(--ink);
+  color: var(--black);
   padding: 0 0.18em;
   margin-inline: -0.02em;
   border-radius: 0.12em;
@@ -318,7 +318,7 @@ p {
 }
 
 .btn--ink {
-  --btn-bg: var(--ink);
+  --btn-bg: var(--black);
   --btn-fg: var(--white);
 }
 .btn--ink:hover {

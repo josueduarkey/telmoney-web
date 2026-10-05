@@ -9,7 +9,7 @@ interface Props {
   [key: `data-${string}`]: string | undefined;
 }
 const { kind, size = 110, class: cls = '', style, ...rest } = Astro.props;
-const ink = '#12263f';
+const ink = '#000000';
 ---
 
 <span class:list={['sticker', cls]} style={style} data-sticker aria-hidden="true" {...rest}>
