@@ -18,6 +18,7 @@ npm run build      # estático en dist/
 | Variable | Qué hace |
 |---|---|
 | `PUBLIC_WHATSAPP_NUMBER` | Vacío = pre-lanzamiento: los botones dicen «Unite a la beta» y llevan al formulario. Con número (ej. `50370000000`), dicen «Probalo gratis 7 días» y abren `wa.me` con «Hola TelMoney». |
+| `RELEASE_AT` (en `src/config.ts`) | Fecha de apertura de la beta para la cuenta regresiva (hoy: 1/11/2026, 00:00 de El Salvador). |
 | `PUBLIC_WAITLIST_URL` | Endpoint que recibe el formulario de la beta. Vacío = modo demo (no envía nada y lo imprime en la consola). |
 
 El formulario manda `POST` con JSON:
@@ -35,9 +36,11 @@ src/
   config.ts            número, endpoint, precios: lo que cambia al lanzar
   data/chats.ts        conversaciones reales del bot (no inventar respuestas)
   lib/wa.ts            *negrita* y _cursiva_ de WhatsApp a HTML
-  lib/guilloche.ts     rosetón de billete, servido como /guilloche.svg
-  scripts/motion.ts    scroll suave y todas las animaciones (respeta «reducir movimiento»)
+  scripts/motion.ts    scroll suave y animaciones de entrada (respeta «reducir movimiento»)
+  scripts/hero-bg.ts   luces del inicio que siguen al cursor
+  scripts/typewriter.ts  título que escribe hasta 3 frases
   scripts/chat.ts      reproduce chats en el teléfono
+  scripts/demo-bot.ts  demo en vivo del inicio: responde gastos, ingresos y consultas en el navegador
   scripts/waitlist.ts  validación y envío del formulario
   components/          una sección por archivo, en el orden de la página
 ```
@@ -50,3 +53,4 @@ src/
 - [ ] Dominio definitivo en `astro.config.mjs` y `SITE.url` (`src/config.ts`).
 - [ ] Cuentas de Instagram/TikTok y correo de contacto en `SITE`.
 - [ ] Imagen para compartir (Open Graph) de 1200×630.
+- [ ] Decidir si se mantiene `public/whatsapp-fondo.png` (es el fondo de chat de WhatsApp, propiedad de Meta) o se reemplaza por uno propio.
