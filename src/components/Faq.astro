@@ -33,7 +33,8 @@ const jsonLd = {
 };
 ---
 
-<section class="faq band band--light" id="preguntas">
+<!-- tone-invert: blanca en modo oscuro, negra en modo claro -->
+<section class="faq band band--invert tone-invert" id="preguntas">
   <div class="container faq__grid">
     <h2 class="display">Preguntas frecuentes</h2>
     <div class="faq__list">
@@ -65,10 +66,10 @@ const jsonLd = {
     top: 120px;
   }
   .faq__list {
-    border-top: 1px solid var(--hairline-light);
+    border-top: 1px solid var(--hairline-strong);
   }
   details {
-    border-bottom: 1px solid var(--hairline-light);
+    border-bottom: 1px solid var(--hairline-strong);
     interpolate-size: allow-keywords;
   }
   details::details-content {
@@ -98,7 +99,7 @@ const jsonLd = {
     display: none;
   }
   summary:hover span {
-    color: var(--green-deep);
+    color: var(--accent);
   }
   summary i {
     position: relative;
@@ -106,7 +107,8 @@ const jsonLd = {
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: var(--cloud);
+    background: var(--surface);
+    box-shadow: inset 0 0 0 1px var(--hairline-strong);
     transition:
       background-color 0.3s,
       rotate 0.45s var(--ease-out);
@@ -120,7 +122,7 @@ const jsonLd = {
     width: 14px;
     height: 2px;
     margin: -1px 0 0 -7px;
-    background: var(--ink);
+    background: var(--text);
     border-radius: 1px;
     transition: background-color 0.3s;
   }
@@ -129,16 +131,16 @@ const jsonLd = {
   }
   details[open] summary i {
     rotate: 45deg;
-    background: var(--ink);
+    background: var(--text);
   }
   details[open] summary i::before,
   details[open] summary i::after {
-    background: var(--white);
+    background: var(--bg);
   }
   details p {
     max-width: 38em;
     padding-bottom: var(--s-5);
-    color: var(--on-light-muted);
+    color: var(--text-muted);
     font-size: 1.05rem;
     line-height: 1.7;
   }

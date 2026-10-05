@@ -88,7 +88,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
     align-items: center;
     gap: 10px;
     font-size: 0.875rem;
-    color: var(--on-dark-muted);
+    color: var(--text-muted);
   }
   .cd__dot {
     width: 7px;
@@ -121,7 +121,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
     align-items: flex-start;
     gap: 2px;
     padding: 0 22px;
-    border-left: 1px solid var(--hairline-dark-strong);
+    border-left: 1px solid var(--hairline-strong);
   }
   .cd__units li:first-child {
     padding-left: 0;
@@ -133,7 +133,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
     font-weight: 600;
     letter-spacing: -0.03em;
     line-height: 1;
-    color: var(--white);
+    color: var(--text);
   }
   .cd__units b.is-tick {
     animation: cd-tick 0.5s var(--ease-out);
@@ -146,7 +146,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
   }
   .cd__units span {
     font-size: 0.75rem;
-    color: var(--on-dark-faint);
+    color: var(--text-faint);
   }
 
   /* Versiones en cajas, centradas */
@@ -168,11 +168,12 @@ const pad = (n: number) => String(n).padStart(2, '0');
     border: 0;
     border-radius: var(--r-xl);
     background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02)),
-      rgba(4, 30, 22, 0.92);
+      linear-gradient(180deg, var(--box-sheen), transparent),
+      var(--box-bg);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.1),
-      inset 0 0 0 1px var(--hairline-dark);
+      inset 0 1px 0 var(--hairline),
+      inset 0 0 0 1px var(--hairline-strong),
+      0 16px 40px -24px var(--shadow);
   }
   .cd--boxed .cd__units b {
     font-size: clamp(2rem, 3.6vw, 3rem);

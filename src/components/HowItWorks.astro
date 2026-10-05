@@ -82,7 +82,7 @@ const steps = [
 
 <style>
   .how {
-    background: var(--night);
+    background: var(--bg-alt);
   }
   .how__head {
     margin-bottom: var(--s-8);
@@ -104,7 +104,7 @@ const steps = [
     top: 8px;
     bottom: 30vh;
     width: 2px;
-    background: var(--hairline-dark);
+    background: var(--hairline);
   }
   .how__rail span {
     position: absolute;
@@ -130,8 +130,8 @@ const steps = [
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: var(--night);
-    box-shadow: inset 0 0 0 1.5px var(--hairline-dark-strong);
+    background: var(--bg-alt);
+    box-shadow: inset 0 0 0 1.5px var(--hairline-strong);
     font-family: var(--font-display);
     font-weight: 800;
     transition:
@@ -141,7 +141,7 @@ const steps = [
   }
   .how__step.is-active .how__n {
     background: var(--green);
-    color: var(--ink);
+    color: var(--black);
     box-shadow: 0 0 0 6px rgba(14, 159, 110, 0.18);
   }
   .how__step h3 {
@@ -154,7 +154,7 @@ const steps = [
     max-width: 30em;
     font-size: var(--fs-lead);
     line-height: 1.7;
-    color: var(--on-dark-muted);
+    color: var(--text-muted);
   }
   .how__onboarding {
     list-style: none;
@@ -167,9 +167,9 @@ const steps = [
   .how__onboarding li {
     padding: 8px 14px;
     border-radius: var(--r-full);
-    box-shadow: inset 0 0 0 1px var(--hairline-dark-strong);
+    box-shadow: inset 0 0 0 1px var(--hairline-strong);
     font-size: var(--fs-small);
-    color: var(--on-dark-muted);
+    color: var(--text-muted);
   }
   .how__mobile {
     display: none;
@@ -224,7 +224,7 @@ const steps = [
       padding: var(--s-4);
       border-radius: var(--r-xl);
       background: var(--chat-bg);
-      box-shadow: inset 0 0 0 1px var(--hairline-dark);
+      box-shadow: inset 0 0 0 1px var(--hairline);
     }
   }
   @media (max-width: 575px) {

@@ -2,47 +2,28 @@
 @import '@fontsource-variable/inter';
 
 /* ───────────────────────── Tokens ─────────────────────────
-   Paleta de marca (docs/marca.md del bot) aplicada con la lógica de DESIGN.md:
-   dos polaridades (Tinta oscuro / Menta claro), un chip de palabra clave,
-   un solo CTA dominante por bloque. */
+   Paleta de marca (telmoney-bot/docs/marca.md) con la lógica de DESIGN.md:
+   dos polaridades, un chip de palabra clave y un solo CTA dominante por bloque.
+
+   Hay dos temas (oscuro y claro). Los componentes NO usan colores sueltos:
+   usan tokens de rol (--bg, --text, --text-muted, --hairline, --chat-*…) que
+   cada tema define con valores verificados (WCAG AA: 4.5:1 texto, 3:1 gráficos).
+
+   .tone-invert: la sección usa el tema contrario al de la página
+   (precios y preguntas: blancas en modo oscuro, negras en modo claro).
+   Anidado dos veces vuelve al tema de la página (el plan Pro dentro de precios). */
 :root {
-  /* Marca */
+  /* Marca (iguales en los dos temas) */
   --green: #0e9f6e; /* Verde Quincena */
   --green-deep: #057a55; /* Verde Profundo */
-  --green-glow: #3ddc97; /* solo luz/realces sobre oscuro, nunca texto chico */
-  --ink: #000000; /* texto sobre claro y «tel» del logo (el azul salió de la marca) */
-  --gold: #f5b83d; /* Oro: ahorro, metas y «Pro», nada más */
+  --green-glow: #3ddc97;
+  --gold: #f5b83d; /* Oro: ahorro, metas y «Pro» */
   --mint: #ecfdf5;
   --coral: #f26b5b;
   --cloud: #f4f6f5;
   --white: #ffffff;
-
-  /* Superficies */
-  /* El negro manda; Verde Noche queda para superficies destacadas y luz */
   --black: #000000;
-  --canvas-dark: var(--black);
-  --night: #070b09; /* tarjetas sobre negro, apenas verdosas */
-  --vault: #04231a; /* Verde Noche: banda y tarjetas destacadas (el azul recordaba a Telegram) */
-  --silver: #d6dbd8; /* filetes y brillos neutros sobre negro */
-  --hairline-dark: rgba(255, 255, 255, 0.1);
-  --hairline-dark-strong: rgba(255, 255, 255, 0.18);
-  --canvas-light: #ffffff;
-  --hairline-light: #dde3ea;
-
-  /* Texto */
-  --on-dark: #ffffff;
-  --on-dark-muted: rgba(255, 255, 255, 0.72);
-  --on-dark-faint: rgba(255, 255, 255, 0.5);
-  --on-light: var(--ink);
-  --on-light-muted: #4f5754;
-
-  /* Chat: modo oscuro de WhatsApp (sin su verde de marca #25D366) */
-  --chat-bg: #0b141a;
-  --chat-in: #202c33;
-  --chat-out: #005c4b;
-  --chat-meta: rgba(233, 237, 239, 0.6);
-  --chat-head: #1f2c34;
-  --chat-tick: #53bdeb;
+  --ink: #000000; /* «tel» del logo sobre claro */
 
   /* Tipografía */
   --font-display: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', system-ui, sans-serif;
@@ -79,6 +60,192 @@
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* ── Tema oscuro (por defecto, y lo invertido dentro del tema claro) ── */
+:root,
+:root[data-theme='light'] .tone-invert,
+:root[data-theme='dark'] .tone-invert .tone-invert {
+  color-scheme: dark;
+  --bg: #000000;
+  --bg-alt: #070b09;
+  --surface: #070b09;
+  --band: #04231a; /* Verde Noche */
+  --band-glow: rgba(14, 159, 110, 0.3);
+  --text: #ffffff;
+  --text-muted: rgba(255, 255, 255, 0.72);
+  --text-faint: rgba(255, 255, 255, 0.5);
+  --hairline: rgba(255, 255, 255, 0.1);
+  --hairline-strong: rgba(255, 255, 255, 0.18);
+  --fill: rgba(255, 255, 255, 0.06);
+  --fill-strong: rgba(255, 255, 255, 0.12);
+  --field-border: rgba(255, 255, 255, 0.42); /* borde de campos y casillas: ≥3:1 */
+  --check-bg: rgba(61, 220, 151, 0.16);
+  --logo-money: #0e9f6e; /* Verde Quincena sobre oscuro: 6.2:1 */
+  --accent: #3ddc97; /* texto verde */
+  --accent-graphic: #3ddc97; /* trazos, anillos, puntos */
+  --focus: #d6dbd8;
+  --gold-text: #f5b83d;
+  --gold-soft: rgba(245, 184, 61, 0.14);
+  --danger: #ff9a8d;
+  --danger-soft: rgba(255, 154, 141, 0.1);
+  --nav-bg: rgba(0, 0, 0, 0.82);
+  --shadow: rgba(0, 0, 0, 0.9);
+  --vignette: rgba(0, 0, 0, 0.75);
+  --aurora-a: rgba(6, 95, 70, 0.75);
+  --aurora-a2: rgba(6, 95, 70, 0.25);
+  --aurora-b: rgba(14, 159, 110, 0.32);
+  --aurora-b2: rgba(14, 159, 110, 0.1);
+  --aurora-c: rgba(214, 219, 216, 0.1);
+  --spot-1: rgba(61, 220, 151, 0.16);
+  --spot-2: rgba(14, 159, 110, 0.06);
+  --box-bg: rgba(4, 30, 22, 0.92);
+  --box-sheen: rgba(255, 255, 255, 0.07);
+  --glass: rgba(7, 11, 9, 0.9);
+  /* «Sin TelMoney»: pantalla bloqueada gris */
+  --before-bg: #0a0a0a;
+  --before-glow: rgba(255, 255, 255, 0.05);
+  --before-say: rgba(255, 255, 255, 0.5);
+  --lock-1: #1a1a1a;
+  --lock-2: #0d0d0d;
+  --lock-time: rgba(255, 255, 255, 0.85);
+  --note-bg: #262626;
+  --note-text: rgba(255, 255, 255, 0.85);
+  --note-app: rgba(255, 255, 255, 0.5);
+  --note-strong: #ffffff;
+  --switch-off: rgba(255, 255, 255, 0.55);
+  --switch-off-text: #000000;
+
+  /* Chat: modo oscuro de WhatsApp (sin su verde de marca #25D366) */
+  --chat-bg: #0b141a;
+  --chat-wall-blend: normal;
+  --chat-in: #202c33;
+  --chat-out: #005c4b;
+  --chat-text: #e9edef;
+  --chat-strong: #ffffff;
+  --chat-soft: rgba(233, 237, 239, 0.85);
+  --chat-meta: rgba(233, 237, 239, 0.6);
+  --chat-meta-out: #c3d7d2;
+  --chat-head: #1f2c34;
+  --chat-status: #ffffff;
+  --chat-icon: #aebac1;
+  --chat-input: #2a3942;
+  --chat-placeholder: #a3b0b8;
+  --chat-day-bg: #182229;
+  --chat-day-text: #8d9ba4;
+  --chat-tick: #53bdeb;
+  --chat-quick: #00a884;
+  --chat-highlight: #7ff0c1;
+  --chat-chip: #2a3942;
+  --chat-chip-hover: #34474f;
+  --chat-panel: rgba(31, 44, 52, 0.96);
+  --chat-veil-1: rgba(11, 20, 26, 0.55);
+  --chat-veil-2: rgba(11, 20, 26, 0.85);
+  --chat-voice: #d1d7db;
+  --chat-dots: rgba(233, 237, 239, 0.7);
+  --chart-bg: rgba(0, 0, 0, 0.35);
+  --chart-ghost: rgba(233, 237, 239, 0.22);
+  --tone-ok: #3ddc97;
+  --tone-warn: #f5b83d;
+  --tone-no: #f26b5b;
+}
+
+/* ── Tema claro (y lo invertido dentro del tema oscuro) ── */
+:root[data-theme='light'],
+:root[data-theme='dark'] .tone-invert,
+:root:not([data-theme]) .tone-invert,
+:root[data-theme='light'] .tone-invert .tone-invert {
+  color-scheme: light;
+  --bg: #ffffff;
+  --bg-alt: #f4f6f5;
+  --surface: #f4f6f5;
+  --band: #e6f6ee;
+  --band-glow: rgba(14, 159, 110, 0.16);
+  --text: #000000;
+  --text-muted: #4f5754;
+  --text-faint: #5f6764;
+  --hairline: rgba(0, 0, 0, 0.1);
+  --hairline-strong: rgba(0, 0, 0, 0.18);
+  --fill: rgba(0, 0, 0, 0.04);
+  --fill-strong: rgba(0, 0, 0, 0.08);
+  --field-border: rgba(0, 0, 0, 0.46);
+  --check-bg: #e6f6ee;
+  --logo-money: #057a55; /* Verde Profundo: el de la marca para texto sobre claro */
+  --accent: #057a55;
+  --accent-graphic: #0e9f6e;
+  --focus: #057a55;
+  --gold-text: #7a4f00;
+  --gold-soft: #fff1d6;
+  --danger: #b42318;
+  --danger-soft: #fdecea;
+  --nav-bg: rgba(255, 255, 255, 0.86);
+  --shadow: rgba(16, 24, 20, 0.18);
+  --vignette: rgba(255, 255, 255, 0.55);
+  --aurora-a: rgba(14, 159, 110, 0.2);
+  --aurora-a2: rgba(14, 159, 110, 0.07);
+  --aurora-b: rgba(61, 220, 151, 0.2);
+  --aurora-b2: rgba(61, 220, 151, 0.06);
+  --aurora-c: rgba(14, 159, 110, 0.08);
+  --spot-1: rgba(14, 159, 110, 0.13);
+  --spot-2: rgba(14, 159, 110, 0.04);
+  --box-bg: #ffffff;
+  --box-sheen: rgba(255, 255, 255, 0);
+  --glass: rgba(255, 255, 255, 0.94);
+  --before-bg: #ececec;
+  --before-glow: rgba(255, 255, 255, 0.7);
+  --before-say: rgba(0, 0, 0, 0.55);
+  --lock-1: #f2f2f2;
+  --lock-2: #e2e2e2;
+  --lock-time: #1a1a1a;
+  --note-bg: #ffffff;
+  --note-text: #1f1f1f;
+  --note-app: #5c5c5c;
+  --note-strong: #000000;
+  --switch-off: rgba(0, 0, 0, 0.62);
+  --switch-off-text: #ffffff;
+
+  /* Chat: modo claro de WhatsApp */
+  --chat-bg: #efeae2;
+  --chat-wall-blend: difference; /* invierte el fondo de garabatos oscuro: queda claro */
+  --chat-in: #ffffff;
+  --chat-out: #d9fdd3;
+  --chat-text: #111b21;
+  --chat-strong: #111b21;
+  --chat-soft: #3b4a54;
+  --chat-meta: #5b6b75;
+  --chat-meta-out: #5b6b75;
+  --chat-head: #f0f2f5;
+  --chat-status: #000000;
+  --chat-icon: #54656f;
+  --chat-input: #ffffff;
+  --chat-placeholder: #5b6b75;
+  --chat-day-bg: #ffffff;
+  --chat-day-text: #54656f;
+  --chat-tick: #1d8fd0;
+  --chat-quick: #00735c;
+  --chat-highlight: #046a4b;
+  --chat-chip: #ffffff;
+  --chat-chip-hover: #e9edef;
+  --chat-panel: rgba(240, 242, 245, 0.97);
+  --chat-veil-1: rgba(239, 234, 226, 0.45);
+  --chat-veil-2: rgba(239, 234, 226, 0.8);
+  --chat-voice: #54656f;
+  --chat-dots: #8696a0;
+  --chart-bg: rgba(0, 0, 0, 0.05);
+  --chart-ghost: rgba(17, 27, 33, 0.28);
+  --tone-ok: #0a7d57;
+  --tone-warn: #9a6700;
+  --tone-no: #c2410c;
+}
+
+/* Fondo de chat de WhatsApp: en claro se invierte con una mezcla «difference»
+   (garabatos oscuros sobre beige), en oscuro se usa tal cual. */
+.wa-wall {
+  background-color: var(--chat-bg);
+  background-image: url('/whatsapp-fondo.jpg');
+  background-size: cover;
+  background-position: center;
+  background-blend-mode: var(--chat-wall-blend);
+}
+
 /* ───────────────────────── Base ───────────────────────── */
 *,
 *::before,
@@ -101,8 +268,8 @@ html.lenis body {
 
 body {
   margin: 0;
-  background: var(--canvas-dark);
-  color: var(--on-dark);
+  background: var(--bg);
+  color: var(--text);
   font-family: var(--font-ui);
   font-size: var(--fs-body);
   line-height: 1.6;
@@ -139,14 +306,14 @@ p {
 }
 
 :focus-visible {
-  outline: 2px solid var(--silver);
+  outline: 2px solid var(--focus);
   outline-offset: 3px;
   border-radius: var(--r-xs);
 }
 
 ::selection {
   background: var(--green);
-  color: var(--white);
+  color: var(--black); /* negro sobre verde: 6.2:1 */
 }
 
 .num {
@@ -170,8 +337,8 @@ p {
   left: var(--s-4);
   top: -100px;
   z-index: 100;
-  background: var(--white);
-  color: var(--ink);
+  background: var(--text);
+  color: var(--bg);
   padding: var(--s-2) var(--s-4);
   border-radius: var(--r-md);
   font-weight: 600;
@@ -193,14 +360,10 @@ p {
   padding-block: var(--section);
 }
 
-.band--light {
-  background: var(--canvas-light);
-  color: var(--on-light);
-}
-
-.band--mint {
-  background: var(--mint);
-  color: var(--on-light);
+/* Sección con el tema contrario al de la página (ver .tone-invert en los tokens) */
+.band--invert {
+  background: var(--bg);
+  color: var(--text);
 }
 
 /* ───────────────────────── Tipografía ───────────────────────── */
@@ -234,27 +397,11 @@ p {
 .lead {
   font-size: var(--fs-lead);
   line-height: 1.7;
-  color: var(--on-dark-muted);
+  color: var(--text-muted);
   max-width: 34em;
   text-wrap: pretty;
 }
 
-.band--light .lead,
-.band--mint .lead {
-  color: var(--on-light-muted);
-}
-
-.kicker {
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: var(--green-glow);
-  margin-bottom: var(--s-4);
-}
-
-.band--light .kicker,
-.band--mint .kicker {
-  color: var(--green-deep);
-}
 
 /* El punto de Plus Jakarta en 800 trae mucho aire a la izquierda; en titulares se acerca a la letra */
 .pd {
@@ -276,9 +423,10 @@ p {
 }
 
 /* ───────────────────────── Botones ───────────────────────── */
+/* El botón sólido toma el color del texto: blanco sobre oscuro, negro sobre claro */
 .btn {
-  --btn-bg: var(--white);
-  --btn-fg: var(--ink);
+  --btn-bg: var(--text);
+  --btn-fg: var(--bg);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -307,33 +455,31 @@ p {
   transform: scale(0.97);
 }
 
-/* CTA dominante sobre oscuro: blanco con halo del propio lienzo (nivel 3 de DESIGN.md) + brillo verde */
+/* CTA dominante: halo del propio lienzo (nivel 3 de DESIGN.md) */
 .btn--primary {
   box-shadow:
-    0 0 0 6px var(--canvas-dark),
-    0 18px 40px -12px rgba(0, 0, 0, 0.5);
+    0 0 0 6px var(--bg),
+    0 18px 40px -12px var(--shadow);
 }
 .btn--primary:hover {
   box-shadow:
-    0 0 0 6px var(--canvas-dark),
-    0 0 48px 6px rgba(255, 255, 255, 0.16);
+    0 0 0 6px var(--bg),
+    0 0 48px 6px var(--fill-strong);
 }
 
-.btn--ink {
-  --btn-bg: var(--black);
-  --btn-fg: var(--white);
-}
-.btn--ink:hover {
+/* En hover el botón sólido se vuelve verde profundo (blanco sobre #057a55: 5.4:1) */
+.btn--solid:hover {
   --btn-bg: var(--green-deep);
+  --btn-fg: var(--white);
 }
 
 .btn--ghost {
-  --btn-bg: rgba(255, 255, 255, 0.08);
-  --btn-fg: var(--white);
-  box-shadow: inset 0 0 0 1px var(--hairline-dark-strong);
+  --btn-bg: var(--fill);
+  --btn-fg: var(--text);
+  box-shadow: inset 0 0 0 1px var(--hairline-strong);
 }
 .btn--ghost:hover {
-  --btn-bg: rgba(255, 255, 255, 0.14);
+  --btn-bg: var(--fill-strong);
 }
 
 .btn--block {

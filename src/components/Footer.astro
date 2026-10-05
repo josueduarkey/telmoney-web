@@ -50,7 +50,7 @@ const wave = (phase: number, amp: number) => {
 
 <style>
   .footer {
-    background: var(--night);
+    background: var(--bg-alt);
     padding-bottom: var(--s-6);
   }
   .footer__wave {
@@ -65,7 +65,7 @@ const wave = (phase: number, amp: number) => {
     vector-effect: non-scaling-stroke;
   }
   .footer__wave path:last-child {
-    stroke: var(--silver);
+    stroke: var(--text-faint);
     opacity: 0.5;
   }
   .footer__grid {
@@ -76,7 +76,7 @@ const wave = (phase: number, amp: number) => {
   }
   .footer__brand p {
     margin-top: var(--s-4);
-    color: var(--on-dark-muted);
+    color: var(--text-muted);
     font-size: var(--fs-small);
     line-height: 1.7;
   }
@@ -88,17 +88,17 @@ const wave = (phase: number, amp: number) => {
   .footer h2 {
     font-size: var(--fs-small);
     font-weight: 600;
-    color: var(--on-dark-faint);
+    color: var(--text-faint);
     margin-bottom: var(--s-1);
   }
   .footer nav a {
     width: fit-content;
-    color: var(--on-dark-muted);
+    color: var(--text-muted);
     text-decoration: none;
     font-size: 0.95rem;
   }
   .footer nav a:hover {
-    color: var(--white);
+    color: var(--text);
     text-decoration: underline;
     text-underline-offset: 4px;
   }

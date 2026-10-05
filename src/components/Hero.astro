@@ -121,7 +121,7 @@ const phrases = ['en orden,', 'sin sorpresas,', 'bajo control,'];
     padding-block: 108px 72px;
     overflow: hidden;
     isolation: isolate;
-    background: var(--black);
+    background: var(--bg);
   }
 
   /* ── Fondo ── */
@@ -148,7 +148,7 @@ const phrases = ['en orden,', 'sin sorpresas,', 'bajo control,'];
     height: 64vw;
     right: -12vw;
     top: -22vw;
-    background: radial-gradient(circle, rgba(6, 95, 70, 0.75), rgba(6, 95, 70, 0.25) 38%, rgba(4, 35, 26, 0) 70%);
+    background: radial-gradient(circle, var(--aurora-a), var(--aurora-a2) 38%, transparent 70%);
     animation: drift-a 26s ease-in-out infinite alternate;
   }
   .aurora__b {
@@ -156,7 +156,7 @@ const phrases = ['en orden,', 'sin sorpresas,', 'bajo control,'];
     height: 46vw;
     left: 14vw;
     bottom: -26vw;
-    background: radial-gradient(circle, rgba(14, 159, 110, 0.32), rgba(14, 159, 110, 0.1) 40%, rgba(14, 159, 110, 0) 70%);
+    background: radial-gradient(circle, var(--aurora-b), var(--aurora-b2) 40%, transparent 70%);
     animation: drift-b 32s ease-in-out infinite alternate;
   }
   .aurora__c {
@@ -164,7 +164,7 @@ const phrases = ['en orden,', 'sin sorpresas,', 'bajo control,'];
     height: 34vw;
     right: 20vw;
     top: 28%;
-    background: radial-gradient(circle, rgba(214, 219, 216, 0.1), rgba(214, 219, 216, 0) 68%);
+    background: radial-gradient(circle, var(--aurora-c), transparent 68%);
     animation: drift-c 22s ease-in-out infinite alternate;
   }
   @keyframes drift-a {
@@ -193,8 +193,8 @@ const phrases = ['en orden,', 'sin sorpresas,', 'bajo control,'];
     border-radius: 50%;
     background: radial-gradient(
       circle,
-      rgba(61, 220, 151, 0.16),
-      rgba(14, 159, 110, 0.06) 45%,
+      var(--spot-1),
+      var(--spot-2) 45%,
       transparent 72%
     );
     will-change: transform;
@@ -218,8 +218,8 @@ const phrases = ['en orden,', 'sin sorpresas,', 'bajo control,'];
     position: absolute;
     inset: 0;
     background:
-      radial-gradient(120% 90% at 30% 50%, transparent 40%, rgba(0, 0, 0, 0.75) 100%),
-      linear-gradient(180deg, rgba(0, 0, 0, 0) 70%, var(--black) 100%);
+      radial-gradient(120% 90% at 30% 50%, transparent 40%, var(--vignette) 100%),
+      linear-gradient(180deg, transparent 70%, var(--bg) 100%);
   }
 
   /* ── Contenido ── */
@@ -232,7 +232,7 @@ const phrases = ['en orden,', 'sin sorpresas,', 'bajo control,'];
   .hero__open {
     margin-bottom: var(--s-6);
     text-align: center;
-    color: var(--on-dark-muted);
+    color: var(--text-muted);
   }
   .hero h1 {
     max-width: 10em;
@@ -277,7 +277,7 @@ const phrases = ['en orden,', 'sin sorpresas,', 'bajo control,'];
   .hero__fine {
     margin-top: var(--s-5);
     font-size: var(--fs-small);
-    color: var(--on-dark-faint);
+    color: var(--text-faint);
   }
 
   .hero__stage {
@@ -301,7 +301,7 @@ const phrases = ['en orden,', 'sin sorpresas,', 'bajo control,'];
     display: flex;
     align-items: flex-start;
     gap: 4px;
-    color: var(--green-glow);
+    color: var(--accent);
     font-family: var(--font-display);
     font-size: 1.05rem;
     font-weight: 700;
@@ -332,7 +332,7 @@ const phrases = ['en orden,', 'sin sorpresas,', 'bajo control,'];
     width: 26px;
     height: 42px;
     border-radius: 14px;
-    box-shadow: inset 0 0 0 1.5px var(--hairline-dark-strong);
+    box-shadow: inset 0 0 0 1.5px var(--hairline-strong);
   }
   .hero__scroll span {
     position: absolute;
@@ -342,7 +342,7 @@ const phrases = ['en orden,', 'sin sorpresas,', 'bajo control,'];
     height: 8px;
     margin-left: -1.5px;
     border-radius: 2px;
-    background: var(--white);
+    background: var(--text);
     animation: wheel 2s infinite var(--ease-out);
   }
   @keyframes wheel {

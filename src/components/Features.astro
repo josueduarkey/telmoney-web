@@ -75,7 +75,7 @@ const extras = [
         </div>
       </article>
 
-      <article class="card card--ask">
+      <article class="card card--ask tone-invert">
         <h3 class="h3">Pregúntale lo que quieras</h3>
         <ul class="asks" role="list">
           {questions.map((q) => <li>{q}</li>)}
@@ -101,7 +101,7 @@ const extras = [
 
 <style>
   .features {
-    background: var(--black);
+    background: var(--bg);
   }
   .features__head {
     max-width: 900px;
@@ -120,12 +120,12 @@ const extras = [
     gap: var(--s-3);
     padding: clamp(22px, 3vw, 36px);
     border-radius: var(--r-xxl);
-    background: var(--night);
-    box-shadow: inset 0 0 0 1px var(--hairline-dark);
+    background: var(--surface);
+    box-shadow: inset 0 0 0 1px var(--hairline);
     overflow: hidden;
   }
   .card__text > p {
-    color: var(--on-dark-muted);
+    color: var(--text-muted);
     line-height: 1.6;
   }
   .pro {
@@ -134,8 +134,8 @@ const extras = [
     right: 22px;
     padding: 3px 10px;
     border-radius: var(--r-full);
-    background: rgba(245, 184, 61, 0.14);
-    color: var(--gold);
+    background: var(--gold-soft);
+    color: var(--gold-text);
     font-family: var(--font-ui);
     font-size: 0.72rem;
     font-weight: 700;
@@ -157,11 +157,11 @@ const extras = [
     background:
       radial-gradient(
         80% 120% at 100% 0%,
-        rgba(14, 159, 110, 0.3),
+        var(--band-glow),
         transparent 60%
       ),
-      var(--vault);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+      var(--band);
+    box-shadow: inset 0 0 0 1px var(--hairline);
   }
   .card--report .h3 {
     font-size: clamp(1.8rem, 3vw, 2.6rem);
@@ -172,12 +172,16 @@ const extras = [
   .card--report .card__chat {
     padding: var(--s-4);
     border-radius: var(--r-xl);
-    background: var(--chat-bg) url("/whatsapp-fondo.jpg") center / cover;
+    background-color: var(--chat-bg);
+    background-image: url("/whatsapp-fondo.jpg");
+    background-size: cover;
+    background-position: center;
+    background-blend-mode: var(--chat-wall-blend);
   }
   .card__fine {
     margin-top: var(--s-5);
     font-size: var(--fs-small);
-    color: var(--on-dark-faint) !important;
+    color: var(--text-faint) !important;
   }
 
   .score {
@@ -196,10 +200,10 @@ const extras = [
     stroke-width: 9;
   }
   .score__track {
-    stroke: rgba(255, 255, 255, 0.1);
+    stroke: var(--hairline-strong);
   }
   .score__fill {
-    stroke: var(--green-glow);
+    stroke: var(--accent-graphic);
     stroke-linecap: round;
     stroke-dasharray: 78 100;
   }
@@ -219,14 +223,15 @@ const extras = [
   }
   .score__n small {
     font-size: 0.85rem;
-    color: var(--on-dark-faint);
+    color: var(--text-faint);
     font-weight: 600;
   }
 
+  /* tarjeta de contraste: con .tone-invert usa el tema contrario (blanca en oscuro, negra en claro) */
   .card--ask {
-    background: var(--white);
-    color: var(--ink);
-    box-shadow: none;
+    background: var(--bg);
+    color: var(--text);
+    box-shadow: inset 0 0 0 1px var(--hairline);
   }
   .asks {
     list-style: none;
@@ -241,16 +246,16 @@ const extras = [
     max-width: 92%;
     padding: 9px 14px;
     border-radius: 14px 14px 4px 14px;
-    background: var(--black);
-    color: var(--white);
+    background: var(--text);
+    color: var(--bg);
     font-weight: 600;
     font-size: 0.92rem;
   }
   .asks li:nth-child(even) {
     align-self: flex-start;
     border-radius: 14px 14px 14px 4px;
-    background: var(--cloud);
-    color: var(--ink);
+    background: var(--surface);
+    color: var(--text);
   }
 
   .extras {
@@ -263,7 +268,7 @@ const extras = [
   }
   .extras li {
     padding-top: var(--s-4);
-    border-top: 1px solid var(--hairline-dark-strong);
+    border-top: 1px solid var(--hairline-strong);
   }
   .extras h3 {
     font-family: var(--font-display);
@@ -273,7 +278,7 @@ const extras = [
     margin-bottom: var(--s-2);
   }
   .extras p {
-    color: var(--on-dark-muted);
+    color: var(--text-muted);
     font-size: 0.95rem;
   }
 

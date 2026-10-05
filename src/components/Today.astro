@@ -211,7 +211,7 @@ const dayLabels = Array.from({ length: days }, (_, i) => `${4 + i}`);
 
 <style>
   .today {
-    background: var(--black);
+    background: var(--bg);
   }
   .today__grid {
     display: grid;
@@ -234,10 +234,10 @@ const dayLabels = Array.from({ length: days }, (_, i) => `${4 + i}`);
     align-items: baseline;
     gap: var(--s-4);
     padding: 14px 0;
-    border-bottom: 1px solid var(--hairline-dark);
+    border-bottom: 1px solid var(--hairline);
   }
   .formula dt {
-    color: var(--on-dark-muted);
+    color: var(--text-muted);
   }
   .formula dd {
     margin: 0;
@@ -249,7 +249,7 @@ const dayLabels = Array.from({ length: days }, (_, i) => `${4 + i}`);
     padding-top: var(--s-5);
   }
   .formula__total dt {
-    color: var(--white);
+    color: var(--text);
     font-weight: 600;
   }
   .formula__total dd {
@@ -257,41 +257,46 @@ const dayLabels = Array.from({ length: days }, (_, i) => `${4 + i}`);
     font-size: clamp(2.6rem, 5vw, 3.6rem);
     font-weight: 800;
     letter-spacing: -0.04em;
-    color: var(--white);
+    color: var(--text);
   }
   .formula__total small {
     font-family: var(--font-ui);
     font-size: 1rem;
     font-weight: 500;
     letter-spacing: 0;
-    color: var(--on-dark-muted);
+    color: var(--text-muted);
   }
 
   /* ── El simulador: una conversación sobre el fondo de chat ── */
   .sim {
     --level: 0.665;
     --today: 0.665;
-    --tone: var(--gold);
+    --tone: var(--tone-warn);
     position: relative;
     display: flex;
     flex-direction: column;
     gap: 10px;
     padding: clamp(18px, 3vw, 28px);
     border-radius: 34px;
-    background:
-      linear-gradient(180deg, rgba(11, 20, 26, 0.55), rgba(11, 20, 26, 0.85)),
-      var(--chat-bg) url("/whatsapp-fondo.jpg") center / cover;
+    /* velo arriba (normal) y garabatos abajo (se invierten en modo claro) */
+    background-color: var(--chat-bg);
+    background-image:
+      linear-gradient(180deg, var(--chat-veil-1), var(--chat-veil-2)),
+      url("/whatsapp-fondo.jpg");
+    background-size: cover;
+    background-position: center;
+    background-blend-mode: normal, var(--chat-wall-blend);
     box-shadow:
-      inset 0 0 0 1px rgba(255, 255, 255, 0.07),
-      0 50px 100px -40px rgba(0, 0, 0, 0.9),
+      inset 0 0 0 1px var(--hairline),
+      0 50px 100px -40px var(--shadow),
       0 0 120px -40px rgba(14, 159, 110, 0.35);
-    color: #e9edef;
+    color: var(--chat-text);
   }
   .sim[data-state="ok"] {
-    --tone: var(--green-glow);
+    --tone: var(--tone-ok);
   }
   .sim[data-state="no"] {
-    --tone: var(--coral);
+    --tone: var(--tone-no);
   }
 
   .sim__ask {
@@ -329,7 +334,7 @@ const dayLabels = Array.from({ length: days }, (_, i) => `${4 + i}`);
     clip-path: polygon(0 0, 100% 0, 0 100%);
   }
   .sim__bubble--me output {
-    color: #7ff0c1;
+    color: var(--chat-highlight);
   }
   .sim__bubble--bot {
     align-self: flex-start;
@@ -344,7 +349,7 @@ const dayLabels = Array.from({ length: days }, (_, i) => `${4 + i}`);
   }
   .sim__bubble--bot p + p {
     margin-top: 4px;
-    color: rgba(233, 237, 239, 0.85);
+    color: var(--chat-soft);
   }
 
   /* La gráfica que «manda» TelMoney: 11 días, la silueta es lo que tenías */
@@ -352,14 +357,14 @@ const dayLabels = Array.from({ length: days }, (_, i) => `${4 + i}`);
     margin: 0 0 12px;
     padding: 14px 14px 10px;
     border-radius: 10px;
-    background: rgba(0, 0, 0, 0.35);
+    background: var(--chart-bg);
   }
   .days figcaption {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
     font-size: 0.75rem;
-    color: #8696a0;
+    color: var(--chat-meta);
   }
   .days figcaption b {
     font-size: 1.5rem;
@@ -392,7 +397,7 @@ const dayLabels = Array.from({ length: days }, (_, i) => `${4 + i}`);
   }
   .days__ghost {
     height: 100%;
-    border: 1px dashed rgba(233, 237, 239, 0.22);
+    border: 1px dashed var(--chart-ghost);
   }
   .days__fill {
     height: calc(var(--level) * 100%);
@@ -410,10 +415,10 @@ const dayLabels = Array.from({ length: days }, (_, i) => `${4 + i}`);
     bottom: -18px;
     translate: -50% 0;
     font-size: 0.62rem;
-    color: #8696a0;
+    color: var(--chat-meta);
   }
   .days__bars li:first-child small {
-    color: #e9edef;
+    color: var(--chat-text);
     font-weight: 600;
   }
 
@@ -425,7 +430,7 @@ const dayLabels = Array.from({ length: days }, (_, i) => `${4 + i}`);
     margin-top: 8px;
     padding: 14px;
     border-radius: 22px;
-    background: rgba(31, 44, 52, 0.96);
+    background: var(--chat-panel);
   }
   .sim__presets {
     display: flex;
@@ -437,8 +442,9 @@ const dayLabels = Array.from({ length: days }, (_, i) => `${4 + i}`);
     padding: 7px 14px;
     border: 0;
     border-radius: var(--r-full);
-    background: #2a3942;
-    color: #e9edef;
+    background: var(--chat-chip);
+    box-shadow: inset 0 0 0 1px var(--hairline);
+    color: var(--chat-text);
     font-size: var(--fs-small);
     font-variant-numeric: tabular-nums;
     cursor: pointer;
@@ -447,7 +453,7 @@ const dayLabels = Array.from({ length: days }, (_, i) => `${4 + i}`);
       transform 0.2s;
   }
   .sim__presets button:hover {
-    background: #34474f;
+    background: var(--chat-chip-hover);
   }
   .sim__presets button:active {
     transform: scale(0.96);
@@ -460,7 +466,7 @@ const dayLabels = Array.from({ length: days }, (_, i) => `${4 + i}`);
     align-items: center;
     gap: 10px;
     font-size: 0.72rem;
-    color: #8696a0;
+    color: var(--chat-meta);
   }
   .sim__slider input {
     --p: 30%;
@@ -478,7 +484,7 @@ const dayLabels = Array.from({ length: days }, (_, i) => `${4 + i}`);
     background: linear-gradient(
       90deg,
       var(--green) var(--p),
-      rgba(255, 255, 255, 0.14) var(--p)
+      var(--chart-ghost) var(--p)
     );
   }
   .sim__slider input::-moz-range-track {
@@ -487,7 +493,7 @@ const dayLabels = Array.from({ length: days }, (_, i) => `${4 + i}`);
     background: linear-gradient(
       90deg,
       var(--green) var(--p),
-      rgba(255, 255, 255, 0.14) var(--p)
+      var(--chart-ghost) var(--p)
     );
   }
   .sim__slider input::-webkit-slider-thumb {
@@ -497,7 +503,10 @@ const dayLabels = Array.from({ length: days }, (_, i) => `${4 + i}`);
     margin-top: -9px;
     border-radius: 50%;
     background: var(--white);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    /* el anillo lo separa del panel claro en modo claro */
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.35),
+      0 2px 8px rgba(0, 0, 0, 0.35);
   }
   .sim__slider input::-moz-range-thumb {
     width: 22px;
@@ -505,9 +514,10 @@ const dayLabels = Array.from({ length: days }, (_, i) => `${4 + i}`);
     border: 0;
     border-radius: 50%;
     background: var(--white);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
   }
   .sim__slider input:focus-visible {
-    outline: 2px solid var(--silver);
+    outline: 2px solid var(--focus);
     outline-offset: 4px;
   }
 
