@@ -80,6 +80,28 @@ const steps = [
   </div>
 </section>
 
+<script>
+  // El paso que cruza el centro de la pantalla se marca y el teléfono fijo muestra su chat.
+  // Funciona con o sin animaciones (también con «reducir movimiento»).
+  const root = document.querySelector<HTMLElement>('[data-how]');
+  if (root) {
+    const steps = Array.from(root.querySelectorAll<HTMLElement>('[data-how-step]'));
+    const screens = Array.from(root.querySelectorAll<HTMLElement>('[data-how-screen]'));
+    const activate = (i: number) => {
+      steps.forEach((s, k) => s.classList.toggle('is-active', k === i));
+      screens.forEach((s, k) => s.classList.toggle('is-active', k === i));
+    };
+    activate(0);
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) if (e.isIntersecting) activate(steps.indexOf(e.target as HTMLElement));
+      },
+      { rootMargin: '-45% 0px -45% 0px' },
+    );
+    steps.forEach((s) => io.observe(s));
+  }
+</script>
+
 <style>
   .how {
     background: var(--bg-alt);

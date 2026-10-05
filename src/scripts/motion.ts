@@ -140,28 +140,12 @@ function floatStickers() {
   });
 }
 
-/* Pasos con teléfono fijo: el paso que cruza el centro de la pantalla manda */
+/* Línea de progreso de «Así de simple» */
 function howItWorks() {
+  // El paso activo lo marca el propio componente (HowItWorks.astro), también sin animaciones.
+  // Aquí solo se anima la línea de progreso.
   const root = document.querySelector<HTMLElement>('[data-how]');
   if (!root) return;
-  const steps = gsap.utils.toArray<HTMLElement>('[data-how-step]', root);
-  const screens = gsap.utils.toArray<HTMLElement>('[data-how-screen]', root);
-
-  const activate = (i: number) => {
-    steps.forEach((s, k) => s.classList.toggle('is-active', k === i));
-    screens.forEach((s, k) => s.classList.toggle('is-active', k === i));
-  };
-  activate(0);
-
-  steps.forEach((step, i) => {
-    ScrollTrigger.create({
-      trigger: step,
-      start: 'top 55%',
-      end: 'bottom 55%',
-      onToggle: (self) => self.isActive && activate(i),
-    });
-  });
-
   gsap.to(root.querySelector('[data-how-progress]'), {
     scaleY: 1,
     ease: 'none',
