@@ -123,8 +123,14 @@ export function initWaitlist(form: HTMLFormElement) {
           whatsapp: 'Revisa el número: son 8 dígitos, o con su código si es de otro país.',
           email: 'Ese correo no parece completo. Puedes dejarlo vacío.',
         };
-        err.fields.forEach((f) => msgs[f] && setError(f, msgs[f]));
-        (form.elements.namedItem(err.fields.find((f) => msgs[f]) ?? 'name') as HTMLInputElement)?.focus();
+        const known = err.fields.filter((f) => msgs[f]);
+        known.forEach((f) => setError(f, msgs[f]));
+        if (known.length) {
+          (form.elements.namedItem(known[0]) as HTMLInputElement)?.focus();
+          return;
+        }
+        // el problema está en algo que no es un campo visible (por ejemplo, las opciones marcadas)
+        status.textContent = 'No pudimos guardar tus datos. Desmarca las opciones e inténtalo otra vez.';
         return;
       }
       status.textContent =
