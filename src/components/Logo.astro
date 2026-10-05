@@ -1,28 +1,55 @@
 ---
-// PROVISIONAL hasta tener el logo final (marca.md §6):
-// cuadrado redondeado verde con colita de chat abajo a la derecha (nunca un círculo)
-// y una «t» blanca cuyo tallo sube en flecha. «tel» medio en Azul Noche, «money» negrita en verde.
-// Sobre fondo oscuro «tel» va en blanco (versión invertida).
+// Logo de TelMoney.
+// Si existe public/telmoney-logo.png se usa ese archivo:
+//   - cuadrado (solo el ícono): ícono + «tel money» escrito en Plus Jakarta Sans;
+//   - ancho (ícono con letras): se usa completo y no se repiten las letras.
+// Si no existe, queda el ícono provisional dibujado aquí (cuadrado verde con colita y «t» con flecha).
+// «tel» en peso medio (blanco sobre oscuro, negro sobre claro) y «money» en negrita verde.
+import fs from 'node:fs';
+import path from 'node:path';
+
 interface Props {
   size?: number;
   wordmark?: boolean;
   class?: string;
 }
 const { size = 32, wordmark = true, class: cls = '' } = Astro.props;
+
+const file = path.join(process.cwd(), 'public', 'telmoney-logo.png');
+let png: { w: number; h: number } | null = null;
+try {
+  // Ancho y alto vienen en la cabecera IHDR del PNG (bytes 16 a 24)
+  const head = fs.readFileSync(file).subarray(0, 24);
+  png = { w: head.readUInt32BE(16), h: head.readUInt32BE(20) };
+} catch {
+  png = null;
+}
+const isLockup = !!png && png.w / png.h > 1.6;
+const useFullLockup = isLockup && wordmark;
+const useIcon = !!png && !isLockup;
 ---
 
 <span class:list={['logo', cls]}>
-  <svg width={size} height={size} viewBox="0 0 36 36" aria-hidden="true">
-    <path
-      d="M8 1h18a7 7 0 0 1 7 7v17c0 3 .9 6 2.6 8.6-3.2.3-6.3-.6-8.6-2.4-.5.1-1 .1-1.5.1H8a7 7 0 0 1-7-7V8a7 7 0 0 1 7-7Z"
-      fill="#0e9f6e"></path>
-    <g fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M16 21.5V7.5M11.6 11.8 16 7.4l4.4 4.4M10.5 15.5h11"></path>
-      <path d="M16 21.5c0 2.6 1.4 4 3.8 4h1.7"></path>
-    </g>
-  </svg>
   {
-    wordmark && (
+    useFullLockup ? (
+      <img src="/telmoney-logo.png" alt="TelMoney" height={size} width={Math.round((size * png!.w) / png!.h)} />
+    ) : useIcon ? (
+      <img src="/telmoney-logo.png" alt="" width={size} height={size} />
+    ) : (
+      <svg width={size} height={size} viewBox="0 0 36 36" aria-hidden="true">
+        <path
+          d="M8 1h18a7 7 0 0 1 7 7v17c0 3 .9 6 2.6 8.6-3.2.3-6.3-.6-8.6-2.4-.5.1-1 .1-1.5.1H8a7 7 0 0 1-7-7V8a7 7 0 0 1 7-7Z"
+          fill="#0e9f6e"
+        />
+        <g fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 21.5V7.5M11.6 11.8 16 7.4l4.4 4.4M10.5 15.5h11" />
+          <path d="M16 21.5c0 2.6 1.4 4 3.8 4h1.7" />
+        </g>
+      </svg>
+    )
+  }
+  {
+    wordmark && !useFullLockup && (
       <span class="logo__word">
         <span class="logo__tel">tel</span>
         <b>money</b>
@@ -37,9 +64,13 @@ const { size = 32, wordmark = true, class: cls = '' } = Astro.props;
     align-items: center;
     gap: 10px;
   }
+  .logo img {
+    display: block;
+    object-fit: contain;
+  }
   .logo__word {
     display: inline-flex;
-    font-family: var(--font-display);
+    font-family: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', system-ui, sans-serif;
     font-size: 1.3rem;
     letter-spacing: -0.04em;
     line-height: 1;
