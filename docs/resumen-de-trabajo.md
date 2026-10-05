@@ -4,7 +4,7 @@ Qué se hizo, dónde está y qué queda pendiente. Para revisar con calma.
 
 ## Dónde está todo
 
-- **Rama de trabajo:** `feat/mode-toggle`, con 11 commits **sin subir a GitHub** (`git push -u origin feat/mode-toggle` cuando lo revises).
+- **Rama de trabajo:** `feat/mode-toggle`, con 16 commits **sin subir a GitHub** (`git push -u origin feat/mode-toggle` cuando lo revises).
 - **`main`** ya incluye la etapa anterior (rama `feat/landing-verde-demo` + tu commit «fix images»).
 - **Para verla:** `npm run dev` → http://localhost:4321
 
@@ -23,12 +23,19 @@ Qué se hizo, dónde está y qué queda pendiente. Para revisar con calma.
 | `7c998a8` feat(seo): robots.txt, sitemap y manifiesto | Antes daban 404 |
 | `3001a1a` feat(compartir): botones con mensajes por red | Con campañas `utm_*` medibles |
 | `304b1f2` fix(seo): encabezados legibles | «sueldo.Otro» y títulos de adorno en el footer |
+| `7266192` docs: guía de SEO y redes, y este resumen | `docs/seo-y-redes.md` |
+| `c54175f` feat(copy): «dinero» en todo el sitio | Sin modismos locales, de la página al SEO |
+| `5fb55b0` fix(beta): aviso si el servidor rechaza algo | Antes fallaba en silencio |
+| `c95e862` fix(tema): transición suave | Sin franja verde ni sensación de recarga |
 
 ## 1. Modo claro y oscuro
 
 - **Primera visita:** toma el modo del navegador; se aplica antes de pintar, sin parpadeo.
 - **Botón en el menú:** cambia el tema y lo recuerda. Si eliges lo mismo que tu sistema, vuelve a seguir al sistema.
-- **Transición:** el tema nuevo entra en círculo desde el botón, con un aura verde. Sin animación si la persona pidió menos movimiento.
+- **Transición:** el tema nuevo entra en un círculo de borde difuminado que crece desde el botón, con un brillo verde muy tenue. Dura 0.7 s y corre a 60 cuadros por segundo (medido con la GPU de la Mac). No hay animación si la persona pidió menos movimiento.
+  - **La franja verde** era el anillo del aura agrandado 9 veces. Se quitó: ahora el aura es un brillo sin borde.
+  - **El «mini reload» no era una recarga:** no hay pedidos de red y los scripts no se reinician. Durante la transición, el navegador muestra una foto quieta de la página vieja. Mientras dura, la escritura del título, el chat y la cuenta regresiva parecen congelados, y al terminar aparecen adelantados.
+    Ahora la foto vieja se va rápido (la curva arranca rápido y frena suave) y la página nueva se ve viva dentro del círculo. La etiqueta del cursor se esconde antes de la foto, y el estilo se recalcula una sola vez al final, no a mitad de la animación.
 - **Modo claro:** página blanca con acentos verdes. Precios y preguntas se invierten a negro, con el plan Pro en blanco, para mantener el ritmo. El teléfono muestra WhatsApp en modo claro.
 - **Contraste verificado** (WCAG AA: 4.5:1 texto, 3:1 gráficos y bordes de campos):
   - axe-core: 0 fallas, en los dos temas, a 1440 y 390 px.
@@ -80,10 +87,13 @@ Para que lo entienda gente de cualquier país, todos los textos públicos usan �
 
 ## Pendiente (lo tuyo)
 
-0. **Confirmar con @bot** que el endpoint `/waitlist` acepta la opción «Llegar a fin de mes con dinero». Además, el túnel temporal del bot está caído: hay que levantarlo o, mejor, publicar el bot en `api.telmoney.app`.
+0. **Lista de espera:**
+   - @bot ya confirmó que el endpoint acepta «Llegar a fin de mes con dinero» y la anterior (commit `8e6e990` del bot, migración 0014).
+   - El túnel cambió: `.env` ya apunta al nuevo (`kitty-pictures-dates-amy.trycloudflare.com`), que responde.
+   - Para una URL fija: agrega `telmoney.app` a tu cuenta de Cloudflare y haz `cloudflared tunnel login` en la máquina del bot. Después, `PUBLIC_WAITLIST_URL=https://api.telmoney.app/waitlist` una sola vez.
 
 1. **Publicar en telmoney.app:** el paso a paso de hosting, DNS, variables, Google Search Console y la revisión de vistas previas está en [`seo-y-redes.md`, sección 4](seo-y-redes.md#4-paso-a-paso-para-publicar-en-telmoneyapp).
-2. **Endpoint fijo de la lista de espera:** hoy `.env` apunta a un túnel temporal de Cloudflare que cambia al reiniciar el bot. Hace falta un dominio fijo, por ejemplo `api.telmoney.app/waitlist`.
+2. **Endpoint fijo de la lista de espera:** el túnel temporal cambia cada vez que se reinicia el bot. Ver el punto 0.
 3. **Links de la app:** `PUBLIC_PLAY_STORE_URL` y `PUBLIC_APP_STORE_URL` cuando existan las fichas, y cambiar los botones por las insignias oficiales de cada tienda.
 4. **Textos legales:** cuando estén, quitar `draft` en `src/pages/privacidad.astro` y `terminos.astro`, y sacarlos de `DRAFTS` en `astro.config.mjs`.
 5. **Voz del bot:** la página está en español neutro («tú»); el bot real todavía responde con voseo. Decidirlo con @bot.
