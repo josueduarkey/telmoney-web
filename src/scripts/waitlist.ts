@@ -5,12 +5,21 @@ type Payload = {
   name: string;
   whatsapp: string; // E.164: +50370000000
   email: string | null;
-  pain: string | null;
+  pains: string[]; // respuestas de «¿qué es lo que más te cuesta?» (opción múltiple)
   source: 'landing';
   utm: Record<string, string>;
 };
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+class SubmitError extends Error {
+  constructor(
+    readonly status: number,
+    readonly fields: string[],
+  ) {
+    super(`HTTP ${status}`);
+  }
+}
 
 /** 8 dígitos = número salvadoreño (+503). Con «+» o 00 al inicio = otro país. */
 export function normalizePhone(raw: string): string | null {
@@ -76,7 +85,7 @@ export function initWaitlist(form: HTMLFormElement) {
       name,
       whatsapp: phone!,
       email: email || null,
-      pain: (data.get('pain') as string) || null,
+      pains: data.getAll('pains').map(String),
       source: 'landing',
       utm,
     };
@@ -90,7 +99,11 @@ export function initWaitlist(form: HTMLFormElement) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
-        if (!res.ok) throw new Error(String(res.status));
+        // 201 = registro nuevo, 200 = ya estaba (se actualiza): las dos son éxito
+        if (!res.ok) {
+          const body = await res.json().catch(() => null);
+          throw new SubmitError(res.status, Array.isArray(body?.fields) ? body.fields : []);
+        }
       } else {
         console.info('[waitlist] PUBLIC_WAITLIST_URL vacío: modo demo, no se envió nada.', payload);
         await new Promise((r) => setTimeout(r, 600));
@@ -100,10 +113,24 @@ export function initWaitlist(form: HTMLFormElement) {
         done.hidden = false;
         done.focus();
       }
-    } catch {
-      status.textContent = 'No pudimos guardar tus datos. Revisa tu conexión e inténtalo otra vez.';
+    } catch (err) {
       submit.disabled = false;
       submit.textContent = 'Unirme a la beta';
+      if (err instanceof SubmitError && err.status === 422 && err.fields.length) {
+        // el servidor dice qué campos no le gustaron: los marcamos igual que la validación local
+        const msgs: Record<string, string> = {
+          name: 'Revisa tu nombre.',
+          whatsapp: 'Revisa el número: son 8 dígitos, o con su código si es de otro país.',
+          email: 'Ese correo no parece completo. Puedes dejarlo vacío.',
+        };
+        err.fields.forEach((f) => msgs[f] && setError(f, msgs[f]));
+        (form.elements.namedItem(err.fields.find((f) => msgs[f]) ?? 'name') as HTMLInputElement)?.focus();
+        return;
+      }
+      status.textContent =
+        err instanceof SubmitError && err.status === 429
+          ? 'Ya recibimos varios intentos desde aquí. Espera un minuto y vuelve a probar.'
+          : 'No pudimos guardar tus datos. Revisa tu conexión e inténtalo otra vez.';
     }
   });
 }

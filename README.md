@@ -23,7 +23,7 @@ npm run build      # estático en dist/
 El formulario manda `POST` con JSON:
 
 ```json
-{ "name": "Ana", "whatsapp": "+50371234567", "email": null, "pain": "Ahorrar", "source": "landing", "utm": {} }
+{ "name": "Ana", "whatsapp": "+50371234567", "email": null, "pains": ["Ahorrar", "Acordarme de los pagos"], "source": "landing", "utm": {} }
 ```
 
 Cualquier respuesta 2xx muestra «¡Listo! Te escribimos por WhatsApp cuando abra la beta».

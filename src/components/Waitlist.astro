@@ -78,12 +78,13 @@ const pains = [
           </div>
           <fieldset class="field">
             <legend>
-              ¿Qué es lo que más te cuesta con tu pisto? <span class="opt">(opcional)</span>
+              ¿Qué es lo que más te cuesta con tu pisto?
+              <span class="opt">(puedes elegir varias, opcional)</span>
             </legend>
             <div class="pains">
-              {pains.map((p, i) => (
+              {pains.map((p) => (
                 <label class="pain">
-                  <input type="radio" name="pain" value={p} />
+                  <input type="checkbox" name="pains" value={p} />
                   <span>{p}</span>
                 </label>
               ))}
