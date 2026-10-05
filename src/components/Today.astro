@@ -1,6 +1,7 @@
 ---
 // El centro del producto: «¿cuánto puedo gastar hoy?» con la fórmula real del bot
-// ((saldo − pagos fijos − ahorro) ÷ días hasta el próximo pago) y un simulador de compra.
+// ((saldo − pagos fijos − ahorro) ÷ días hasta el próximo pago) y un simulador de compra
+// contado como una conversación: tú preguntas, TelMoney responde con tus días hasta el próximo pago.
 const balance = 540;
 const fixed = 300;
 const goals = 1.3;
@@ -8,19 +9,25 @@ const days = 11;
 const free = balance - fixed - goals; // 238.70
 const perDay = free / days; // 21.70
 const presets = [
-  { label: 'Almuerzo', value: 6 },
-  { label: 'Tenis', value: 80 },
-  { label: 'Celular', value: 230 },
+  { label: "Almuerzo", value: 6 },
+  { label: "Tenis", value: 80 },
+  { label: "Celular", value: 230 },
 ];
+// Los 11 días hasta el 15/10: hoy (4/10) al 14/10
+const dayLabels = Array.from({ length: days }, (_, i) => `${4 + i}`);
 ---
 
 <section class="today band" id="hoy" data-today>
   <div class="container today__grid">
     <div>
-      <h2 class="display">Un número<span class="pd">.</span> Todos los días<span class="pd">.</span></h2>
+      <h2 class="display">
+        Un número<span class="pd">.</span> Todos los días<span class="pd"
+          >.</span>
+      </h2>
       <p class="lead today__lead">
-        TelMoney no solo anota lo que ya gastaste. Te dice cuánto puedes gastar hoy, con tus pagos fijos y
-        tu ahorro ya descontados, hasta que te vuelvan a pagar.
+        TelMoney no solo anota lo que ya gastaste. Te dice cuánto puedes gastar
+        hoy, con tus pagos fijos y tu ahorro ya descontados, hasta que te
+        vuelvan a pagar.
       </p>
 
       <dl class="formula num" aria-label="Cómo se calcula tu disponible">
@@ -42,92 +49,156 @@ const presets = [
         </div>
         <div class="formula__total">
           <dt>Hoy puedes gastar</dt>
-          <dd><span data-count={perDay}>${perDay.toFixed(2)}</span><small> por día</small></dd>
+          <dd>
+            <span data-count={perDay}>${perDay.toFixed(2)}</span><small>
+              por día</small>
+          </dd>
         </div>
       </dl>
     </div>
 
-    <div class="sim" data-sim data-free={free} data-days={days} data-per-day={perDay}>
-      <p class="sim__q">
-        ¿Puedo comprar algo de <output class="num" for="sim-range" data-sim-amount>$80</output>?
-      </p>
-      <label class="sr-only" for="sim-range">Precio de lo que quieres comprar</label>
-      <input
-        id="sim-range"
-        class="sim__range"
-        type="range"
-        min="1"
-        max="260"
-        step="1"
-        value="80"
-        data-sim-range
-      />
-      <div class="sim__presets" role="group" aria-label="Ejemplos">
-        {
-          presets.map((p) => (
-            <button type="button" data-sim-preset={p.value} aria-pressed={p.value === 80 ? 'true' : 'false'}>
-              {p.label} ${p.value}
-            </button>
-          ))
-        }
+    <div
+      class="sim"
+      data-sim
+      data-free={free}
+      data-days={days}
+      data-per-day={perDay}
+      data-state="warn"
+    >
+      <!-- Tu pregunta -->
+      <div class="sim__ask">
+        <p class="sim__bubble sim__bubble--me">
+          ¿Puedo comprar algo de <output
+            class="num"
+            for="sim-range"
+            data-sim-amount>$80</output
+          >?
+        </p>
       </div>
 
-      <div class="sim__reply" aria-live="polite" data-sim-reply>
-        <p data-sim-head><strong>🟡 Puedes, pero se sale de lo de hoy</strong> ($21.70).</p>
-        <p data-sim-body>
-          Si lo compras, tu disponible baja de $21.70 a <strong>$14.43 por día</strong> hasta el 15/10.
+      <!-- La respuesta: una mini gráfica de tus días y el mensaje -->
+      <div class="sim__bubble sim__bubble--bot" aria-live="polite">
+        <figure class="days" aria-hidden="true">
+          <figcaption>
+            <span>Tu disponible por día</span>
+            <b class="num" data-sim-after>$14.43</b>
+          </figcaption>
+          <ol class="days__bars" role="list">
+            {
+              dayLabels.map((d, i) => (
+                <li style={`--i:${i}`}>
+                  <span class="days__ghost" />
+                  <span class="days__fill" />
+                  <small class="num">{i === 0 ? "hoy" : d}</small>
+                </li>
+              ))
+            }
+          </ol>
+        </figure>
+        <p data-sim-head>
+          <strong>🟡 Puedes, pero se sale de lo de hoy</strong> ($21.70).
         </p>
-        <span class="sim__meter" aria-hidden="true"><span data-sim-meter></span></span>
+        <p data-sim-body>
+          Si lo compras, tu disponible baja de $21.70 a <strong
+            >$14.43 por día</strong
+          > hasta el 15/10.
+        </p>
       </div>
-      <p class="sim__note">Simulación con los montos de ejemplo de arriba.</p>
+
+      <!-- El «teclado»: elige un ejemplo o desliza el precio -->
+      <div class="sim__compose" data-cursor="Elige un precio">
+        <div class="sim__presets" role="group" aria-label="Ejemplos">
+          {
+            presets.map((p) => (
+              <button
+                type="button"
+                data-sim-preset={p.value}
+                aria-pressed={p.value === 80 ? "true" : "false"}
+              >
+                {p.label} ${p.value}
+              </button>
+            ))
+          }
+        </div>
+        <label class="sim__slider">
+          <span class="sr-only">Precio de lo que quieres comprar</span>
+          <span class="sim__cur" aria-hidden="true">$1</span>
+          <input
+            id="sim-range"
+            type="range"
+            min="1"
+            max="260"
+            step="1"
+            value="80"
+            data-sim-range
+          />
+          <span class="sim__cur" aria-hidden="true">$260</span>
+        </label>
+      </div>
     </div>
   </div>
 </section>
 
 <script>
-  const sim = document.querySelector<HTMLElement>('[data-sim]');
+  const sim = document.querySelector<HTMLElement>("[data-sim]");
   if (sim) {
     const free = Number(sim.dataset.free);
     const days = Number(sim.dataset.days);
     const perDay = Number(sim.dataset.perDay);
-    const range = sim.querySelector<HTMLInputElement>('[data-sim-range]')!;
-    const amount = sim.querySelector<HTMLOutputElement>('[data-sim-amount]')!;
-    const head = sim.querySelector<HTMLElement>('[data-sim-head]')!;
-    const body = sim.querySelector<HTMLElement>('[data-sim-body]')!;
-    const reply = sim.querySelector<HTMLElement>('[data-sim-reply]')!;
-    const meter = sim.querySelector<HTMLElement>('[data-sim-meter]')!;
-    const presets = sim.querySelectorAll<HTMLButtonElement>('[data-sim-preset]');
+    const range = sim.querySelector<HTMLInputElement>("[data-sim-range]")!;
+    const amount = sim.querySelector<HTMLOutputElement>("[data-sim-amount]")!;
+    const after = sim.querySelector<HTMLElement>("[data-sim-after]")!;
+    const head = sim.querySelector<HTMLElement>("[data-sim-head]")!;
+    const body = sim.querySelector<HTMLElement>("[data-sim-body]")!;
+    const presets =
+      sim.querySelectorAll<HTMLButtonElement>("[data-sim-preset]");
     const usd = (n: number) => `$${n.toFixed(2)}`;
-    const fmt = (n: number) => `$${Math.round(n)}`;
 
     const render = () => {
       const price = Number(range.value);
-      const after = (free - price) / days;
-      amount.textContent = fmt(price);
-      range.style.setProperty('--p', `${((price - 1) / 259) * 100}%`);
-      meter.style.setProperty('--p', `${Math.min(price / free, 1) * 100}%`);
-      presets.forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.simPreset) === price)));
+      const perDayAfter = Math.max((free - price) / days, 0);
+      amount.textContent = `$${price}`;
+      range.style.setProperty("--p", `${((price - 1) / 259) * 100}%`);
+      presets.forEach((b) =>
+        b.setAttribute(
+          "aria-pressed",
+          String(Number(b.dataset.simPreset) === price),
+        ),
+      );
 
-      let state: 'ok' | 'warn' | 'no';
+      // Barras: cuánto queda por día comparado con hoy (la silueta es lo que tenías)
+      sim.style.setProperty(
+        "--level",
+        String(Math.min(perDayAfter / perDay, 1)),
+      );
+
+      let state: "ok" | "warn" | "no";
       if (price <= perDay) {
-        state = 'ok';
+        state = "ok";
+        sim.style.setProperty("--level", "1");
+        sim.style.setProperty("--today", String((perDay - price) / perDay));
+        after.textContent = usd(perDay);
         head.innerHTML = `<strong>🟢 Sí, entra en lo de hoy.</strong>`;
         body.innerHTML = `Te quedarían <strong>${usd(perDay - price)}</strong> de ${usd(perDay)} para el resto del día.`;
-      } else if (after >= 0) {
-        state = 'warn';
+      } else if (free - price >= 0) {
+        state = "warn";
+        sim.style.setProperty("--today", "var(--level)");
+        after.textContent = usd(perDayAfter);
         head.innerHTML = `<strong>🟡 Puedes, pero se sale de lo de hoy</strong> (${usd(perDay)}).`;
-        body.innerHTML = `Si lo compras, tu disponible baja de ${usd(perDay)} a <strong>${usd(after)} por día</strong> hasta el 15/10.`;
+        body.innerHTML = `Si lo compras, tu disponible baja de ${usd(perDay)} a <strong>${usd(perDayAfter)} por día</strong> hasta el 15/10.`;
       } else {
-        state = 'no';
+        state = "no";
+        sim.style.setProperty("--today", "0");
+        after.textContent = usd(0);
         head.innerHTML = `<strong>🔴 Hoy no te alcanza.</strong>`;
         body.innerHTML = `Te faltarían <strong>${usd(price - free)}</strong> para llegar al 15/10 con tus pagos fijos cubiertos.`;
       }
-      reply.dataset.state = state;
+      sim.dataset.state = state;
     };
 
-    range.addEventListener('input', render);
+    range.addEventListener("input", render);
     presets.forEach((b) =>
-      b.addEventListener('click', () => {
+      b.addEventListener("click", () => {
         range.value = b.dataset.simPreset!;
         render();
       }),
@@ -137,6 +208,9 @@ const presets = [
 </script>
 
 <style>
+  .today {
+    background: var(--black);
+  }
   .today__grid {
     display: grid;
     grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
@@ -191,149 +265,261 @@ const presets = [
     color: var(--on-dark-muted);
   }
 
-  .today {
-    background: var(--black);
-  }
+  /* ── El simulador: una conversación sobre el fondo de chat ── */
   .sim {
-    padding: clamp(24px, 4vw, 40px);
-    border-radius: var(--r-xxl);
+    --level: 0.665;
+    --today: 0.665;
+    --tone: var(--gold);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: clamp(18px, 3vw, 28px);
+    border-radius: 34px;
     background:
-      radial-gradient(90% 70% at 100% 0%, rgba(36, 72, 128, 0.55), transparent 65%),
-      var(--vault);
-    color: var(--white);
+      linear-gradient(180deg, rgba(11, 20, 26, 0.55), rgba(11, 20, 26, 0.85)),
+      var(--chat-bg) url("/whatsapp-fondo.png") center / cover;
     box-shadow:
-      inset 0 0 0 1px rgba(255, 255, 255, 0.1),
-      0 40px 80px -40px rgba(0, 0, 0, 0.9);
+      inset 0 0 0 1px rgba(255, 255, 255, 0.07),
+      0 50px 100px -40px rgba(0, 0, 0, 0.9),
+      0 0 120px -40px rgba(14, 159, 110, 0.35);
+    color: #e9edef;
   }
-  .sim__q {
+  .sim[data-state="ok"] {
+    --tone: var(--green-glow);
+  }
+  .sim[data-state="no"] {
+    --tone: var(--coral);
+  }
+
+  .sim__ask {
+    display: flex;
+    justify-content: flex-end;
+  }
+  .sim__bubble {
+    position: relative;
+    max-width: 92%;
+    padding: 10px 14px;
+    border-radius: 14px;
+    line-height: 1.45;
+    font-variant-numeric: tabular-nums;
+    box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.3);
+  }
+  .sim__bubble::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    width: 10px;
+    height: 16px;
+    background: inherit;
+  }
+  .sim__bubble--me {
+    background: var(--chat-out);
+    border-top-right-radius: 0;
     font-family: var(--font-display);
-    font-size: clamp(1.5rem, 2.8vw, 2.1rem);
-    font-weight: 800;
+    font-size: clamp(1.25rem, 2.2vw, 1.6rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+  .sim__bubble--me::before {
+    right: -10px;
+    clip-path: polygon(0 0, 100% 0, 0 100%);
+  }
+  .sim__bubble--me output {
+    color: #7ff0c1;
+  }
+  .sim__bubble--bot {
+    align-self: flex-start;
+    width: 92%;
+    background: var(--chat-in);
+    border-top-left-radius: 0;
+    font-size: 0.95rem;
+  }
+  .sim__bubble--bot::before {
+    left: -10px;
+    clip-path: polygon(0 0, 100% 0, 100% 100%);
+  }
+  .sim__bubble--bot p + p {
+    margin-top: 4px;
+    color: rgba(233, 237, 239, 0.85);
+  }
+
+  /* La gráfica que «manda» TelMoney: 11 días, la silueta es lo que tenías */
+  .days {
+    margin: 0 0 12px;
+    padding: 14px 14px 10px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.35);
+  }
+  .days figcaption {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 0.75rem;
+    color: #8696a0;
+  }
+  .days figcaption b {
+    font-size: 1.5rem;
+    font-weight: 700;
     letter-spacing: -0.03em;
-    line-height: 1.15;
+    color: var(--tone);
+    transition: color 0.3s;
   }
-  .sim__q output {
-    color: var(--green-glow);
+  .days__bars {
+    display: grid;
+    grid-template-columns: repeat(11, 1fr);
+    gap: 5px;
+    height: 92px;
+    margin: 10px 0 0;
+    padding: 0 0 18px;
+    list-style: none;
   }
-  .sim__range {
+  .days__bars li {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+  }
+  .days__ghost,
+  .days__fill {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 4px 4px 2px 2px;
+  }
+  .days__ghost {
+    height: 100%;
+    border: 1px dashed rgba(233, 237, 239, 0.22);
+  }
+  .days__fill {
+    height: calc(var(--level) * 100%);
+    background: var(--tone);
+    transition:
+      height 0.6s var(--ease-out) calc(var(--i) * 25ms),
+      background-color 0.3s;
+  }
+  .days__bars li:first-child .days__fill {
+    height: calc(var(--today) * 100%);
+  }
+  .days__bars small {
+    position: absolute;
+    left: 50%;
+    bottom: -18px;
+    translate: -50% 0;
+    font-size: 0.62rem;
+    color: #8696a0;
+  }
+  .days__bars li:first-child small {
+    color: #e9edef;
+    font-weight: 600;
+  }
+
+  /* El «teclado» del simulador */
+  .sim__compose {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 8px;
+    padding: 14px;
+    border-radius: 22px;
+    background: rgba(31, 44, 52, 0.96);
+  }
+  .sim__presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .sim__presets button {
+    min-height: 38px;
+    padding: 7px 14px;
+    border: 0;
+    border-radius: var(--r-full);
+    background: #2a3942;
+    color: #e9edef;
+    font-size: var(--fs-small);
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+    transition:
+      background-color 0.2s,
+      transform 0.2s;
+  }
+  .sim__presets button:hover {
+    background: #34474f;
+  }
+  .sim__presets button:active {
+    transform: scale(0.96);
+  }
+  .sim__presets button[aria-pressed="true"] {
+    background: var(--chat-out);
+  }
+  .sim__slider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.72rem;
+    color: #8696a0;
+  }
+  .sim__slider input {
     --p: 30%;
-    width: 100%;
-    margin: var(--s-6) 0 var(--s-4);
-    height: 28px;
+    flex: 1;
+    height: 40px; /* área táctil */
+    margin: 0;
     background: transparent;
     appearance: none;
     -webkit-appearance: none;
     cursor: pointer;
   }
-  .sim__range::-webkit-slider-runnable-track {
-    height: 6px;
-    border-radius: 3px;
-    background: linear-gradient(90deg, var(--green) var(--p), rgba(255, 255, 255, 0.15) var(--p));
-  }
-  .sim__range::-moz-range-track {
-    height: 6px;
-    border-radius: 3px;
-    background: linear-gradient(90deg, var(--green) var(--p), rgba(255, 255, 255, 0.15) var(--p));
-  }
-  .sim__range::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 26px;
-    height: 26px;
-    margin-top: -10px;
-    border-radius: 50%;
-    background: var(--white);
-    box-shadow:
-      0 0 0 6px rgba(14, 159, 110, 0.35),
-      0 4px 10px rgba(0, 0, 0, 0.4);
-  }
-  .sim__range::-moz-range-thumb {
-    width: 26px;
-    height: 26px;
-    border: 0;
-    border-radius: 50%;
-    background: var(--white);
-    box-shadow: 0 0 0 6px rgba(14, 159, 110, 0.35);
-  }
-  .sim__presets {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--s-2);
-  }
-  .sim__presets button {
-    min-height: 40px;
-    padding: 8px 14px;
-    border: 0;
-    border-radius: var(--r-full);
-    background: rgba(255, 255, 255, 0.08);
-    box-shadow: inset 0 0 0 1px var(--hairline-dark);
-    font-size: var(--fs-small);
-    font-variant-numeric: tabular-nums;
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-  .sim__presets button:hover {
-    background: rgba(255, 255, 255, 0.14);
-  }
-  .sim__presets button[aria-pressed='true'] {
-    background: var(--white);
-    color: var(--ink);
-  }
-  .sim__reply {
-    margin-top: var(--s-6);
-    padding: 16px 18px;
-    border-radius: 6px 16px 16px 16px;
-    background: var(--chat-in);
-    line-height: 1.5;
-    font-variant-numeric: tabular-nums;
-    transition: box-shadow 0.3s;
-  }
-  .sim__reply p + p {
-    margin-top: 6px;
-    color: rgba(234, 241, 250, 0.85);
-  }
-  .sim__reply[data-state='ok'] {
-    box-shadow: inset 3px 0 0 var(--green-glow);
-  }
-  .sim__reply[data-state='warn'] {
-    box-shadow: inset 3px 0 0 var(--gold);
-  }
-  .sim__reply[data-state='no'] {
-    box-shadow: inset 3px 0 0 var(--coral);
-  }
-  .sim__meter {
-    display: block;
+  .sim__slider input::-webkit-slider-runnable-track {
     height: 4px;
-    margin-top: var(--s-4);
     border-radius: 2px;
-    background: rgba(255, 255, 255, 0.12);
-    overflow: hidden;
+    background: linear-gradient(
+      90deg,
+      var(--green) var(--p),
+      rgba(255, 255, 255, 0.14) var(--p)
+    );
   }
-  .sim__meter span {
-    --p: 33%;
-    display: block;
-    height: 100%;
-    width: var(--p);
-    background: currentColor;
-    color: var(--gold);
-    transition:
-      width 0.4s var(--ease-out),
-      color 0.3s;
+  .sim__slider input::-moz-range-track {
+    height: 4px;
+    border-radius: 2px;
+    background: linear-gradient(
+      90deg,
+      var(--green) var(--p),
+      rgba(255, 255, 255, 0.14) var(--p)
+    );
   }
-  [data-state='ok'] .sim__meter span {
-    color: var(--green-glow);
+  .sim__slider input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px;
+    height: 22px;
+    margin-top: -9px;
+    border-radius: 50%;
+    background: var(--white);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   }
-  [data-state='no'] .sim__meter span {
-    color: var(--coral);
+  .sim__slider input::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--white);
   }
-  .sim__note {
-    margin-top: var(--s-4);
-    font-size: 0.8rem;
-    color: var(--on-dark-faint);
+  .sim__slider input:focus-visible {
+    outline: 2px solid var(--silver);
+    outline-offset: 4px;
   }
 
   @media (max-width: 991px) {
     .today__grid {
       grid-template-columns: 1fr;
+    }
+  }
+  @media (max-width: 575px) {
+    .sim__bubble--bot {
+      width: 100%;
+    }
+    .days__bars {
+      gap: 3px;
     }
   }
 </style>
