@@ -45,6 +45,12 @@ src/
   components/          una sección por archivo, en el orden de la página
 ```
 
+## Modo claro y oscuro
+
+- La primera visita sigue la configuración del navegador; el botón del menú (`ThemeToggle.astro`) lo cambia y lo recuerda.
+- Los colores viven en `src/styles/global.css` como **tokens de rol** (`--bg`, `--text`, `--text-muted`, `--hairline`, `--band`, `--chat-*`…), con un valor por tema verificado con WCAG AA (4.5:1 texto, 3:1 gráficos y bordes de campos).
+- En los componentes usa siempre esos tokens, nunca colores sueltos. Para una sección o tarjeta con el tema contrario al de la página, agrega la clase `tone-invert`.
+
 ## Antes de lanzar
 
 - [ ] Número oficial de WhatsApp en `PUBLIC_WHATSAPP_NUMBER`.
