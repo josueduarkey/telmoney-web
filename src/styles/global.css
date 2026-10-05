@@ -522,10 +522,24 @@ html.motion [data-hero-phone] {
   animation: none;
   mix-blend-mode: normal;
 }
+/* El tema nuevo entra por una máscara circular de borde difuminado. Arranca en tamaño 0 desde el CSS
+   para que no se vea ni un cuadro sin máscara antes de que empiece la animación (ThemeToggle.astro). */
+::view-transition-new(root) {
+  -webkit-mask-image: radial-gradient(circle closest-side, #000 70%, transparent 100%);
+  mask-image: radial-gradient(circle closest-side, #000 70%, transparent 100%);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 0 0;
+  mask-size: 0 0;
+}
 
-/* Mientras cambia el tema, ningún componente anima sus colores (ver ThemeToggle.astro) */
+/* Mientras cambia el tema, ningún componente anima sus colores (ver ThemeToggle.astro)
+   y la etiqueta del cursor se esconde para no quedar congelada en la «foto» de la transición */
 .theme-switching *,
 .theme-switching *::before,
 .theme-switching *::after {
   transition: none !important;
+}
+.theme-switching .ucursor {
+  visibility: hidden;
 }

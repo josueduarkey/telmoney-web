@@ -4,9 +4,9 @@
 //   <head> por Base.astro antes de pintar, así no hay parpadeo.
 // - Al tocarlo: cambia el tema y lo recuerda en localStorage. Si la elección coincide con la del
 //   sistema, se borra lo guardado y la página vuelve a seguir al sistema.
-// - La transición: el tema nuevo entra como un círculo que crece desde el botón (View Transitions)
-//   y, encima, un «aura» verde se expande y se desvanece. Sin animación si la persona pidió menos
-//   movimiento; si el navegador no soporta View Transitions, queda solo el aura.
+// - La transición: el tema nuevo entra como un círculo de borde difuminado que crece desde el botón
+//   (View Transitions) y un brillo verde tenue se disuelve detrás. Sin animación si la persona pidió
+//   menos movimiento; si el navegador no soporta View Transitions, queda solo el brillo.
 ---
 
 <button type="button" class="theme-toggle" data-theme-toggle aria-label="Cambiar a modo claro">
@@ -42,13 +42,15 @@
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', t === 'light' ? '#ffffff' : '#000000');
   };
 
-  // Durante el cambio se apagan las transiciones de color de los componentes: si no, un botón
-  // pasaría unos milisegundos con texto y fondo del mismo color mientras cambia de tema.
+  // «theme-switching» apaga las transiciones de color de los componentes (si no, un botón pasaría
+  // unos milisegundos con texto y fondo del mismo color) y esconde la etiqueta del cursor, que si no
+  // quedaría congelada en la «foto» que toma el navegador para animar el cambio.
+  const startSwitch = () => root.classList.add('theme-switching');
+  const endSwitch = () => root.classList.remove('theme-switching');
+
   const apply = (theme: 'light' | 'dark') => {
-    root.classList.add('theme-switching');
     root.dataset.theme = theme;
     sync();
-    requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('theme-switching')));
   };
 
   const save = (theme: 'light' | 'dark') => {
@@ -60,7 +62,7 @@
     }
   };
 
-  // Aura: un halo verde que nace en el botón, crece y se desvanece
+  // Aura: un brillo verde muy tenue que nace en el botón y se disuelve (sin anillo)
   const aura = (x: number, y: number) => {
     const el = document.createElement('span');
     el.className = 'theme-aura';
@@ -71,6 +73,9 @@
     el.addEventListener('animationend', () => el.remove());
   };
 
+  type ViewTransition = { ready: Promise<void>; finished: Promise<void> };
+  const doc = document as Document & { startViewTransition?: (cb: () => void) => ViewTransition };
+
   buttons.forEach((button) =>
     button.addEventListener('click', () => {
       const next = current() === 'dark' ? 'light' : 'dark';
@@ -78,23 +83,42 @@
       const r = button.getBoundingClientRect();
       const x = r.left + r.width / 2;
       const y = r.top + r.height / 2;
-      if (reduced.matches) {
+
+      if (reduced.matches || !doc.startViewTransition) {
+        startSwitch();
         apply(next);
+        if (!reduced.matches) aura(x, y);
+        requestAnimationFrame(() => requestAnimationFrame(endSwitch));
         return;
       }
-      aura(x, y);
-      const doc = document as Document & { startViewTransition?: (cb: () => void) => { ready: Promise<void> } };
-      if (!doc.startViewTransition) {
+
+      // Antes de la «foto»: se esconde la etiqueta del cursor
+      startSwitch();
+      // El tema nuevo entra como un círculo de borde difuminado que crece desde el botón.
+      // La máscara es un degradado radial: sólido hasta el 70 % del radio y se desvanece hasta el 100 %.
+      const reach = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+      const size = Math.ceil((reach * 2) / 0.7);
+      const vt = doc.startViewTransition(() => {
         apply(next);
-        return;
-      }
-      const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
-      doc.startViewTransition(() => apply(next)).ready.then(() => {
+        aura(x, y); // el aura vive en la página nueva, no en la foto de la vieja
+      });
+      vt.ready.then(() => {
         root.animate(
-          { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
-          { duration: 650, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', pseudoElement: '::view-transition-new(root)' },
+          {
+            maskSize: ['0px 0px', `${size}px ${size}px`],
+            maskPosition: [`${x}px ${y}px`, `${x - size / 2}px ${y - size / 2}px`],
+          },
+          {
+            // Arranca rápido y frena suave: la página vieja (que es una foto quieta) desaparece pronto
+            duration: 700,
+            easing: 'cubic-bezier(0.33, 1, 0.68, 1)',
+            fill: 'both',
+            pseudoElement: '::view-transition-new(root)',
+          },
         );
       });
+      // El estilo se recalcula una sola vez más, al terminar (no a mitad de la animación)
+      vt.finished.finally(endSwitch);
     }),
   );
 
@@ -106,7 +130,11 @@
     } catch {
       saved = null;
     }
-    if (!saved) apply(systemTheme());
+    if (!saved) {
+      startSwitch();
+      apply(systemTheme());
+      requestAnimationFrame(() => requestAnimationFrame(endSwitch));
+    }
   });
 
   sync();
@@ -159,30 +187,30 @@
   :global(.theme-aura) {
     position: fixed;
     z-index: 10000;
-    width: 120px;
-    height: 120px;
-    margin: -60px 0 0 -60px;
+    width: 220px;
+    height: 220px;
+    margin: -110px 0 0 -110px;
     border-radius: 50%;
     pointer-events: none;
+    /* brillo tenue que se disuelve hacia afuera: sin borde ni anillo visible */
     background: radial-gradient(
       circle,
-      rgba(61, 220, 151, 0.55) 0%,
-      rgba(14, 159, 110, 0.28) 38%,
+      rgba(61, 220, 151, 0.2) 0%,
+      rgba(14, 159, 110, 0.1) 35%,
       rgba(14, 159, 110, 0) 70%
     );
-    box-shadow: 0 0 0 2px rgba(61, 220, 151, 0.55);
-    animation: theme-aura 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    animation: theme-aura 1.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
   @keyframes theme-aura {
     0% {
-      transform: scale(0.2);
+      transform: scale(0.3);
+      opacity: 0;
+    }
+    25% {
       opacity: 1;
     }
-    60% {
-      opacity: 0.6;
-    }
     100% {
-      transform: scale(9);
+      transform: scale(6);
       opacity: 0;
     }
   }
