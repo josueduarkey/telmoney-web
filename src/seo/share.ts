@@ -21,8 +21,8 @@ const CTA = LAUNCHED ? 'Pruébalo gratis 7 días' : 'La beta abre el 1 de noviem
 
 export const shareText = {
   chat: `Mira esto 👀 TelMoney te dice cuánto puedes gastar hoy, solo con mensajes de WhatsApp. ${CTA}:`,
-  x: `Tu pisto en orden, por WhatsApp 💚 Le escribes tus gastos como a un amigo y te dice cuánto puedes gastar hoy. ${CTA} 👇`,
-  emailSubject: 'Para que el pisto te alcance todo el mes',
+  x: `Tu dinero en orden, por WhatsApp 💚 Le escribes tus gastos como a un amigo y te dice cuánto puedes gastar hoy. ${CTA} 👇`,
+  emailSubject: 'Para que el dinero te alcance todo el mes',
   emailBody: `Encontré TelMoney: le escribes tus gastos por WhatsApp como a un amigo y te dice cuánto puedes gastar hoy, con tus pagos fijos ya descontados. ${CTA}:`,
 };
 

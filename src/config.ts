@@ -32,7 +32,7 @@ export const SITE = {
   name: 'TelMoney',
   /** Dominio público (sin «/» final). Las imágenes para compartir necesitan URLs absolutas. */
   url: (env.PUBLIC_SITE_URL || 'https://telmoney.app').replace(/\/$/, ''),
-  tagline: 'Tu pisto en orden, por WhatsApp.',
+  tagline: 'Tu dinero en orden, por WhatsApp.',
   instagram: 'https://instagram.com/telmoney.sv',
   tiktok: 'https://tiktok.com/@telmoney.sv',
   /** Usuario de X sin «@». Vacío = no se publica twitter:site. */

@@ -53,7 +53,7 @@ const logo = (size) =>
 
 const headline = (size) =>
   h('div', { style: { display: 'flex', flexDirection: 'column', fontFamily: 'Jakarta', fontWeight: 800, fontSize: size, lineHeight: 1, letterSpacing: -size * 0.045, color: C.text } },
-    h('span', {}, 'Tu pisto'),
+    h('span', {}, 'Tu dinero'),
     h('div', { style: { display: 'flex', marginTop: size * 0.06 } },
       h('span', { style: { background: C.green, color: C.black, padding: `0 ${size * 0.16}px ${size * 0.06}px`, borderRadius: size * 0.12 } }, 'en orden,')),
     // el punto de Plus Jakarta trae mucho aire a la izquierda: se acerca, igual que en la página

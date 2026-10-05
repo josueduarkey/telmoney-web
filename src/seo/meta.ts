@@ -17,26 +17,26 @@ export const SEO = {
   /** Facebook no reconoce es_SV: para Latinoamérica usa es_LA. */
   ogLocale: 'es_LA',
 
-  /** 60 caracteres: marca + lo que se busca + el lema. */
-  title: 'TelMoney: control de gastos por WhatsApp | Tu pisto en orden',
+  /** 61 caracteres / 571 px (Google corta cerca de 580 px): marca + lo que se busca + el lema. */
+  title: 'TelMoney: control de gastos por WhatsApp | Tu dinero en orden',
   /** ≈150 caracteres: qué hace, el beneficio y el llamado a la acción. */
   description: LAUNCHED
     ? 'Anota tus gastos con un mensaje, un audio o la foto del recibo. TelMoney te dice cuánto puedes gastar hoy y te avisa antes de cada pago. Pruébalo gratis.'
     : 'Anota tus gastos con un mensaje, un audio o la foto del recibo. TelMoney te dice cuánto puedes gastar hoy y te avisa antes de cada pago. Únete a la beta.',
 
   /** Para redes: el lema manda; el nombre ya aparece como og:site_name. */
-  ogTitle: 'Tu pisto en orden, por WhatsApp',
+  ogTitle: 'Tu dinero en orden, por WhatsApp',
   ogDescription: `Sabe cuánto puedes gastar hoy con un mensaje de WhatsApp. ${CTA_SOCIAL}`,
 
   /** Imagen para compartir: 1200×630 (1.91:1), JPEG liviano (WhatsApp no muestra imágenes pesadas).
    *  Se genera con «npm run og» (scripts/og.mjs). Si cambia el diseño, sube el número de ?v=
    *  para que WhatsApp y Facebook no sigan mostrando la versión vieja guardada en caché. */
   image: {
-    path: '/og/telmoney-og.jpg?v=2',
+    path: '/og/telmoney-og.jpg?v=3',
     width: 1200,
     height: 630,
     type: 'image/jpeg',
-    alt: 'TelMoney: tu pisto en orden, por WhatsApp. Un chat responde «Hoy puedes gastar $21.70».',
+    alt: 'TelMoney: tu dinero en orden, por WhatsApp. Un chat responde «Hoy puedes gastar $21.70».',
   },
 };
 

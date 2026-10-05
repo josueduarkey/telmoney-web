@@ -58,20 +58,29 @@ Qué se hizo, dónde está y qué queda pendiente. Para revisar con calma.
 La guía completa está en [`seo-y-redes.md`](seo-y-redes.md). En resumen:
 
 - **Google:**
-  - Título «TelMoney: control de gastos por WhatsApp \| Tu pisto en orden» (60 caracteres).
+  - Título «TelMoney: control de gastos por WhatsApp \| Tu dinero en orden» (61 caracteres, entra sin cortarse).
   - Descripción de 153 caracteres que termina en «Únete a la beta».
   - Datos estructurados: empresa, sitio, la app con sus 2 planes en USD y las preguntas.
   - robots.txt y sitemap.
   - Páginas legales provisionales con `noindex`.
 - **Al compartir** (WhatsApp, Facebook, LinkedIn, X, Telegram):
   - Imagen de 1200×630 (70 KB) con el lema, un chat que responde «Hoy puedes gastar $21.70» y «Únete gratis a la beta · 1 de noviembre».
-  - Título «Tu pisto en orden, por WhatsApp» y una descripción que entra completa en WhatsApp.
+  - Título «Tu dinero en orden, por WhatsApp» y una descripción que entra completa en WhatsApp.
 - **Botones para compartir:**
   - Están en el «¡Listo!» de la beta y en el footer.
   - Cada red tiene su mensaje, y todos llevan `utm_*`. La lista de espera guarda esos `utm`, así se ve qué red trae más registros.
 - **Todo cambia solo el día del lanzamiento:** al poner `PUBLIC_WHATSAPP_NUMBER`, el llamado a la acción pasa a «Pruébalo gratis 7 días».
 
+## 5. «Dinero» en lugar del modismo local
+
+Para que lo entienda gente de cualquier país, todos los textos públicos usan «dinero»: el lema («Tu dinero en orden, por WhatsApp»), el título de Google, las imágenes para compartir (regeneradas, versión `?v=3`), los mensajes de los botones, el formulario y el manifiesto. No queda ningún modismo local en el código ni en la página compilada.
+
+- El título de Google quedó en 61 caracteres, pero mide 571 px y Google corta cerca de 580 px: entra completo.
+- Una opción del formulario cambió de texto («Llegar a fin de mes con dinero»). Se le pidió a @bot que el endpoint la acepte (y que siga aceptando la anterior). Si el servidor rechaza algo que no es un campo visible, el formulario ahora muestra un aviso claro en vez de fallar en silencio.
+
 ## Pendiente (lo tuyo)
+
+0. **Confirmar con @bot** que el endpoint `/waitlist` acepta la opción «Llegar a fin de mes con dinero». Además, el túnel temporal del bot está caído: hay que levantarlo o, mejor, publicar el bot en `api.telmoney.app`.
 
 1. **Publicar en telmoney.app:** el paso a paso de hosting, DNS, variables, Google Search Console y la revisión de vistas previas está en [`seo-y-redes.md`, sección 4](seo-y-redes.md#4-paso-a-paso-para-publicar-en-telmoneyapp).
 2. **Endpoint fijo de la lista de espera:** hoy `.env` apunta a un túnel temporal de Cloudflare que cambia al reiniciar el bot. Hace falta un dominio fijo, por ejemplo `api.telmoney.app/waitlist`.
