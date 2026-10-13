@@ -1,20 +1,32 @@
 ---
+import type { ImageMetadata } from 'astro';
 import Sticker from './Sticker.astro';
 
+// Logos ya normalizados por scripts/bancos.mjs (una sola tinta, sin aire, mismo alto).
+// Se pintan con el color del texto vía máscara, así siguen el tema claro u oscuro.
+const files = import.meta.glob<{ default: ImageMetadata }>('../assets/bancos/*.png', { eager: true });
+
+// `scale` corrige a ojo los que pesan más que el resto (letras muy gruesas).
 const institutions = [
-  'Banco Agrícola',
-  'BAC Credomatic',
-  'Cuscatlán',
-  'Davivienda',
-  'Promerica',
-  'Hipotecario',
-  'n1co',
-  'Tigo Money',
-  'Chivo',
-  'Multimoney',
-  'Banco Azul',
-  'Fedecrédito',
-];
+  { name: 'Banco Agrícola', slug: 'agricola' },
+  { name: 'BAC Credomatic', slug: 'bac' },
+  { name: 'Banco Cuscatlán', slug: 'cuscatlan' },
+  { name: 'Davivienda', slug: 'davivienda' },
+  { name: 'Banco Promerica', slug: 'promerica' },
+  { name: 'Banco Hipotecario', slug: 'hipotecario' },
+  { name: 'n1co', slug: 'n1co', scale: 0.85 },
+  { name: 'Multimoney', slug: 'multimoney' },
+  { name: 'Banco Azul', slug: 'azul' },
+  { name: 'Fedecrédito', slug: 'fedecredito' },
+].map(({ name, slug, scale = 1 }) => {
+  const { src, width, height } = files[`../assets/bancos/${slug}.png`].default;
+  const ratio = width / height;
+  // Mismo «peso» para todos: a igual área, los anchos salen más bajos y los compactos más altos.
+  const k = Math.sqrt(3.2 / ratio) * scale;
+  return { name, style: `--logo:url(${src});--r:${ratio.toFixed(3)};--k:${k.toFixed(3)}` };
+});
+// Cuatro vueltas de la lista: la animación recorre la mitad y así no queda hueco ni en pantallas muy anchas.
+const reel = Array.from({ length: 4 }, () => institutions).flat();
 const phrases = [
   '«gasté 3.50 en el almuerzo»',
   '«me cayó la quincena»',
@@ -40,9 +52,15 @@ const facts = [
     <p class="sv__note">Empezamos en El Salvador.</p>
   </div>
 
-  <div class="marquee" aria-label="Bancos y billeteras que reconoce">
+  <div class="marquee marquee--logos" aria-label="Bancos y billeteras que reconoce">
     <ul class="marquee__track" role="list">
-      {[...institutions, ...institutions].map((n, i) => <li aria-hidden={i >= institutions.length ? 'true' : undefined}>{n}</li>)}
+      {
+        reel.map((n, i) => (
+          <li aria-hidden={i >= institutions.length ? 'true' : undefined}>
+            <span class="bank" role="img" aria-label={n.name} style={n.style} />
+          </li>
+        ))
+      }
     </ul>
   </div>
   <div class="marquee marquee--reverse marquee--phrases" aria-label="Frases que entiende">
@@ -108,11 +126,22 @@ const facts = [
     animation-play-state: paused;
   }
   .marquee li {
-    font-family: var(--font-display);
-    font-size: clamp(1.6rem, 3.4vw, 2.8rem);
-    font-weight: 800;
-    letter-spacing: -0.035em;
     white-space: nowrap;
+  }
+  .marquee--logos {
+    --logo-h: clamp(1.75rem, 3.2vw, 2.5rem);
+  }
+  .marquee--logos .marquee__track {
+    align-items: center;
+    min-height: calc(var(--logo-h) * 1.4);
+  }
+  .bank {
+    display: block;
+    height: calc(var(--logo-h) * var(--k));
+    width: calc(var(--logo-h) * var(--k) * var(--r));
+    background: currentColor;
+    -webkit-mask: var(--logo) center / contain no-repeat;
+    mask: var(--logo) center / contain no-repeat;
   }
   .marquee--reverse .marquee__track {
     animation-direction: reverse;
