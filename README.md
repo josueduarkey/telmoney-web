@@ -72,6 +72,18 @@ npm run icons   # genera app-icon.png, favicon-32.png, favicon-192.png y apple-t
 
 El pájaro tiene partes casi negras, así que en la página va sobre una baldosa blanca para verse en los dos temas.
 
+## Logos de bancos
+
+En el repo solo quedan los logos ya normalizados (`src/assets/bancos/*.png`); los originales no se guardan. Para agregar o cambiar uno, pon el original (como venga: a color, blanco, con aire alrededor) en `src/assets/bancos/originales/`, súmalo a `LOGOS` en `scripts/bancos.mjs` y a la lista de `src/components/MadeInSV.astro`, y corre:
+
+```bash
+npm run bancos  # recorta, deja una sola tinta y mismo alto en src/assets/bancos/
+```
+
+Después puedes borrar el original: esa carpeta está en `.gitignore` y el script deja como están los logos que no tengan original.
+
+En la página se pintan con el color del texto, así se ven igual en tema claro y oscuro. El tamaño de cada uno sale de su proporción para que todos pesen parecido.
+
 ## Modo claro y oscuro
 
 - La primera visita sigue la configuración del navegador; el botón del menú (`ThemeToggle.astro`) lo cambia y lo recuerda.
