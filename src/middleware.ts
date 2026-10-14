@@ -18,9 +18,10 @@ const gate =
     ? clerkMiddleware(async (auth, context, next) => {
         const show = next as MiddlewareNext;
         const { userId, sessionId, redirectToSignIn } = auth();
+        // Salir siempre se puede, aunque la cuenta no tenga acceso (así se cambia de cuenta);
+        // sin sesión no hay nada que cerrar: al inicio.
+        if (context.url.pathname === '/admin/salir') return userId ? next() : context.redirect('/', 303);
         if (!userId || !sessionId) return redirectToSignIn();
-        // Salir siempre se puede, aunque la cuenta no tenga acceso (así se cambia de cuenta).
-        if (context.url.pathname === '/admin/salir') return next();
 
         const user = await api.users.getUser(userId);
         const email = user.emailAddresses.find(

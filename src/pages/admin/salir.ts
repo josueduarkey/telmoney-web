@@ -1,11 +1,13 @@
-// POST /admin/salir: cierra la sesión del panel. Revoca la sesión en Clerk y borra su cookie aquí,
-// para que no siga abierta el minuto que dura el token. Astro rechaza un POST que venga de otro sitio.
+// /admin/salir: cierra la sesión del panel. Revoca la sesión en Clerk y borra su cookie aquí,
+// para que no siga abierta el minuto que dura el token.
+// El botón «Salir» hace POST, pero si el token ya venció, Clerk primero lo renueva y regresa aquí
+// con GET; por eso se aceptan los dos. (Cerrar sesión por GET a lo sumo saca al admin: no expone nada.)
 import type { APIRoute } from 'astro';
 import { clerkApi } from '../../lib/admin/clerk';
 
 export const prerender = false;
 
-export const POST: APIRoute = async ({ locals, request, cookies, redirect }) => {
+const signOut: APIRoute = async ({ locals, request, cookies, redirect }) => {
   const sessionId = locals.auth?.().sessionId;
   if (clerkApi && sessionId) {
     try {
@@ -20,3 +22,6 @@ export const POST: APIRoute = async ({ locals, request, cookies, redirect }) => 
   }
   return redirect('/', 303);
 };
+
+export const GET = signOut;
+export const POST = signOut;
