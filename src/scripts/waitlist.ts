@@ -37,7 +37,27 @@ export function initWaitlist(form: HTMLFormElement) {
   const endpoint = form.dataset.endpoint || '/api/waitlist';
   const status = form.querySelector<HTMLElement>('[data-status]')!;
   const submit = form.querySelector<HTMLButtonElement>('[data-submit]')!;
-  const done = document.querySelector<HTMLElement>('[data-done]');
+  const done = document.querySelector<HTMLDialogElement>('[data-done]');
+  const SUBMIT_LABEL = submit.textContent?.trim() || 'Unirme a la beta';
+
+  // La base (Neon) se duerme tras unos minutos sin uso y el primer registro esperaba a que
+  // despertara. Se despierta apenas la persona empieza a llenar el formulario: cuando envía, ya está.
+  form.addEventListener('focusin', () => fetch(endpoint, { method: 'GET' }).catch(() => {}), { once: true });
+
+  done?.addEventListener('close', () => {
+    document.dispatchEvent(new Event('tm:scroll-unlock'));
+    submit.focus();
+  });
+
+  const setStatus = (msg: string, tone: 'error' | 'info' = 'error') => {
+    status.dataset.tone = tone;
+    status.textContent = msg;
+  };
+  const setLoading = (on: boolean) => {
+    submit.disabled = on;
+    submit.toggleAttribute('data-loading', on);
+    submit.textContent = on ? 'Enviando…' : SUBMIT_LABEL;
+  };
 
   const setError = (name: string, msg: string) => {
     const input = form.elements.namedItem(name);
@@ -55,7 +75,7 @@ export function initWaitlist(form: HTMLFormElement) {
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    status.textContent = '';
+    setStatus('');
     const data = new FormData(form);
     if (data.get('company')) return; // bot
 
@@ -89,27 +109,38 @@ export function initWaitlist(form: HTMLFormElement) {
       utm,
     };
 
-    submit.disabled = true;
-    submit.textContent = 'Enviando…';
+    setLoading(true);
+    // Si tarda, se dice; y nunca se queda esperando para siempre.
+    const slow = setTimeout(() => setStatus('Un momento, estamos guardando tus datos…', 'info'), 2500);
+    const abort = new AbortController();
+    const giveUp = setTimeout(() => abort.abort(), 20000);
     try {
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
+        signal: abort.signal,
       });
       // 201 = registro nuevo, 200 = ya estaba (se actualiza): las dos son éxito
       if (!res.ok) {
         const body = await res.json().catch(() => null);
         throw new SubmitError(res.status, Array.isArray(body?.fields) ? body.fields : []);
       }
-      form.hidden = true;
+      setStatus('');
+      setLoading(false);
+      form.reset();
       if (done) {
-        done.hidden = false;
-        done.focus();
+        document.dispatchEvent(new Event('tm:scroll-lock'));
+        done.showModal();
       }
     } catch (err) {
-      submit.disabled = false;
-      submit.textContent = 'Unirme a la beta';
+      setLoading(false);
+      setStatus('');
+      if (abort.signal.aborted) {
+        // Registrarse dos veces no duplica (se guarda por número), así que reintentar es seguro.
+        setStatus('Está tardando más de lo normal. Inténtalo otra vez en un momento; si ya quedó, no se duplica.');
+        return;
+      }
       if (err instanceof SubmitError && err.status === 422 && err.fields.length) {
         // el servidor dice qué campos no le gustaron: los marcamos igual que la validación local
         const msgs: Record<string, string> = {
@@ -124,13 +155,17 @@ export function initWaitlist(form: HTMLFormElement) {
           return;
         }
         // el problema está en algo que no es un campo visible (por ejemplo, las opciones marcadas)
-        status.textContent = 'No pudimos guardar tus datos. Desmarca las opciones e inténtalo otra vez.';
+        setStatus('No pudimos guardar tus datos. Desmarca las opciones e inténtalo otra vez.');
         return;
       }
-      status.textContent =
+      setStatus(
         err instanceof SubmitError && err.status === 429
           ? 'Ya recibimos varios intentos desde aquí. Espera un minuto y vuelve a probar.'
-          : 'No pudimos guardar tus datos. Revisa tu conexión e inténtalo otra vez.';
+          : 'No pudimos guardar tus datos. Revisa tu conexión e inténtalo otra vez.',
+      );
+    } finally {
+      clearTimeout(slow);
+      clearTimeout(giveUp);
     }
   });
 }

@@ -1,4 +1,5 @@
 // POST /api/waitlist: guarda el formulario de la beta directo en la base (tabla waitlist del bot).
+// GET /api/waitlist: solo despierta la base mientras la persona llena el formulario (ver abajo).
 // Mismas reglas que el endpoint del bot (telmoney-bot/src/telmoney_bot/waitlist.py):
 //   201 registrado · 200 ya estaba (se actualiza) · 413 muy grande · 415 no es JSON
 //   422 datos inválidos ({ fields }) · 429 demasiados intentos · 503 falta configurar la base
@@ -26,6 +27,22 @@ function allow(ip: string): boolean {
   if (hits.size > 10_000) hits.clear();
   return true;
 }
+
+// Neon se duerme tras unos minutos sin uso, y despertarla tarda unos segundos. El formulario llama
+// aquí cuando la persona empieza a escribir: para cuando envía, la base ya está despierta.
+// No lee ni devuelve datos.
+export const GET: APIRoute = async ({ request, clientAddress }) => {
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || clientAddress || '?';
+  const sql = waitlistDb();
+  if (sql && allow(`despertar:${ip}`)) {
+    try {
+      await sql`select 1`;
+    } catch {
+      // si falla, el envío lo vuelve a intentar y ahí sí se avisa
+    }
+  }
+  return new Response(null, { status: 204, headers: { 'Cache-Control': 'no-store' } });
+};
 
 const json = (status: number, body: object) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
