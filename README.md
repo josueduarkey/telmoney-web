@@ -10,7 +10,7 @@ Landing de **TelMoney**: tu plata en orden, por WhatsApp. Hecha con Astro, GSAP 
 ```bash
 npm install
 npm run dev        # http://localhost:4321
-npm run build      # estático en dist/
+npm run build      # para Vercel (.vercel/output): la página es estática; el panel y /api/waitlist, funciones
 ```
 
 ## Configuración (`.env`, ver `.env.example`)
@@ -23,7 +23,8 @@ npm run build      # estático en dist/
 | `PUBLIC_APP_STORE_URL` | Ficha en App Store. Vacío = el botón dice «Muy pronto» y no es un enlace. |
 | `PUBLIC_SITE_URL` | Dominio público (`https://telmoney.app`). Lo usan las URLs absolutas para redes, el sitemap y robots.txt. |
 | `PUBLIC_X_HANDLE` | Usuario de X sin «@» para la tarjeta de X (opcional). |
-| `PUBLIC_WAITLIST_URL` | Endpoint que recibe el formulario de la beta. Vacío = modo demo (no envía nada y lo imprime en la consola). |
+| `PUBLIC_WAITLIST_URL` | Endpoint que recibe el formulario de la beta. Vacío = `/api/waitlist` de esta misma página, que guarda directo en la base del bot. |
+| `ADMIN_DATABASE_URL`, `WAITLIST_DATABASE_URL`, `PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`… | Panel de administración y formulario de la beta: ver [`docs/admin.md`](docs/admin.md). |
 
 El formulario manda `POST` con JSON:
 
@@ -46,8 +47,16 @@ src/
   scripts/chat.ts      reproduce chats en el teléfono
   scripts/demo-bot.ts  demo en vivo del inicio: responde gastos, ingresos y consultas en el navegador
   scripts/waitlist.ts  validación y envío del formulario
+  pages/api/waitlist.ts  guarda el formulario en la base (tabla waitlist del bot)
+  pages/admin/         panel de administración (con sesión de Clerk; ver docs/admin.md)
+  middleware.ts        la puerta del panel
+  lib/admin/           consultas y formatos del panel
   components/          una sección por archivo, en el orden de la página
 ```
+
+## Panel de administración
+
+`telmoney.app/admin`: usuarios, mensajes, costo estimado, ventas, gastos (también por persona) y la lista de interesados en la beta. Solo entra `josueduardo.dev@gmail.com` con Google. Qué muestra, cómo se protege y cómo configurarlo: [`docs/admin.md`](docs/admin.md).
 
 ## Documentación
 
@@ -93,7 +102,8 @@ En la página se pintan con el color del texto, así se ven igual en tema claro 
 ## Antes de lanzar
 
 - [ ] Número oficial de WhatsApp en `PUBLIC_WHATSAPP_NUMBER`.
-- [ ] Endpoint de la lista de espera en `PUBLIC_WAITLIST_URL` (por ejemplo, un `POST /waitlist` en el bot).
+- [ ] Variables del panel y del formulario en Vercel (`docs/admin.md`); sin `WAITLIST_DATABASE_URL` el formulario no guarda.
+- [ ] Que la política de privacidad diga que el equipo puede ver los movimientos (el panel los muestra).
 - [ ] Textos de `/privacidad` y `/terminos` (hoy son páginas provisionales).
 - [ ] Dominio definitivo en `astro.config.mjs` y `SITE.url` (`src/config.ts`).
 - [ ] Cuentas de Instagram/TikTok y correo de contacto en `SITE`.
