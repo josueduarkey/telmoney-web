@@ -13,7 +13,7 @@ Astro.response.status = notice === 'forbidden' ? 403 : 503;
 
 // Solo si está o no; nunca el valor.
 const missing = [
-  !clerkKeys && 'Clerk: PUBLIC_CLERK_PUBLISHABLE_KEY y CLERK_SECRET_KEY',
+  !clerkKeys && 'Clerk: PUBLIC_CLERK_PUBLISHABLE_KEY (o NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) y CLERK_SECRET_KEY',
   !adminDb() && 'Base para el panel: ADMIN_DATABASE_URL',
   !waitlistDb() && 'Base para el formulario de la beta: WAITLIST_DATABASE_URL',
 ].filter(Boolean);
@@ -41,9 +41,19 @@ const missing = [
               </li>
             ))}
           </ol>
+          {import.meta.env.DEV ? (
+            <p>
+              Agrégalas a tu <code>.env</code> y reinicia el servidor (<code>Ctrl+C</code> y otra vez{' '}
+              <code>npm run dev</code>): las variables nuevas se leen al arrancar.
+            </p>
+          ) : (
+            <p>
+              Se agregan en Vercel → el proyecto → Settings → Environment Variables, y después se vuelve a publicar
+              (Deployments → Redeploy).
+            </p>
+          )}
           <p>
-            Se agregan en Vercel → el proyecto → Settings → Environment Variables, y después se vuelve a publicar. El
-            paso a paso está en <code>docs/admin.md</code>.
+            El paso a paso está en <code>docs/admin.md</code>.
           </p>
         </>
       )
