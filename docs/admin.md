@@ -68,7 +68,7 @@ Vercel → el proyecto → **Settings → Environment Variables**, para *Product
 |---|---|
 | `ADMIN_DATABASE_URL` | La conexión de `panel_admin` (secreta). |
 | `WAITLIST_DATABASE_URL` | La conexión de `landing_waitlist` (secreta). |
-| `PUBLIC_CLERK_PUBLISHABLE_KEY` | La *Publishable key*. Si Clerk vino del Marketplace, crea esta con el mismo valor que `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`. |
+| `PUBLIC_CLERK_PUBLISHABLE_KEY` | La *Publishable key*. También vale con el nombre `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` (el que pone Clerk o el Marketplace). |
 | `CLERK_SECRET_KEY` | La *Secret key* (secreta). |
 | `ADMIN_EMAILS` | Opcional. Correos con acceso, separados por coma. Por defecto `josueduardo.dev@gmail.com`. |
 | `FREE_NUMBERS` | Opcional. El mismo valor que en el `.env` del bot (el equipo), para que aparezcan como «Invitado» y no como «Vencido». |
