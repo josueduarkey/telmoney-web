@@ -524,6 +524,167 @@
   color: var(--accent);
 }
 
+/* ── Chips de estado genéricos ── */
+.chip--ok {
+  color: var(--accent);
+  background: var(--check-bg);
+}
+.chip--warn {
+  color: var(--gold-text);
+  background: var(--gold-soft);
+}
+.chip--danger {
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+.chip--muted {
+  color: var(--text-muted);
+}
+
+/* ── Aviso de la última acción ── */
+.flash {
+  padding: 12px 16px;
+  border-radius: var(--r-md);
+  margin-bottom: var(--s-4);
+  font-size: var(--fs-small);
+  font-weight: 600;
+}
+.flash--ok {
+  background: var(--check-bg);
+  color: var(--accent);
+}
+.flash--error {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9em;
+}
+
+/* ── IA del bot ── */
+.ia-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s-4);
+}
+.ia-item--off {
+  opacity: 0.72;
+}
+.ia-item__head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--s-4);
+}
+.ia-item__head h2 {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin-right: var(--s-2);
+}
+.ia-item__pos {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--fill-strong);
+  font-weight: 700;
+  font-size: var(--fs-small);
+  font-variant-numeric: tabular-nums;
+}
+.ia-item__kv {
+  margin-bottom: var(--s-4);
+}
+.ia-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  align-items: flex-start;
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--hairline);
+}
+.ia-actions .btn-quiet {
+  height: 36px;
+}
+.btn-quiet[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.ia-delete summary {
+  list-style: none;
+}
+.ia-delete summary::-webkit-details-marker {
+  display: none;
+}
+.ia-delete[open] summary {
+  display: none;
+}
+.ia-delete form {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--fs-small);
+}
+.btn-danger {
+  color: var(--danger);
+  border-color: var(--danger);
+  background: var(--danger-soft);
+}
+.btn-main {
+  background: var(--text);
+  color: var(--bg);
+  border-color: var(--text);
+}
+.btn-main:hover {
+  background: var(--text);
+  opacity: 0.9;
+}
+#editar {
+  scroll-margin-top: 88px;
+}
+.ia-form {
+  display: grid;
+  gap: var(--s-4);
+  max-width: 560px;
+}
+.ia-form label {
+  display: grid;
+  gap: 6px;
+  font-size: var(--fs-small);
+  font-weight: 600;
+}
+.ia-form .field {
+  width: 100%;
+  font-weight: 400;
+}
+.ia-form .btn-quiet {
+  justify-self: start;
+}
+.ia-models {
+  display: grid;
+  gap: var(--s-3);
+}
+.ia-models[open] {
+  gap: var(--s-4);
+}
+.ia-models summary {
+  cursor: pointer;
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.ia-models label + label,
+.ia-models summary + label {
+  margin-top: var(--s-3);
+}
+
 @media (max-width: 640px) {
   .admin-top {
     position: static;

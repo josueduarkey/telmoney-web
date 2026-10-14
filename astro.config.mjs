@@ -32,6 +32,9 @@ export default defineConfig({
       PUBLIC_CLERK_PUBLISHABLE_KEY: envField.string({ context: 'server', access: 'public', optional: true }),
       // El nombre que usan Clerk (para Next.js) y el Marketplace de Vercel: también vale.
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: envField.string({ context: 'server', access: 'public', optional: true }),
+      // API de administración del bot (sección IA del panel; telmoney-bot/docs/ia.md). Solo Production.
+      BOT_API_URL: envField.string({ context: 'server', access: 'secret', optional: true }),
+      BOT_ADMIN_TOKEN: envField.string({ context: 'server', access: 'secret', optional: true }),
       ADMIN_EMAILS: envField.string({ context: 'server', access: 'public', default: 'josueduardo.dev@gmail.com' }),
       FREE_NUMBERS: envField.string({ context: 'server', access: 'public', default: '' }),
       // Costo por mensaje (USD), de telmoney-bot/docs/precios-y-pagos.md. Al pasar a la API de

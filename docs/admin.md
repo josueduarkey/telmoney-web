@@ -8,6 +8,7 @@ Un panel privado para ver cómo va TelMoney. Lee la misma base del bot (Neon) y 
 | **Usuarios** | La lista con estado (en prueba, pagando, vencido, invitado), plan, mensajes, gasto y pagos. Se busca por nombre o número. |
 | **Una persona** | Sus mensajes por día, lo que cuesta atenderla, su gasto por categoría, sus cuentas con saldo, sus últimos 100 movimientos y sus pagos. |
 | **Interesados** | La lista de espera de la beta: nombre, WhatsApp (con enlace para escribirle), correo, lo que más le cuesta, de qué red llegó y si ya usa el bot. Se descarga en CSV. |
+| **IA** | Las conexiones de Gemini del bot en orden (si la primera falla, el bot pasa a la siguiente y avisa por WhatsApp): su estado, cuál está en uso, probar, usar primero, subir y bajar, prender y apagar, editar los modelos (de la lista que permite esa llave), agregar una llave nueva (se prueba antes de guardarse) y borrar. Abajo, los últimos eventos con quién hizo cada cambio. |
 
 ## Cómo se protege
 
@@ -73,6 +74,8 @@ Vercel → el proyecto → **Settings → Environment Variables**, para *Product
 | `ADMIN_EMAILS` | Opcional. Correos con acceso, separados por coma. Por defecto `josueduardo.dev@gmail.com`. |
 | `FREE_NUMBERS` | Opcional. El mismo valor que en el `.env` del bot (el equipo), para que aparezcan como «Invitado» y no como «Vencido». |
 | `PUBLIC_WAITLIST_URL` | **Bórrala.** Vacía, el formulario guarda directo en la base con `/api/waitlist`. |
+| `BOT_API_URL` | Sección IA. La dirección **fija** del bot (ej. `https://api.telmoney.app`), sin `/` al final. Solo *Production*. |
+| `BOT_ADMIN_TOKEN` | Sección IA. El mismo valor que `ADMIN_API_TOKEN` en el `.env` del bot (secreta). Solo *Production*. |
 
 Después: **Deployments → Redeploy**. Las variables se leen al publicar.
 
@@ -83,6 +86,15 @@ Después: **Deployments → Redeploy**. Las variables se leen al publicar.
 1. Abre `telmoney.app/admin` → entra con Google → ves el Resumen.
 2. Anótate en el formulario de la beta con tu número → aparece en **Interesados**.
 3. Prueba con otra cuenta de Google (o una ventana privada): no debe entrar.
+
+## IA del bot (cómo se conecta)
+
+La sección **IA** no lee la base: llama a la API de administración del bot (`telmoney-bot/docs/ia.md`) desde el servidor del panel, con `Authorization: Bearer BOT_ADMIN_TOKEN` y `X-Admin-Email` (tu correo, para el registro y el aviso de WhatsApp). El navegador nunca ve el token ni habla con el bot.
+
+- Una llave nueva se escribe una vez en un campo de contraseña, va al bot, que la prueba y la guarda cifrada, y desde entonces solo se ven sus últimos 4 caracteres. El panel no la guarda ni la registra.
+- Cada botón es un formulario: funciona aunque la página no cargue JavaScript.
+- Sin `BOT_API_URL` y `BOT_ADMIN_TOKEN`, la sección dice qué falta y el resto del panel sigue funcionando.
+- **Necesita que el bot tenga una dirección fija.** Con el túnel temporal de cloudflared, cada reinicio del bot cambia la URL y la sección deja de conectar.
 
 ## Costos (cómo se estiman)
 

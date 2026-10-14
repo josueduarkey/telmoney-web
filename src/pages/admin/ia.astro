@@ -1,0 +1,447 @@
+---
+// IA del bot: las conexiones de Gemini (llave + modelos) en orden. Si la primera falla, el bot pasa
+// sola a la siguiente y avisa por WhatsApp. Todo pasa por la API del bot (telmoney-bot/docs/ia.md),
+// llamada desde este servidor. Cada botón es un formulario: funciona sin JavaScript.
+// Las llaves se escriben una vez, viajan al bot y no se guardan, registran ni devuelven aquí.
+import Admin from '../../layouts/Admin.astro';
+import { bot, botConfigured, type Conexion, type Estado, type Evento, type Ia } from '../../lib/admin/bot';
+import { ago, dateTime } from '../../lib/admin/format';
+
+export const prerender = false;
+
+// Segunda llave (la primera es src/middleware.ts): sin sesión de admin no se consulta nada.
+if (!Astro.locals.admin) return new Response('No autorizado', { status: 401 });
+const email = Astro.locals.admin.email;
+
+// Aviso de la última acción (un solo uso), para volver con GET después de cada POST.
+type Aviso = { tipo: 'ok' | 'error'; texto: string; form?: Record<string, string> };
+const AVISO = 'ia_aviso';
+const avisar = (aviso: Aviso) =>
+  Astro.cookies.set(AVISO, JSON.stringify(aviso), { path: '/admin/ia', httpOnly: true, sameSite: 'lax', maxAge: 60 });
+
+const opcional = (v: FormDataEntryValue | null) => String(v ?? '').trim() || undefined;
+
+if (Astro.request.method === 'POST') {
+  const f = await Astro.request.formData();
+  const accion = String(f.get('accion') ?? '');
+  const id = Number(f.get('id'));
+  const nombre = String(f.get('nombre') ?? '').trim();
+  let volver = '/admin/ia';
+
+  const reordenar = async (mover: (ids: number[]) => number[]) => {
+    const actual = await bot<Ia>('/admin/ia');
+    if (!actual.ok) return actual;
+    const ids = [...actual.data.conexiones].sort((a, b) => a.prioridad - b.prioridad).map((c) => c.id);
+    return bot<{ conexiones: Conexion[] }>('/admin/ia/orden', { method: 'PUT', body: { ids: mover(ids) }, email });
+  };
+  const mueve = (ids: number[], paso: number) => {
+    const i = ids.indexOf(id);
+    const j = i + paso;
+    if (i < 0 || j < 0 || j >= ids.length) return ids;
+    [ids[i], ids[j]] = [ids[j], ids[i]];
+    return ids;
+  };
+
+  if (accion === 'agregar') {
+    const modelos = {
+      modelo: opcional(f.get('modelo')),
+      modelo_fotos: opcional(f.get('modelo_fotos')),
+      modelo_respaldo: opcional(f.get('modelo_respaldo')),
+    };
+    const r = await bot<Conexion>('/admin/ia/conexiones', {
+      method: 'POST',
+      body: { nombre, llave: String(f.get('llave') ?? '').trim(), ...modelos },
+      email,
+    });
+    // Si falla, se devuelve lo escrito para no repetirlo; la llave nunca.
+    avisar(
+      r.ok
+        ? { tipo: 'ok', texto: `Se agregó «${r.data.nombre}» y respondió bien.` }
+        : { tipo: 'error', texto: r.detail, form: { nombre, ...(modelos as Record<string, string>) } },
+    );
+  } else if (accion === 'editar') {
+    const body: Record<string, string> = {};
+    for (const k of ['nombre', 'modelo', 'modelo_fotos', 'modelo_respaldo', 'llave']) {
+      const v = opcional(f.get(k));
+      if (v !== undefined && v !== f.get(`antes_${k}`)) body[k] = v;
+    }
+    if (!Object.keys(body).length) {
+      avisar({ tipo: 'ok', texto: 'No había nada que cambiar.' });
+    } else {
+      const r = await bot<Conexion>(`/admin/ia/conexiones/${id}`, { method: 'PATCH', body, email });
+      avisar(r.ok ? { tipo: 'ok', texto: `Se guardó «${r.data.nombre}».` } : { tipo: 'error', texto: r.detail });
+      if (!r.ok) volver = `/admin/ia?editar=${id}`;
+    }
+  } else if (accion === 'activar' || accion === 'apagar') {
+    const r = await bot<Conexion>(`/admin/ia/conexiones/${id}`, {
+      method: 'PATCH',
+      body: { activa: accion === 'activar' },
+      email,
+    });
+    avisar(
+      r.ok
+        ? { tipo: 'ok', texto: `«${r.data.nombre}» quedó ${r.data.activa ? 'prendida' : 'apagada'}.` }
+        : { tipo: 'error', texto: r.detail },
+    );
+  } else if (accion === 'primero' || accion === 'subir' || accion === 'bajar') {
+    const r = await reordenar((ids) =>
+      accion === 'primero' ? [id, ...ids.filter((x) => x !== id)] : mueve(ids, accion === 'subir' ? -1 : 1),
+    );
+    avisar(r.ok ? { tipo: 'ok', texto: 'Se cambió el orden.' } : { tipo: 'error', texto: r.detail });
+  } else if (accion === 'probar') {
+    const r = await bot<{ ok: boolean; ms: number; estado: Estado; error?: string }>(
+      `/admin/ia/conexiones/${id}/probar`,
+      { method: 'POST', email },
+    );
+    avisar(
+      !r.ok
+        ? { tipo: 'error', texto: r.detail }
+        : r.data.ok
+          ? { tipo: 'ok', texto: `«${nombre}» respondió en ${(r.data.ms / 1000).toFixed(1)} s.` }
+          : { tipo: 'error', texto: `«${nombre}» no respondió: ${(r.data.error ?? r.data.estado).replace(/\.$/, '')}.` },
+    );
+  } else if (accion === 'borrar') {
+    const r = await bot<{ ok: boolean }>(`/admin/ia/conexiones/${id}`, { method: 'DELETE', email });
+    avisar(r.ok ? { tipo: 'ok', texto: `Se borró «${nombre}».` } : { tipo: 'error', texto: r.detail });
+  }
+  return Astro.redirect(volver, 303);
+}
+
+const aviso = Astro.cookies.get(AVISO)?.json() as Aviso | undefined;
+if (aviso) Astro.cookies.delete(AVISO, { path: '/admin/ia' });
+
+const ia = botConfigured ? await bot<Ia>('/admin/ia') : null;
+const data = ia?.ok ? ia.data : null;
+const conexiones = data ? [...data.conexiones].sort((a, b) => a.prioridad - b.prioridad) : [];
+
+// Edición de una conexión: los modelos que su llave puede usar, para elegir de una lista.
+const editarId = Number(Astro.url.searchParams.get('editar'));
+const editando = conexiones.find((c) => c.id === editarId);
+const modelos = editando ? await bot<{ modelos: string[] }>(`/admin/ia/conexiones/${editando.id}/modelos`) : null;
+const opciones = (actual: string | null) => {
+  const lista = modelos?.ok ? modelos.data.modelos : [];
+  return actual && !lista.includes(actual) ? [actual, ...lista] : lista;
+};
+
+const ESTADO: Record<Estado, { texto: string; chip: string; ayuda?: string }> = {
+  ok: { texto: 'Funciona', chip: 'ok' },
+  sin_probar: { texto: 'Sin probar', chip: 'muted' },
+  llave_invalida: { texto: 'Llave inválida', chip: 'danger', ayuda: 'Revisa la llave en Google AI Studio.' },
+  sin_cuota: { texto: 'Sin cuota', chip: 'warn', ayuda: 'Se acabó la cuota: espera o súbela en Google.' },
+  caida: { texto: 'Caída', chip: 'danger', ayuda: 'Google no responde; vuelve sola.' },
+};
+const EVENTO: Record<Evento['tipo'], string> = {
+  caida: 'Falló',
+  recuperada: 'Volvió',
+  todas_caidas: 'Ninguna responde',
+  agregada: 'Se agregó',
+  cambio: 'Cambio',
+  orden: 'Nuevo orden',
+  borrada: 'Se borró',
+};
+const ORIGEN: Record<Evento['origen'], string> = { bot: 'el bot', web: 'el panel', whatsapp: 'WhatsApp', env: '.env' };
+const form = aviso?.form ?? {};
+---
+
+<Admin title="IA del bot" section="ia">
+  <div class="admin-head">
+    <div>
+      <h1>IA del bot</h1>
+      <p>Las conexiones de Gemini, en orden: si la primera falla, el bot pasa sola a la siguiente y te avisa por WhatsApp.</p>
+    </div>
+  </div>
+
+  {
+    aviso && (
+      <p class:list={['flash', `flash--${aviso.tipo}`]} role={aviso.tipo === 'error' ? 'alert' : 'status'}>
+        {aviso.texto}
+      </p>
+    )
+  }
+
+  {
+    !botConfigured && (
+      <div class="card notice" style="margin: 0; max-width: none">
+        <h1>Falta conectar el panel con el bot</h1>
+        <p>
+          En Vercel (solo <em>Production</em>) van <code>BOT_API_URL</code>, la dirección fija del bot, y{' '}
+          <code>BOT_ADMIN_TOKEN</code>, igual al <code>ADMIN_API_TOKEN</code> del bot. El paso a paso está en{' '}
+          <code>docs/admin.md</code>.
+        </p>
+      </div>
+    )
+  }
+  {
+    ia && !ia.ok && (
+      <div class="card notice" role="alert" style="margin: 0; max-width: none">
+        <h1>No se pudo leer la IA del bot</h1>
+        <p>{ia.detail}</p>
+      </div>
+    )
+  }
+
+  {
+    data && (
+      <>
+        <ol class="ia-list" role="list">
+          {conexiones.map((c, i) => {
+            const e = ESTADO[c.estado] ?? ESTADO.sin_probar;
+            return (
+              <li class:list={['card', 'ia-item', { 'ia-item--off': !c.activa }]}>
+                <div class="ia-item__head">
+                  <span class="ia-item__pos" aria-label={`Prioridad ${i + 1}`}>
+                    {i + 1}
+                  </span>
+                  <h2>{c.nombre}</h2>
+                  <span class={`chip chip--${e.chip}`}>{e.texto}</span>
+                  {data.en_uso === c.id && <span class="chip chip--ok">En uso</span>}
+                  {!c.activa && <span class="chip chip--muted">Apagada</span>}
+                  {c.llave_origen === 'env' && <span class="pill">del .env del bot</span>}
+                </div>
+                <dl class="kv ia-item__kv">
+                  <dt>Llave</dt>
+                  <dd class="mono">{c.llave_fin}</dd>
+                  <dt>Modelo</dt>
+                  <dd>{c.modelo ?? 'el del .env'}</dd>
+                  <dt>Fotos</dt>
+                  <dd>{c.modelo_fotos ?? 'el mismo'}</dd>
+                  <dt>Respaldo</dt>
+                  <dd>{c.modelo_respaldo ?? '—'}</dd>
+                  <dt>Respondió bien</dt>
+                  <dd>{c.ultimo_ok ? ago(c.ultimo_ok) : 'todavía no'}</dd>
+                  {c.ultimo_error && (
+                    <>
+                      <dt>Último error</dt>
+                      <dd>
+                        {c.ultimo_error}
+                        {c.ultimo_error_en && <span class="muted"> · {ago(c.ultimo_error_en)}</span>}
+                        {e.ayuda && <span class="muted"> · {e.ayuda}</span>}
+                      </dd>
+                    </>
+                  )}
+                </dl>
+                <div class="ia-actions">
+                  <form method="post" data-busy="Probando…">
+                    <input type="hidden" name="accion" value="probar" />
+                    <input type="hidden" name="id" value={c.id} />
+                    <input type="hidden" name="nombre" value={c.nombre} />
+                    <button class="btn-quiet" type="submit">Probar</button>
+                  </form>
+                  {i > 0 && c.activa && (
+                    <form method="post">
+                      <input type="hidden" name="accion" value="primero" />
+                      <input type="hidden" name="id" value={c.id} />
+                      <button class="btn-quiet" type="submit">Usar primero</button>
+                    </form>
+                  )}
+                  <form method="post">
+                    <input type="hidden" name="accion" value="subir" />
+                    <input type="hidden" name="id" value={c.id} />
+                    <button class="btn-quiet" type="submit" disabled={i === 0} aria-label={`Subir ${c.nombre}`}>
+                      ↑
+                    </button>
+                  </form>
+                  <form method="post">
+                    <input type="hidden" name="accion" value="bajar" />
+                    <input type="hidden" name="id" value={c.id} />
+                    <button
+                      class="btn-quiet"
+                      type="submit"
+                      disabled={i === conexiones.length - 1}
+                      aria-label={`Bajar ${c.nombre}`}>
+                      ↓
+                    </button>
+                  </form>
+                  <form method="post">
+                    <input type="hidden" name="accion" value={c.activa ? 'apagar' : 'activar'} />
+                    <input type="hidden" name="id" value={c.id} />
+                    <button class="btn-quiet" type="submit">
+                      {c.activa ? 'Apagar' : 'Prender'}
+                    </button>
+                  </form>
+                  <a class="btn-quiet" href={`/admin/ia?editar=${c.id}#editar`}>
+                    Editar
+                  </a>
+                  <details class="ia-delete">
+                    <summary class="btn-quiet">Borrar</summary>
+                    <form method="post">
+                      <input type="hidden" name="accion" value="borrar" />
+                      <input type="hidden" name="id" value={c.id} />
+                      <input type="hidden" name="nombre" value={c.nombre} />
+                      <span>¿Borrar «{c.nombre}»?</span>
+                      <button class="btn-quiet btn-danger" type="submit">
+                        Sí, borrarla
+                      </button>
+                    </form>
+                  </details>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+
+        {
+          editando && (
+            <section class="card section" id="editar" aria-labelledby="t-editar">
+              <div class="card__head">
+                <h2 id="t-editar">Editar «{editando.nombre}»</h2>
+                <a class="card__sub" href="/admin/ia">
+                  Cancelar
+                </a>
+              </div>
+              {modelos && !modelos.ok && <p class="flash flash--error">No se pudo leer la lista de modelos: {modelos.detail}</p>}
+              <form method="post" class="ia-form" data-busy="Probando y guardando…">
+                <input type="hidden" name="accion" value="editar" />
+                <input type="hidden" name="id" value={editando.id} />
+                <input type="hidden" name="antes_nombre" value={editando.nombre} />
+                <input type="hidden" name="antes_modelo" value={editando.modelo ?? ''} />
+                <input type="hidden" name="antes_modelo_fotos" value={editando.modelo_fotos ?? ''} />
+                <input type="hidden" name="antes_modelo_respaldo" value={editando.modelo_respaldo ?? ''} />
+                <label>
+                  Nombre
+                  <input class="field" name="nombre" value={editando.nombre} maxlength="40" required />
+                </label>
+                {(
+                  [
+                    ['modelo', 'Modelo (texto y audio)', editando.modelo],
+                    ['modelo_fotos', 'Modelo para fotos de recibos', editando.modelo_fotos],
+                    ['modelo_respaldo', 'Modelo de respaldo', editando.modelo_respaldo],
+                  ] as const
+                ).map(([name, label, actual]) => (
+                  <label>
+                    {label}
+                    <select class="field" name={name}>
+                      <option value="">{actual ? `Sin cambio (${actual})` : 'El del .env del bot'}</option>
+                      {opciones(actual).map((m) => (
+                        <option value={m} selected={m === actual}>
+                          {m}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ))}
+                <label>
+                  Llave nueva <span class="muted">(opcional: déjala vacía para conservar …{editando.llave_fin.replace('…', '')})</span>
+                  <input
+                    class="field mono"
+                    name="llave"
+                    type="password"
+                    autocomplete="off"
+                    spellcheck="false"
+                    placeholder="AIza…"
+                  />
+                </label>
+                <p class="note">Antes de guardar, el bot prueba el modelo o la llave nueva con una llamada real (hasta 10 s).</p>
+                <button class="btn-quiet btn-main" type="submit">Probar y guardar</button>
+              </form>
+            </section>
+          )
+        }
+
+        <section class="card section" aria-labelledby="t-agregar">
+          <div class="card__head">
+            <div>
+              <h2 id="t-agregar">Agregar una llave</h2>
+              <p class="card__sub">De otro proyecto de Google AI Studio, para tener respaldo. Queda al final de la lista.</p>
+            </div>
+          </div>
+          {
+            !data.puede_guardar_llaves ? (
+              <p class="note">
+                El bot todavía no puede guardar llaves: le falta <code>LLM_KEYS_SECRET</code> en su servidor.
+              </p>
+            ) : (
+              <form method="post" class="ia-form" data-busy="Probando la llave…">
+                <input type="hidden" name="accion" value="agregar" />
+                <label>
+                  Nombre
+                  <input class="field" name="nombre" value={form.nombre ?? ''} maxlength="40" required placeholder="gemini-proyecto-2" />
+                </label>
+                <label>
+                  Llave
+                  <input
+                    class="field mono"
+                    name="llave"
+                    type="password"
+                    autocomplete="off"
+                    spellcheck="false"
+                    required
+                    placeholder="AIza…"
+                  />
+                </label>
+                <details class="ia-models" open={Boolean(form.modelo || form.modelo_fotos || form.modelo_respaldo)}>
+                  <summary>Modelos (opcional: si no pones nada, usa los del .env del bot)</summary>
+                  <label>
+                    Modelo (texto y audio)
+                    <input class="field" name="modelo" value={form.modelo ?? ''} placeholder="gemini-3.1-flash-lite" />
+                  </label>
+                  <label>
+                    Modelo para fotos
+                    <input class="field" name="modelo_fotos" value={form.modelo_fotos ?? ''} />
+                  </label>
+                  <label>
+                    Modelo de respaldo
+                    <input class="field" name="modelo_respaldo" value={form.modelo_respaldo ?? ''} />
+                  </label>
+                </details>
+                <p class="note">
+                  La llave se manda al bot, que la prueba, la guarda cifrada y desde entonces solo muestra sus últimos 4
+                  caracteres. Aquí no queda guardada.
+                </p>
+                <button class="btn-quiet btn-main" type="submit">Probar y agregar</button>
+              </form>
+            )
+          }
+        </section>
+
+        <section class="section" aria-labelledby="t-eventos">
+          <div class="card__head">
+            <h2 id="t-eventos" class="section-title">Últimos eventos</h2>
+            <p class="card__sub">Caídas, recuperaciones y cambios (los 30 más recientes)</p>
+          </div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Cuándo</th>
+                  <th>Qué pasó</th>
+                  <th>Conexión</th>
+                  <th>Detalle</th>
+                  <th>Desde</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.eventos.map((ev) => (
+                  <tr>
+                    <td class="nowrap muted">{dateTime(ev.created_at)}</td>
+                    <td class="nowrap">{EVENTO[ev.tipo] ?? ev.tipo}</td>
+                    <td class="nowrap">{ev.nombre ?? '—'}</td>
+                    <td>{ev.detalle ?? ''}</td>
+                    <td class="muted">
+                      {ORIGEN[ev.origen] ?? ev.origen}
+                      {ev.quien && ` · ${ev.quien}`}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {!data.eventos.length && <p class="empty">Todavía no hay eventos.</p>}
+          </div>
+        </section>
+      </>
+    )
+  }
+</Admin>
+
+<script>
+  // Las pruebas con Google tardan unos segundos: el botón lo dice y no se puede apretar dos veces.
+  document.querySelectorAll<HTMLFormElement>('form[data-busy]').forEach((form) =>
+    form.addEventListener('submit', () => {
+      const button = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+      if (!button) return;
+      button.textContent = form.dataset.busy ?? 'Un momento…';
+      // Se desactiva después de que el envío salió (si no, el navegador no lo manda).
+      setTimeout(() => (button.disabled = true));
+    }),
+  );
+</script>
