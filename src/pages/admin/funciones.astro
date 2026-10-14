@@ -1,0 +1,263 @@
+---
+// Funciones: qué usa la gente, qué quiso usar y era de Pro, cuánto se le ahorró (estimado) y si ver
+// su "te ahorré" lleva a pagar. Datos de la fase 1 del bot (telmoney-bot/docs/pro-se-paga-solo.md).
+import Admin from '../../layouts/Admin.astro';
+import DbError from '../../components/admin/DbError.astro';
+import { RANGES, faseError, features, type FaseError, type Range } from '../../lib/admin/queries';
+import { int, usd, usdShort } from '../../lib/admin/format';
+
+export const prerender = false;
+
+// Segunda llave (la primera es src/middleware.ts): sin sesión de admin no se consulta nada.
+if (!Astro.locals.admin) return new Response('No autorizado', { status: 401 });
+
+const asked = Number(Astro.url.searchParams.get('dias'));
+const days: Range = (RANGES as readonly number[]).includes(asked) ? (asked as Range) : 30;
+
+let data: Awaited<ReturnType<typeof features>> | null = null;
+let fase: FaseError | null = null;
+let error = '';
+try {
+  data = await features(days);
+} catch (e) {
+  fase = faseError(e);
+  if (!fase) error = e instanceof Error ? e.message : String(e);
+}
+
+const FEATURE: Record<string, string> = {
+  anotar: 'Anotar por texto',
+  anotar_foto: 'Anotar con foto',
+  anotar_voz: 'Anotar con audio',
+  consulta: 'Consultas',
+  resumen: 'Resumen',
+  pregunta: 'Preguntas libres',
+  disponible: '"¿Cuánto puedo gastar?"',
+  consejo: 'Consejos',
+  metas: 'Metas',
+  limites: 'Límites',
+  cuentas: 'Cuentas',
+  deudas: 'Deudas',
+  cobros: 'Cobros',
+  gastos_fijos: 'Gastos fijos',
+  tarjeta: 'Tarjeta de crédito',
+  reporte_texto: 'Reporte en texto',
+  reporte_excel: 'Excel',
+  reporte_csv: 'CSV',
+  reporte_imagen: 'Gráfica',
+  reporte_pdf: 'PDF',
+  reporte_diario: 'Reporte de la noche',
+  aviso_pago: 'Aviso de pago',
+  te_ahorre: '"Te ahorré"',
+  suscripciones: 'Suscripciones',
+  cobro_doble: 'Cobros dobles',
+  hormiga: 'Gastos hormiga',
+};
+const AHORRO: Record<string, string> = {
+  mora_evitada: 'Recargos evitados',
+  suscripcion_cancelada: 'Suscripciones canceladas',
+  duplicado_detectado: 'Cobros dobles devueltos',
+  hormiga_reducida: 'Gasto hormiga reducido',
+};
+const DETECCION: Record<string, string> = { suscripcion: 'Suscripciones', duplicado: 'Cobros dobles', hormiga: 'Gasto hormiga' };
+const ESTADO: Record<string, string> = {
+  pendiente: 'Sin responder',
+  confirmada: 'Confirmada',
+  cancelar: 'La va a cancelar',
+  descartada: 'Descartada',
+  borrada: 'Borrada',
+};
+
+const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : '—');
+const ahorroMesTotal = data?.ahorroMes.reduce((s, r) => s + r.total, 0) ?? 0;
+const maxUsos = Math.max(1, ...(data?.usage.map((u) => u.usos) ?? [0]));
+---
+
+<Admin title="Funciones" section="funciones">
+  <div class="admin-head">
+    <div>
+      <h1>Funciones</h1>
+      <p>Qué usa la gente, qué quiso usar y era de Pro, y cuánto le ahorra TelMoney.</p>
+    </div>
+    <nav class="seg" aria-label="Periodo">
+      {RANGES.map((r) => <a href={`?dias=${r}`} aria-current={r === days ? 'true' : undefined}>{r} días</a>)}
+    </nav>
+  </div>
+
+  {error && <DbError error={error} />}
+  {
+    fase === 'sin_tablas' && (
+      <div class="card notice" style="margin: 0; max-width: none">
+        <h1>Todavía no hay datos de funciones</h1>
+        <p>
+          Esta sección lee lo que registra el bot desde su fase 1 (migración <code>0018_pro_se_paga_solo</code>). Aparece
+          cuando el bot esté desplegado con esa migración.
+        </p>
+      </div>
+    )
+  }
+  {
+    fase === 'sin_permiso' && (
+      <div class="card notice" style="margin: 0; max-width: none">
+        <h1>Al panel le falta un permiso</h1>
+        <p>Corre esto en Neon → SQL Editor, con el usuario dueño de la base:</p>
+        <p>
+          <code>grant select on feature_usage, ahorros, detecciones to panel_admin;</code>
+        </p>
+      </div>
+    )
+  }
+
+  {
+    data && (
+      <>
+        <div class="cards">
+          <div class="card">
+            <p class="stat__label">Ahorro estimado este mes</p>
+            <p class="stat__value">{usdShort(ahorroMesTotal)}</p>
+            <p class="stat__note">
+              a <b>{int(data.ahorroTotal.personas_mes)}</b> {data.ahorroTotal.personas_mes === 1 ? 'persona' : 'personas'}
+            </p>
+          </div>
+          <div class="card">
+            <p class="stat__label">Ahorro estimado en total</p>
+            <p class="stat__value">{usdShort(data.ahorroTotal.total)}</p>
+            <p class="stat__note">
+              <b>{int(data.ahorroTotal.personas)}</b> personas ·{' '}
+              {data.ahorroTotal.personas ? usd(data.ahorroTotal.total / data.ahorroTotal.personas) : '—'} cada una
+            </p>
+          </div>
+          <div class="card">
+            <p class="stat__label">Pagan, después de ver su "te ahorré"</p>
+            <p class="stat__value">{pct(data.conversion.vieron_pagando, data.conversion.vieron)}</p>
+            <p class="stat__note">
+              de <b>{int(data.conversion.vieron)}</b> que lo vieron · el resto:{' '}
+              <b>{pct(data.conversion.resto_pagando, data.conversion.resto)}</b>
+            </p>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <section class="card" aria-labelledby="t-uso">
+            <div class="card__head">
+              <div>
+                <h2 id="t-uso">Uso por función</h2>
+                <p class="card__sub">Últimos {days} días. "Quisieron" = la pidieron y era de Pro.</p>
+              </div>
+            </div>
+            {data.usage.length ? (
+              <div class="table-wrap table--card">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Función</th>
+                      <th class="r">Personas</th>
+                      <th class="r">Usos</th>
+                      <th class="r">Quisieron</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.usage.map((u) => (
+                      <tr data-tip={`${int(u.usos)} usos\n${FEATURE[u.feature] ?? u.feature}`}>
+                        <td>
+                          <span class="use-name">{FEATURE[u.feature] ?? u.feature}</span>
+                          <span class="use-bar" aria-hidden="true">
+                            <span style={`width:${((u.usos / maxUsos) * 100).toFixed(1)}%`} />
+                          </span>
+                        </td>
+                        <td class="r">{int(u.personas)}</td>
+                        <td class="r">{int(u.usos)}</td>
+                        <td class="r">{u.quisieron ? int(u.quisieron) : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p class="empty">Todavía no hay uso registrado en este periodo.</p>
+            )}
+          </section>
+
+          <div style="display: grid; gap: var(--s-4); align-content: start">
+            <section class="card" aria-labelledby="t-ahorro">
+              <div class="card__head">
+                <h2 id="t-ahorro">Ahorro de este mes</h2>
+                <p class="card__sub">Estimado y conservador</p>
+              </div>
+              {data.ahorroMes.length ? (
+                <ul class="hbars hbars--wide" role="list">
+                  {data.ahorroMes.map((r) => (
+                    <li data-tip={`${usd(r.total)}\n${AHORRO[r.tipo] ?? r.tipo} · ${r.personas} personas`}>
+                      <span class="hbars__name">{AHORRO[r.tipo] ?? r.tipo}</span>
+                      <span class="hbars__track" aria-hidden="true">
+                        <span class="hbars__bar" style={`width:${((r.total / Math.max(1, ahorroMesTotal)) * 100).toFixed(1)}%`} />
+                      </span>
+                      <span class="hbars__value">{usd(r.total)}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p class="empty">Todavía no hay ahorro registrado este mes.</p>
+              )}
+            </section>
+
+            <section class="card" aria-labelledby="t-det">
+              <div class="card__head">
+                <h2 id="t-det">Lo que detectó el bot</h2>
+                <p class="card__sub">Y qué respondió la gente</p>
+              </div>
+              {data.detecciones.length ? (
+                <table class="table table--card">
+                  <thead>
+                    <tr>
+                      <th>Qué</th>
+                      <th>Respuesta</th>
+                      <th class="r">Cuántas</th>
+                      <th class="r">Monto</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.detecciones.map((d) => (
+                      <tr>
+                        <td>{DETECCION[d.tipo] ?? d.tipo}</td>
+                        <td class="muted">{ESTADO[d.estado] ?? d.estado}</td>
+                        <td class="r">{int(d.n)}</td>
+                        <td class="r">{d.monto ? usd(d.monto) : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p class="empty">Todavía no detectó nada.</p>
+              )}
+            </section>
+          </div>
+        </div>
+
+        <p class="note">
+          El ahorro lo calcula el bot con montos conservadores: el recargo típico que se evitó, cada mes sin cobro de una
+          suscripción cancelada (hasta 12), los cobros dobles devueltos y la mitad de lo que bajó el gasto hormiga.
+        </p>
+      </>
+    )
+  }
+</Admin>
+
+<style>
+  .use-name {
+    display: block;
+  }
+  .use-bar {
+    display: block;
+    height: 4px;
+    margin-top: 6px;
+    border-radius: 2px;
+    background: var(--fill);
+  }
+  .use-bar span {
+    display: block;
+    height: 100%;
+    min-width: 2px;
+    border-radius: 2px;
+    background: var(--accent-graphic);
+  }
+</style>

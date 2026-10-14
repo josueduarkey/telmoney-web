@@ -5,7 +5,7 @@ import StatusChip from '../../../components/admin/StatusChip.astro';
 import DailyColumns from '../../../components/admin/DailyColumns.astro';
 import CategoryBars from '../../../components/admin/CategoryBars.astro';
 import DbError from '../../../components/admin/DbError.astro';
-import { messagesPerDay, spendingByCategory, user } from '../../../lib/admin/queries';
+import { messagesPerDay, spendingByCategory, user, userSavings } from '../../../lib/admin/queries';
 import { ago, date, dateTime, int, phone, planName, usd, usdCost, waLink } from '../../../lib/admin/format';
 
 export const prerender = false;
@@ -18,8 +18,10 @@ if (!Number.isInteger(id) || id <= 0) return Astro.redirect('/admin/usuarios');
 
 let data: [Awaited<ReturnType<typeof user>>, Awaited<ReturnType<typeof messagesPerDay>>, Awaited<ReturnType<typeof spendingByCategory>>] | null = null;
 let error = '';
+let ahorro: Awaited<ReturnType<typeof userSavings>> = null;
 try {
   data = await Promise.all([user(id), messagesPerDay(30, id), spendingByCategory(30, id)]);
+  ahorro = await userSavings(id);
 } catch (e) {
   error = e instanceof Error ? e.message : String(e);
 }
@@ -84,7 +86,14 @@ const PAYMENT: Record<string, string> = { approved: 'Aprobado', pending: 'Pendie
           <div class="card">
             <p class="stat__label">Pagó en total</p>
             <p class="stat__value">{usd(t.paid_total)}</p>
-            <p class="stat__note">{planName(u.plan)}</p>
+            <p class="stat__note">
+              {planName(u.plan)}
+              {ahorro && ahorro.total > 0 && (
+                <>
+                  {' '}· le ahorramos <b>{usd(ahorro.total)}</b>
+                </>
+              )}
+            </p>
           </div>
         </div>
 

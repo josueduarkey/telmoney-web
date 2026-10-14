@@ -8,6 +8,7 @@ Un panel privado para ver cómo va TelMoney. Lee la misma base del bot (Neon) y 
 | **Usuarios** | La lista con estado (en prueba, pagando, vencido, invitado), plan, mensajes, gasto y pagos. Se busca por nombre o número. |
 | **Una persona** | Sus mensajes por día, lo que cuesta atenderla, su gasto por categoría, sus cuentas con saldo, sus últimos 100 movimientos y sus pagos. |
 | **Interesados** | La lista de espera de la beta: nombre, WhatsApp (con enlace para escribirle), correo, lo que más le cuesta, de qué red llegó y si ya usa el bot. Se descarga en CSV. |
+| **Funciones** | Uso por función (y quiénes quisieron una función de Pro), ahorro estimado del mes y total, si ver su "te ahorré" lleva a pagar, y qué detectó el bot (suscripciones, cobros dobles, gasto hormiga) con lo que respondió la gente. Necesita la migración 0018 del bot y `grant select on feature_usage, ahorros, detecciones to panel_admin;`. |
 | **IA** | Las conexiones de Gemini del bot en orden (si la primera falla, el bot pasa a la siguiente y avisa por WhatsApp): su estado, cuál está en uso, probar, usar primero, subir y bajar, prender y apagar, editar los modelos (de la lista que permite esa llave), agregar una llave nueva (se prueba antes de guardarse) y borrar. Abajo, los últimos eventos con quién hizo cada cambio. |
 
 ## Cómo se protege

@@ -295,3 +295,83 @@ export async function waitlist(): Promise<Interested[]> {
     isUser: r.is_user,
   }));
 }
+
+// ─────────────────────────────────────────── funciones (fase 1 del bot)
+// Tablas de la migración 0018 del bot: feature_usage, ahorros y detecciones
+// (telmoney-bot/docs/pro-se-paga-solo.md). Si todavía no existen o falta el permiso, se avisa.
+
+export type FaseError = 'sin_tablas' | 'sin_permiso';
+
+/** Distingue "todavía no está la migración" y "falta el grant" de cualquier otro error. */
+export function faseError(e: unknown): FaseError | null {
+  const code = (e as { code?: string })?.code;
+  const msg = e instanceof Error ? e.message : String(e);
+  if (code === '42P01' || /does not exist/i.test(msg)) return 'sin_tablas';
+  if (code === '42501' || /permission denied/i.test(msg)) return 'sin_permiso';
+  return null;
+}
+
+export async function features(days: Range) {
+  const sql = db();
+  const usage = await sql.query(
+    `select feature,
+            count(distinct user_id) filter (where uses > 0)::int as personas,
+            coalesce(sum(uses), 0)::int as usos,
+            count(distinct user_id) filter (where blocked > 0)::int as quisieron,
+            coalesce(sum(blocked), 0)::int as bloqueos
+       from feature_usage
+      where day > (now() at time zone $2)::date - $1::int
+      group by feature
+      order by usos desc, bloqueos desc`,
+    [days, TZ],
+  );
+  const ahorroMes = await sql.query(
+    `select tipo, coalesce(sum(monto_estimado), 0)::float8 as total, count(*)::int as n,
+            count(distinct user_id)::int as personas
+       from ahorros
+      where mes = date_trunc('month', now() at time zone $1)::date
+      group by tipo order by total desc`,
+    [TZ],
+  );
+  const [ahorroTotal] = await sql.query(
+    `select coalesce(sum(monto_estimado), 0)::float8 as total, count(distinct user_id)::int as personas,
+            count(distinct user_id) filter (where mes = date_trunc('month', now() at time zone $1)::date)::int as personas_mes
+       from ahorros`,
+    [TZ],
+  );
+  // ¿Ver su "te ahorré" lleva a pagar? Se compara con el resto de los usuarios.
+  const [conversion] = await sql.query(
+    `with vio as (select user_id from feature_usage where feature = 'te_ahorre' and uses > 0 group by user_id)
+     select (select count(*)::int from vio) as vieron,
+            (select count(*)::int from vio join users u on u.id = vio.user_id where u.paid_until > now()) as vieron_pagando,
+            (select count(*)::int from users where id not in (select user_id from vio)) as resto,
+            (select count(*)::int from users where id not in (select user_id from vio) and paid_until > now()) as resto_pagando`,
+  );
+  const detecciones = await sql.query(
+    `select tipo, estado, count(*)::int as n, coalesce(sum(monto), 0)::float8 as monto
+       from detecciones group by tipo, estado order by tipo, estado`,
+  );
+  return {
+    usage: usage as { feature: string; personas: number; usos: number; quisieron: number; bloqueos: number }[],
+    ahorroMes: ahorroMes as { tipo: string; total: number; n: number; personas: number }[],
+    ahorroTotal: ahorroTotal as { total: number; personas: number; personas_mes: number },
+    conversion: conversion as { vieron: number; vieron_pagando: number; resto: number; resto_pagando: number },
+    detecciones: detecciones as { tipo: string; estado: string; n: number; monto: number }[],
+  };
+}
+
+/** Lo que TelMoney le ahorró a una persona (estimado). null si la fase 1 todavía no está en la base. */
+export async function userSavings(id: number) {
+  try {
+    const [r] = await db().query(
+      `select coalesce(sum(monto_estimado), 0)::float8 as total,
+              coalesce(sum(monto_estimado) filter (where mes = date_trunc('month', now() at time zone $2)::date), 0)::float8 as mes
+         from ahorros where user_id = $1`,
+      [id, TZ],
+    );
+    return r as { total: number; mes: number };
+  } catch (e) {
+    if (faseError(e)) return null;
+    throw e;
+  }
+}

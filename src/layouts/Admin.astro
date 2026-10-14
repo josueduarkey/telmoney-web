@@ -9,7 +9,7 @@ import ThemeToggle from '../components/ThemeToggle.astro';
 interface Props {
   title: string;
   /** Sección activa del menú. */
-  section?: 'resumen' | 'usuarios' | 'interesados' | 'ia';
+  section?: 'resumen' | 'usuarios' | 'interesados' | 'funciones' | 'ia';
 }
 const { title, section } = Astro.props;
 const admin = Astro.locals.admin;
@@ -18,6 +18,7 @@ const nav = [
   { id: 'resumen', label: 'Resumen', href: '/admin' },
   { id: 'usuarios', label: 'Usuarios', href: '/admin/usuarios' },
   { id: 'interesados', label: 'Interesados', href: '/admin/interesados' },
+  { id: 'funciones', label: 'Funciones', href: '/admin/funciones' },
   { id: 'ia', label: 'IA', href: '/admin/ia' },
 ] as const;
 ---
