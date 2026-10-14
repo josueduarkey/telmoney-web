@@ -11,7 +11,7 @@ export const faqs: Faq[] = [
   },
   {
     q: '¿Quién ve mis datos?',
-    a: 'Solo tú. Escribe «borrar mis datos» y se eliminan todos; «exportar» te los manda en CSV.',
+    a: 'Tú y el equipo de TelMoney, para darte soporte y mejorar el servicio. Escribe «borrar mis datos» y se eliminan todos; «exportar» te los manda en CSV.',
   },
   {
     q: '¿Qué pasa cuando termina la prueba?',
