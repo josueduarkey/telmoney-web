@@ -17,8 +17,9 @@ export const PLAY_STORE_URL: string =
   env.PUBLIC_PLAY_STORE_URL || 'https://play.google.com/store/search?q=TelMoney&c=apps';
 export const APP_STORE_URL: string = env.PUBLIC_APP_STORE_URL ?? '';
 
-/** Endpoint que recibe el formulario de la beta (POST JSON). Vacío = modo demo. */
-export const WAITLIST_URL: string = env.PUBLIC_WAITLIST_URL ?? '';
+/** Endpoint que recibe el formulario de la beta (POST JSON). Por defecto, el de esta misma página
+ *  (pages/api/waitlist.ts), que guarda directo en la base. */
+export const WAITLIST_URL: string = env.PUBLIC_WAITLIST_URL || '/api/waitlist';
 
 export const CTA = LAUNCHED
   ? { label: 'Pruébalo gratis 7 días', href: WHATSAPP_URL, external: true, cursor: 'Pruébalo' }

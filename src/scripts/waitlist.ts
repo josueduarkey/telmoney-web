@@ -1,5 +1,4 @@
-// Lista de espera de la beta. Envía JSON a PUBLIC_WAITLIST_URL.
-// Sin endpoint configurado (desarrollo), simula el éxito y lo deja en la consola.
+// Lista de espera de la beta. Envía JSON a /api/waitlist (o a PUBLIC_WAITLIST_URL si se define).
 
 type Payload = {
   name: string;
@@ -35,7 +34,7 @@ export function normalizePhone(raw: string): string | null {
 }
 
 export function initWaitlist(form: HTMLFormElement) {
-  const endpoint = form.dataset.endpoint ?? '';
+  const endpoint = form.dataset.endpoint || '/api/waitlist';
   const status = form.querySelector<HTMLElement>('[data-status]')!;
   const submit = form.querySelector<HTMLButtonElement>('[data-submit]')!;
   const done = document.querySelector<HTMLElement>('[data-done]');
@@ -93,20 +92,15 @@ export function initWaitlist(form: HTMLFormElement) {
     submit.disabled = true;
     submit.textContent = 'Enviando…';
     try {
-      if (endpoint) {
-        const res = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-        // 201 = registro nuevo, 200 = ya estaba (se actualiza): las dos son éxito
-        if (!res.ok) {
-          const body = await res.json().catch(() => null);
-          throw new SubmitError(res.status, Array.isArray(body?.fields) ? body.fields : []);
-        }
-      } else {
-        console.info('[waitlist] PUBLIC_WAITLIST_URL vacío: modo demo, no se envió nada.', payload);
-        await new Promise((r) => setTimeout(r, 600));
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      // 201 = registro nuevo, 200 = ya estaba (se actualiza): las dos son éxito
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new SubmitError(res.status, Array.isArray(body?.fields) ? body.fields : []);
       }
       form.hidden = true;
       if (done) {

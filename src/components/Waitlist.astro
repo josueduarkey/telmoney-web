@@ -3,14 +3,7 @@ import Sticker from './Sticker.astro';
 import Countdown from './Countdown.astro';
 import ShareButtons from './ShareButtons.astro';
 import { LAUNCHED, WHATSAPP_URL, WAITLIST_URL } from '../config';
-
-const pains = [
-  'Saber en qué se me va',
-  'Llegar a fin de mes con dinero',
-  'Acordarme de los pagos',
-  'Cobrar lo que me deben',
-  'Ahorrar',
-];
+import { PAINS as pains } from '../data/pains';
 ---
 
 <section class="beta band grain" id="beta">
