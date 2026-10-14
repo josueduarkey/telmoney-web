@@ -339,9 +339,16 @@ export async function features(days: Range) {
        from ahorros`,
     [TZ],
   );
-  // ¿Ver su "te ahorré" lleva a pagar? Se compara con el resto de los usuarios.
+  // ¿Ver su "te ahorré" lleva a pagar? Cuenta solo a quien vio un ahorro real: 'te_ahorre' también
+  // se registra si preguntó y era $0, así que se cruza con un ahorro de un mes anterior a ese día.
   const [conversion] = await sql.query(
-    `with vio as (select user_id from feature_usage where feature = 'te_ahorre' and uses > 0 group by user_id)
+    `with vio as (
+       select f.user_id from feature_usage f
+        where f.feature = 'te_ahorre' and f.uses > 0
+          and exists (select 1 from ahorros a
+                       where a.user_id = f.user_id and a.monto_estimado > 0
+                         and a.mes < date_trunc('month', f.day)::date)
+        group by f.user_id)
      select (select count(*)::int from vio) as vieron,
             (select count(*)::int from vio join users u on u.id = vio.user_id where u.paid_until > now()) as vieron_pagando,
             (select count(*)::int from users where id not in (select user_id from vio)) as resto,
