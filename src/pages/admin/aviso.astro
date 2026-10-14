@@ -1,0 +1,52 @@
+---
+// Lo que ve quien llega al panel sin poder usarlo: otra cuenta, o falta configurar algo.
+// El middleware decide cuál (Astro.locals.adminNotice); entrar aquí directo lleva al resumen.
+import Admin from '../../layouts/Admin.astro';
+import { clerkKeys } from '../../lib/admin/clerk';
+import { adminDb, waitlistDb } from '../../lib/db';
+
+export const prerender = false;
+
+const notice = Astro.locals.adminNotice;
+if (!notice) return Astro.redirect('/admin');
+Astro.response.status = notice === 'forbidden' ? 403 : 503;
+
+// Solo si está o no; nunca el valor.
+const missing = [
+  !clerkKeys && 'Clerk: PUBLIC_CLERK_PUBLISHABLE_KEY y CLERK_SECRET_KEY',
+  !adminDb() && 'Base para el panel: ADMIN_DATABASE_URL',
+  !waitlistDb() && 'Base para el formulario de la beta: WAITLIST_DATABASE_URL',
+].filter(Boolean);
+---
+
+<Admin title={notice === 'forbidden' ? 'Sin acceso' : 'Falta configurar'}>
+  <div class="notice">
+    {
+      notice === 'forbidden' ? (
+        <>
+          <h1>Esta cuenta no tiene acceso</h1>
+          <p>El panel solo abre con el correo de administración. Sal y vuelve a entrar con esa cuenta de Google.</p>
+          <form method="post" action="/admin/salir">
+            <button class="btn-quiet" type="submit">Salir y cambiar de cuenta</button>
+          </form>
+        </>
+      ) : (
+        <>
+          <h1>Al panel le falta configuración</h1>
+          <p>Estas variables no están en este entorno:</p>
+          <ol>
+            {missing.map((m) => (
+              <li>
+                <code>{m}</code>
+              </li>
+            ))}
+          </ol>
+          <p>
+            Se agregan en Vercel → el proyecto → Settings → Environment Variables, y después se vuelve a publicar. El
+            paso a paso está en <code>docs/admin.md</code>.
+          </p>
+        </>
+      )
+    }
+  </div>
+</Admin>

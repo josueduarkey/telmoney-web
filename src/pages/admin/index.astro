@@ -1,0 +1,154 @@
+---
+// Resumen: cómo va TelMoney en los últimos 7 o 30 días.
+import Admin from '../../layouts/Admin.astro';
+import DailyColumns from '../../components/admin/DailyColumns.astro';
+import CategoryBars from '../../components/admin/CategoryBars.astro';
+import DbError from '../../components/admin/DbError.astro';
+import { RANGES, messagesPerDay, spendingByCategory, summary, type Range, type Status } from '../../lib/admin/queries';
+import { int, usd, usdCost, usdShort } from '../../lib/admin/format';
+import { COST_GEMINI_PER_MESSAGE, COST_META_PER_REPLY, COST_TWILIO_PER_MESSAGE } from 'astro:env/server';
+
+export const prerender = false;
+
+// Segunda llave (la primera es src/middleware.ts): sin sesión de admin no se consulta nada.
+if (!Astro.locals.admin) return new Response('No autorizado', { status: 401 });
+
+const asked = Number(Astro.url.searchParams.get('dias'));
+const days: Range = (RANGES as readonly number[]).includes(asked) ? (asked as Range) : 30;
+
+let data: [Awaited<ReturnType<typeof summary>>, Awaited<ReturnType<typeof messagesPerDay>>, Awaited<ReturnType<typeof spendingByCategory>>] | null = null;
+let error = '';
+try {
+  data = await Promise.all([summary(days), messagesPerDay(days), spendingByCategory(days)]);
+} catch (e) {
+  error = e instanceof Error ? e.message : String(e);
+}
+const [s, perDay, cats] = data ?? [];
+
+const STATUS_LABEL: Record<Status, string> = {
+  prueba: 'En prueba',
+  pagando: 'Pagando',
+  vencido: 'Vencidos',
+  invitado: 'Invitados',
+};
+const perActive = (n: number) => (s && s.messages.active ? n / s.messages.active : 0);
+---
+
+<Admin title="Resumen" section="resumen">
+  <div class="admin-head">
+    <div>
+      <h1>Resumen</h1>
+      <p>Últimos {days} días, en hora de El Salvador.</p>
+    </div>
+    <nav class="seg" aria-label="Periodo">
+      {RANGES.map((r) => <a href={`?dias=${r}`} aria-current={r === days ? 'true' : undefined}>{r} días</a>)}
+    </nav>
+  </div>
+
+  {error && <DbError error={error} />}
+  {
+    s && perDay && cats && (
+      <>
+        <div class="cards">
+          <div class="card">
+            <p class="stat__label">Usuarios</p>
+            <p class="stat__value">{int(s.users.total)}</p>
+            <p class="stat__note">
+              <b>+{int(s.users.new)}</b> en {days} días · {int(s.users.whatsapp)} WhatsApp · {int(s.users.telegram)} Telegram
+            </p>
+          </div>
+          <div class="card">
+            <p class="stat__label">Mensajes de usuarios</p>
+            <p class="stat__value">{int(s.messages.in)}</p>
+            <p class="stat__note">
+              de <b>{int(s.messages.active)}</b> personas · {perActive(s.messages.in).toFixed(1)} por persona
+            </p>
+          </div>
+          <div class="card">
+            <p class="stat__label">Mensajes del bot</p>
+            <p class="stat__value">{int(s.messages.out)}</p>
+            <p class="stat__note">respuestas, reportes diarios y alertas</p>
+          </div>
+          <div class="card">
+            <p class="stat__label">Costo estimado</p>
+            <p class="stat__value">{usdCost(s.cost)}</p>
+            <p class="stat__note">
+              <b>{usdCost(perActive(s.cost))}</b> por persona activa
+            </p>
+          </div>
+          <div class="card">
+            <p class="stat__label">Ventas</p>
+            <p class="stat__value">{usdShort(s.sales.revenue)}</p>
+            <p class="stat__note">
+              <b>{int(s.sales.purchases)}</b> {s.sales.purchases === 1 ? 'compra' : 'compras'} · margen{' '}
+              {usd(s.sales.revenue - s.cost)}
+            </p>
+          </div>
+          <div class="card">
+            <p class="stat__label">Clientes pagando hoy</p>
+            <p class="stat__value">{int(s.byStatus.pagando)}</p>
+            <p class="stat__note">
+              <b>{int(s.sales.buyersTotal)}</b> compraron alguna vez · {usdShort(s.sales.revenueTotal)} en total
+            </p>
+          </div>
+          <div class="card">
+            <p class="stat__label">Gasto que anotaron</p>
+            <p class="stat__value">{usdShort(s.spending.total)}</p>
+            <p class="stat__note">
+              <b>{int(s.spending.movements)}</b> movimientos anotados
+            </p>
+          </div>
+          <div class="card">
+            <p class="stat__label">Interesados en la beta</p>
+            <p class="stat__value">{int(s.waitlist.total)}</p>
+            <p class="stat__note">
+              <b>+{int(s.waitlist.new)}</b> en {days} días · <a href="/admin/interesados">ver lista</a>
+            </p>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: var(--s-4)">
+          <div class="card__head">
+            <h2>Usuarios por estado</h2>
+            <a class="card__sub" href="/admin/usuarios">Ver usuarios</a>
+          </div>
+          <div class="pills" style="gap: var(--s-3)">
+            {(Object.keys(STATUS_LABEL) as Status[]).map((k) => (
+              <a class={`chip chip--${k}`} href={`/admin/usuarios?estado=${k}`} style="text-decoration:none">
+                {STATUS_LABEL[k]}: {int(s.byStatus[k])}
+              </a>
+            ))}
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <section class="card" aria-labelledby="t-msgs">
+            <div class="card__head">
+              <div>
+                <h2 id="t-msgs">Mensajes de usuarios por día</h2>
+                <p class="card__sub">Lo que escriben al bot (texto, audio o foto).</p>
+              </div>
+            </div>
+            <DailyColumns data={perDay} unit="mensajes" />
+          </section>
+          <section class="card" aria-labelledby="t-cats">
+            <div class="card__head">
+              <div>
+                <h2 id="t-cats">Gasto anotado por categoría</h2>
+                <p class="card__sub">De todos los usuarios, en {days} días.</p>
+              </div>
+            </div>
+            <CategoryBars data={cats} />
+          </section>
+        </div>
+
+        <p class="note">
+          El costo es un estimado: Twilio {usdCost(COST_TWILIO_PER_MESSAGE)} por mensaje (entrante y saliente), Meta{' '}
+          {usdCost(COST_META_PER_REPLY)} por mensaje del bot y Gemini {usdCost(COST_GEMINI_PER_MESSAGE)} por mensaje del
+          usuario, sin descontar los 1,000 mensajes gratis al mes de Meta. Telegram solo cuenta Gemini. El bot guarda el
+          detalle de los mensajes 30 días.
+        </p>
+      </>
+    )
+  }
+</Admin>

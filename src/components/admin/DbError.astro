@@ -1,0 +1,22 @@
+---
+// Cuando una consulta falla. El mensaje de Postgres no trae datos de nadie y ayuda a arreglarlo
+// (lo típico: «permission denied», si falta correr el SQL de permisos de docs/admin.md).
+interface Props {
+  error: string;
+}
+const { error } = Astro.props;
+const permission = /permission denied/i.test(error);
+---
+
+<div class="card notice" role="alert">
+  <h1>No se pudieron leer los datos</h1>
+  <p><code>{error}</code></p>
+  {
+    permission && (
+      <p>
+        Al usuario del panel le falta un permiso en la base. Corre otra vez el SQL de permisos de <code>docs/admin.md</code>{' '}
+        en el SQL Editor de Neon.
+      </p>
+    )
+  }
+</div>

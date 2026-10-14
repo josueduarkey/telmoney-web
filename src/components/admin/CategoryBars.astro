@@ -1,0 +1,47 @@
+---
+// Gasto por categoría: nombre, barra y monto en la misma fila (la barra compara, el monto informa).
+// Una sola serie y un solo color. Las que no caben en `limit` se juntan en «otras», sin barra:
+// es una suma de varias y aplastaría a las demás.
+import { usd } from '../../lib/admin/format';
+
+interface Props {
+  data: { name: string; emoji: string; total: number; n: number }[];
+  limit?: number;
+}
+const { data, limit = 8 } = Astro.props;
+
+const shown = data.slice(0, limit);
+const rest = data.slice(limit);
+const restTotal = rest.reduce((s, d) => s + d.total, 0);
+const max = Math.max(...shown.map((d) => d.total), 0) || 1;
+---
+
+{
+  shown.length ? (
+    <ul class="hbars" role="list">
+      {shown.map((d) => (
+        <li data-tip={`${usd(d.total)}\n${d.name} · ${d.n} ${d.n === 1 ? 'gasto' : 'gastos'}`}>
+          <span class="hbars__name">
+            {d.emoji && <span aria-hidden="true">{d.emoji} </span>}
+            {d.name}
+          </span>
+          <span class="hbars__track" aria-hidden="true">
+            <span class="hbars__bar" style={`width:${((d.total / max) * 100).toFixed(1)}%`} />
+          </span>
+          <span class="hbars__value">{usd(d.total)}</span>
+        </li>
+      ))}
+      {rest.length > 0 && (
+        <li class="hbars__rest">
+          <span class="hbars__name">
+            {rest.length} {rest.length === 1 ? 'categoría más' : 'categorías más'}
+          </span>
+          <span />
+          <span class="hbars__value">{usd(restTotal)}</span>
+        </li>
+      )}
+    </ul>
+  ) : (
+    <p class="empty">Todavía no hay gastos anotados en este periodo.</p>
+  )
+}

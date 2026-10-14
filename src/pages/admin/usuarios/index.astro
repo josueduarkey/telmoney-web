@@ -1,0 +1,92 @@
+---
+// Lista de usuarios del bot: quiénes son, en qué plan están y cuánto lo usan.
+import Admin from '../../../layouts/Admin.astro';
+import StatusChip from '../../../components/admin/StatusChip.astro';
+import DbError from '../../../components/admin/DbError.astro';
+import { users, type UserRow } from '../../../lib/admin/queries';
+import { ago, date, int, phone, planName, usd } from '../../../lib/admin/format';
+
+export const prerender = false;
+
+// Segunda llave (la primera es src/middleware.ts): sin sesión de admin no se consulta nada.
+if (!Astro.locals.admin) return new Response('No autorizado', { status: 401 });
+
+const q = (Astro.url.searchParams.get('q') ?? '').slice(0, 80);
+const asked = Astro.url.searchParams.get('estado') ?? '';
+const estado = ['prueba', 'pagando', 'vencido', 'invitado'].includes(asked) ? asked : '';
+
+let rows: UserRow[] = [];
+let error = '';
+try {
+  rows = await users({ q, status: estado });
+} catch (e) {
+  error = e instanceof Error ? e.message : String(e);
+}
+---
+
+<Admin title="Usuarios" section="usuarios">
+  <div class="admin-head">
+    <div>
+      <h1>Usuarios</h1>
+      <p>{int(rows.length)} {rows.length === 1 ? 'persona' : 'personas'}{rows.length === 500 && ' (se muestran las 500 más recientes)'}. Mensajes y gasto: últimos 30 días.</p>
+    </div>
+  </div>
+
+  <form class="filters" method="get" role="search">
+    <label class="sr-only" for="q">Buscar por nombre o número</label>
+    <input class="field" id="q" name="q" type="search" value={q} placeholder="Nombre o número" />
+    <label class="sr-only" for="estado">Estado</label>
+    <select class="field" id="estado" name="estado">
+      <option value="">Todos los estados</option>
+      <option value="prueba" selected={estado === 'prueba'}>En prueba</option>
+      <option value="pagando" selected={estado === 'pagando'}>Pagando</option>
+      <option value="vencido" selected={estado === 'vencido'}>Vencidos</option>
+      <option value="invitado" selected={estado === 'invitado'}>Invitados</option>
+    </select>
+    <button class="btn-quiet" type="submit">Buscar</button>
+    {(q || estado) && <a class="btn-quiet" href="/admin/usuarios">Quitar filtros</a>}
+  </form>
+
+  {error && <DbError error={error} />}
+  {
+    !error && (
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Contacto</th>
+              <th>Estado</th>
+              <th>Plan</th>
+              <th class="r">Mensajes</th>
+              <th class="r">Gastó</th>
+              <th class="r">Pagó en total</th>
+              <th>Última vez</th>
+              <th>Desde</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((u) => (
+              <tr>
+                <td>
+                  <a href={`/admin/usuarios/${u.id}`}>{u.name || 'Sin nombre'}</a>
+                </td>
+                <td class="nowrap">{u.whatsapp ? phone(u.whatsapp) : <span class="muted">Telegram</span>}</td>
+                <td>
+                  <StatusChip status={u.status} />
+                </td>
+                <td class="nowrap">{planName(u.plan)}</td>
+                <td class="r">{int(u.msgs30)}</td>
+                <td class="r">{usd(u.spent30)}</td>
+                <td class="r">{u.paidTotal ? usd(u.paidTotal) : '—'}</td>
+                <td class="nowrap muted">{ago(u.lastSeen)}</td>
+                <td class="nowrap muted">{date(u.createdAt)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {!rows.length && <p class="empty">{q || estado ? 'Nadie coincide con esa búsqueda.' : 'Todavía no hay usuarios.'}</p>}
+      </div>
+    )
+  }
+</Admin>

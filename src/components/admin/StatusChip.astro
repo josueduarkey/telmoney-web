@@ -1,0 +1,11 @@
+---
+import type { Status } from '../../lib/admin/queries';
+
+interface Props {
+  status: Status;
+}
+const LABEL: Record<Status, string> = { prueba: 'En prueba', pagando: 'Pagando', vencido: 'Vencido', invitado: 'Invitado' };
+const { status } = Astro.props;
+---
+
+<span class={`chip chip--${status}`}>{LABEL[status]}</span>

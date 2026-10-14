@@ -1,0 +1,115 @@
+---
+// Lista de espera de la beta: quién se anotó, cómo contactarle y qué le cuesta.
+import Admin from '../../layouts/Admin.astro';
+import DbError from '../../components/admin/DbError.astro';
+import { waitlist, type Interested } from '../../lib/admin/queries';
+import { date, int, phone, waLink } from '../../lib/admin/format';
+import { PAINS } from '../../data/pains';
+
+export const prerender = false;
+
+// Segunda llave (la primera es src/middleware.ts): sin sesión de admin no se consulta nada.
+if (!Astro.locals.admin) return new Response('No autorizado', { status: 401 });
+
+let rows: Interested[] = [];
+let error = '';
+try {
+  rows = await waitlist();
+} catch (e) {
+  error = e instanceof Error ? e.message : String(e);
+}
+
+// Qué les cuesta más (cada persona puede marcar varias).
+const painCount = PAINS.map((p) => ({ name: p, n: rows.filter((r) => r.pains.includes(p)).length })).sort((a, b) => b.n - a.n);
+const maxPain = Math.max(...painCount.map((p) => p.n), 0) || 1;
+const users = rows.filter((r) => r.isUser).length;
+const origin = (utm: Record<string, string>) =>
+  [utm.utm_source, utm.utm_campaign].filter(Boolean).join(' · ') || 'directo';
+---
+
+<Admin title="Interesados" section="interesados">
+  <div class="admin-head">
+    <div>
+      <h1>Interesados en la beta</h1>
+      <p>
+        {int(rows.length)} {rows.length === 1 ? 'persona anotada' : 'personas anotadas'} ·{' '}
+        {`${int(users)} ya ${users === 1 ? 'usa' : 'usan'} el bot`}
+      </p>
+    </div>
+    {rows.length > 0 && <a class="btn-quiet" href="/admin/interesados.csv" download>Descargar CSV</a>}
+  </div>
+
+  {error && <DbError error={error} />}
+  {
+    !error && rows.length > 0 && (
+      <section class="card" aria-labelledby="t-pains" style="margin-bottom: var(--s-4)">
+        <div class="card__head">
+          <h2 id="t-pains">Lo que más les cuesta</h2>
+          <p class="card__sub">Cada persona puede marcar varias</p>
+        </div>
+        <ul class="hbars hbars--wide" role="list">
+          {painCount.map((p) => (
+            <li data-tip={`${int(p.n)} ${p.n === 1 ? 'persona' : 'personas'}\n${p.name}`}>
+              <span class="hbars__name">{p.name}</span>
+              <span class="hbars__track" aria-hidden="true">
+                <span class="hbars__bar" style={`width:${((p.n / maxPain) * 100).toFixed(1)}%`} />
+              </span>
+              <span class="hbars__value">{int(p.n)}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+  {
+    !error && (
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>WhatsApp</th>
+              <th>Correo</th>
+              <th>Le cuesta</th>
+              <th>Llegó por</th>
+              <th>Se anotó</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr>
+                <td>{r.name}</td>
+                <td class="nowrap">
+                  <a href={waLink(r.whatsapp)} target="_blank" rel="noopener">
+                    {phone(r.whatsapp)}
+                  </a>
+                </td>
+                <td>{r.email ?? <span class="muted">—</span>}</td>
+                <td>
+                  <div class="pills">
+                    {r.pains.map((p) => (
+                      <span class="pill">{p}</span>
+                    ))}
+                  </div>
+                </td>
+                <td class="muted">{origin(r.utm)}</td>
+                <td class="nowrap muted">{date(r.createdAt)}</td>
+                <td class="nowrap">
+                  {r.isUser ? (
+                    <span class="chip chip--pagando">Ya usa el bot</span>
+                  ) : r.notifiedAt ? (
+                    <span class="chip chip--prueba">Avisado</span>
+                  ) : (
+                    <span class="chip chip--vencido">Esperando</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {!rows.length && <p class="empty">Todavía nadie se anotó.</p>}
+      </div>
+    )
+  }
+</Admin>

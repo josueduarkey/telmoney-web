@@ -1,0 +1,92 @@
+---
+// Columnas por día (una sola serie: el título de la tarjeta dice qué es, sin leyenda).
+// Barras de máximo 24px con la punta redondeada y la base recta, 2px de aire entre barras,
+// guías finas y pocas etiquetas: los valores exactos van en el tooltip y en la tabla de abajo.
+import { day as fmtDay, int } from '../../lib/admin/format';
+
+interface Props {
+  data: { day: string; n: number }[];
+  /** Cómo se llama lo que se cuenta, en el tooltip y la tabla («mensajes»). */
+  unit: string;
+}
+const { data, unit } = Astro.props;
+
+const W = 720;
+const H = 200;
+const pad = { top: 8, right: 4, bottom: 24, left: 36 };
+const plotW = W - pad.left - pad.right;
+const plotH = H - pad.top - pad.bottom;
+
+// Eje con números redondos: 0, la mitad y el tope.
+const max = Math.max(...data.map((d) => d.n), 0);
+const step = max <= 4 ? 1 : Math.pow(10, Math.floor(Math.log10(max / 2)));
+const top = Math.max(4, Math.ceil(max / 2 / step) * step * 2);
+const ticks = [0, top / 2, top];
+const y = (v: number) => pad.top + plotH - (v / top) * plotH;
+
+const band = plotW / Math.max(data.length, 1);
+const barW = Math.min(24, Math.max(2, band - 2));
+const r = Math.min(4, barW / 2);
+
+// Etiquetas del eje X: el primer día, el del medio y el último.
+const labelAt = new Set([0, Math.floor((data.length - 1) / 2), data.length - 1]);
+
+/** Barra con la punta (arriba) redondeada y la base recta. */
+function barPath(x: number, h: number) {
+  const yTop = pad.top + plotH - h;
+  const rr = Math.min(r, h);
+  return `M${x},${pad.top + plotH}V${yTop + rr}Q${x},${yTop} ${x + rr},${yTop}H${x + barW - rr}Q${x + barW},${yTop} ${x + barW},${yTop + rr}V${pad.top + plotH}Z`;
+}
+const total = data.reduce((s, d) => s + d.n, 0);
+---
+
+<svg class="cols" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${int(total)} ${unit} en ${data.length} días`}>
+  {
+    ticks.map((t) => (
+      <>
+        <line class="cols__grid" x1={pad.left} x2={W - pad.right} y1={y(t)} y2={y(t)} />
+        <text class="cols__tick" x={pad.left - 8} y={y(t) + 4} text-anchor="end">
+          {int(t)}
+        </text>
+      </>
+    ))
+  }
+  {
+    data.map((d, i) => {
+      const x = pad.left + i * band + (band - barW) / 2;
+      const h = (d.n / top) * plotH;
+      return (
+        <g>
+          {d.n > 0 && <path class="cols__bar" d={barPath(x, h)} />}
+          <rect
+            class="cols__hit"
+            x={pad.left + i * band}
+            y={pad.top}
+            width={band}
+            height={plotH}
+            tabindex="0"
+            data-tip={`${int(d.n)} ${unit}\n${fmtDay(d.day)}`}
+            aria-label={`${fmtDay(d.day)}: ${int(d.n)} ${unit}`}
+          />
+          {labelAt.has(i) && (
+            <text class="cols__xlabel" x={x + barW / 2} y={H - 6} text-anchor={i === 0 ? 'start' : i === data.length - 1 ? 'end' : 'middle'}>
+              {fmtDay(d.day)}
+            </text>
+          )}
+        </g>
+      );
+    })
+  }
+</svg>
+
+<details class="data-table">
+  <summary>Ver como tabla</summary>
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>Día</th><th class="r">{unit[0].toUpperCase() + unit.slice(1)}</th></tr></thead>
+      <tbody>
+        {[...data].reverse().map((d) => <tr><td>{fmtDay(d.day)}</td><td class="r">{int(d.n)}</td></tr>)}
+      </tbody>
+    </table>
+  </div>
+</details>

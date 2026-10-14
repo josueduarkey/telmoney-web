@@ -1,0 +1,542 @@
+/* Panel de administración. Usa los tokens de global.css (los dos temas) y nada de color suelto.
+   Es una herramienta de lectura: lienzo plano, tarjetas con línea fina, números grandes y tablas
+   densas. El verde es solo para los datos (barras) y para lo que está bien. */
+
+.admin {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Barra superior ── */
+.admin-top {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--nav-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--hairline);
+}
+.admin-top__inner {
+  display: flex;
+  align-items: center;
+  gap: var(--s-5);
+  min-height: 64px;
+  flex-wrap: wrap;
+}
+.admin-top__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  text-decoration: none;
+}
+.admin-top__tag {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-full);
+  padding: 2px 10px;
+}
+.admin-nav {
+  display: flex;
+  gap: var(--s-1);
+  margin-right: auto;
+}
+.admin-nav a {
+  text-decoration: none;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: var(--fs-small);
+  padding: 8px 12px;
+  border-radius: var(--r-md);
+}
+.admin-nav a:hover {
+  color: var(--text);
+  background: var(--fill);
+}
+.admin-nav a[aria-current='page'] {
+  color: var(--text);
+  background: var(--fill-strong);
+}
+.admin-top__who {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+
+.admin-main {
+  flex: 1;
+  padding-block: var(--s-6) var(--s-8);
+}
+
+/* ── Encabezado de página ── */
+.admin-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--s-5);
+}
+.admin-head h1 {
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+.admin-head p {
+  color: var(--text-muted);
+  margin-top: var(--s-1);
+}
+.admin-back {
+  display: inline-block;
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  text-decoration: none;
+  margin-bottom: var(--s-2);
+}
+.admin-back:hover {
+  color: var(--text);
+}
+
+/* ── Filtros (una fila, arriba de todo lo que afectan) ── */
+.seg {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-full);
+}
+.seg a {
+  text-decoration: none;
+  font-size: var(--fs-small);
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 6px 14px;
+  border-radius: var(--r-full);
+}
+.seg a:hover {
+  color: var(--text);
+}
+.seg a[aria-current='true'] {
+  background: var(--text);
+  color: var(--bg);
+}
+.filters {
+  display: flex;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: var(--s-4);
+}
+.field {
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--field-border);
+  border-radius: var(--r-md);
+  background: transparent;
+  min-width: 0;
+}
+.field:focus-visible {
+  outline-offset: 1px;
+}
+.btn-quiet {
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-md);
+  background: var(--fill);
+  font-weight: 600;
+  font-size: var(--fs-small);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  white-space: nowrap;
+}
+.btn-quiet:hover {
+  background: var(--fill-strong);
+}
+
+/* ── Tarjetas ── */
+.cards {
+  display: grid;
+  gap: var(--s-4);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr));
+}
+.card {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-xl);
+  padding: var(--s-5);
+  min-width: 0;
+}
+.card h2 {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.card__sub {
+  color: var(--text-muted);
+  font-size: var(--fs-small);
+  margin-top: 2px;
+}
+.card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--s-4);
+}
+.section {
+  margin-top: var(--s-6);
+}
+.section-title {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.grid-2 {
+  display: grid;
+  gap: var(--s-4);
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  margin-top: var(--s-4);
+}
+@media (max-width: 900px) {
+  .grid-2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Número grande (lo que la tarjeta responde) */
+.stat__label {
+  font-size: var(--fs-small);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.stat__value {
+  font-family: var(--font-display);
+  font-size: clamp(1.7rem, 2.6vw, 2.2rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin-top: var(--s-2);
+  font-variant-numeric: tabular-nums;
+}
+.stat__note {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  margin-top: var(--s-1);
+}
+.stat__note b {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ── Chips de estado (siempre con texto: nunca solo color) ── */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: var(--r-full);
+  background: var(--fill);
+  white-space: nowrap;
+}
+.chip::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.9;
+}
+.chip--pagando {
+  color: var(--accent);
+  background: var(--check-bg);
+}
+.chip--prueba {
+  color: var(--gold-text);
+  background: var(--gold-soft);
+}
+.chip--vencido {
+  color: var(--text-muted);
+}
+.chip--invitado {
+  color: var(--text);
+}
+
+/* ── Tablas ── */
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-xl);
+  background: var(--surface);
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-small);
+}
+.table th,
+.table td {
+  text-align: left;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--hairline);
+  vertical-align: top;
+}
+.table thead th {
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+}
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.table tbody tr:hover td {
+  background: var(--fill);
+}
+.table .r {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.table .nowrap {
+  white-space: nowrap;
+}
+.table .muted {
+  color: var(--text-muted);
+}
+.table a {
+  text-decoration: none;
+  font-weight: 600;
+}
+.table a:hover {
+  text-decoration: underline;
+}
+.table--card {
+  border: 0;
+}
+.empty {
+  padding: var(--s-6);
+  text-align: center;
+  color: var(--text-muted);
+}
+
+/* ── Barras horizontales (categorías): nombre, barra y monto en la misma fila ── */
+.hbars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s-3);
+}
+.hbars li {
+  display: grid;
+  grid-template-columns: minmax(0, 9rem) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--s-3);
+  font-size: var(--fs-small);
+}
+.hbars__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hbars__track {
+  display: block;
+  height: 12px;
+}
+.hbars__bar {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+  background: var(--accent-graphic);
+  border-radius: 0 4px 4px 0;
+}
+.hbars--wide li {
+  grid-template-columns: minmax(0, 17rem) minmax(0, 1fr) auto;
+}
+.hbars--wide .hbars__value {
+  min-width: 2.5rem;
+}
+.hbars__rest {
+  color: var(--text-muted);
+  border-top: 1px solid var(--hairline);
+  padding-top: var(--s-3);
+}
+.hbars__value {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  min-width: 5.5rem;
+}
+
+/* ── Columnas por día (SVG) ── */
+.cols {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.cols__grid {
+  stroke: var(--hairline);
+  stroke-width: 1;
+}
+.cols__tick,
+.cols__xlabel {
+  fill: var(--text-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.cols__bar {
+  fill: var(--accent-graphic);
+  transition: opacity 0.15s;
+}
+.cols__hit {
+  fill: transparent;
+  cursor: default;
+  outline: none;
+}
+.cols g:hover .cols__bar,
+.cols g:focus-within .cols__bar {
+  opacity: 0.72;
+}
+.cols__hit:focus-visible {
+  stroke: var(--focus);
+  stroke-width: 2;
+}
+
+/* Tabla con los mismos datos de la gráfica (para quien no puede o no quiere leer la gráfica) */
+.data-table {
+  margin-top: var(--s-3);
+  font-size: var(--fs-small);
+}
+.data-table summary {
+  cursor: pointer;
+  color: var(--text-muted);
+  font-weight: 600;
+  width: fit-content;
+}
+.data-table .table-wrap {
+  margin-top: var(--s-3);
+  max-height: 320px;
+  overflow: auto;
+}
+
+/* ── Tooltip ── */
+.tip {
+  position: fixed;
+  z-index: 50;
+  pointer-events: none;
+  background: var(--text);
+  color: var(--bg);
+  border-radius: var(--r-md);
+  padding: 8px 12px;
+  font-size: var(--fs-small);
+  line-height: 1.35;
+  box-shadow: 0 8px 24px var(--shadow);
+  transform: translate(-50%, calc(-100% - 10px));
+  white-space: nowrap;
+}
+.tip strong {
+  display: block;
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+.tip[hidden] {
+  display: none;
+}
+
+/* ── Avisos ── */
+.notice {
+  max-width: 640px;
+  margin: var(--s-8) auto;
+}
+.notice h1 {
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-bottom: var(--s-3);
+}
+.notice p + p,
+.notice ol,
+.notice form {
+  margin-top: var(--s-3);
+}
+.notice code {
+  font-size: 0.9em;
+  background: var(--fill-strong);
+  padding: 1px 6px;
+  border-radius: var(--r-xs);
+}
+.note {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  margin-top: var(--s-3);
+}
+
+.kv {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px var(--s-4);
+  font-size: var(--fs-small);
+  margin: 0;
+}
+.kv dt {
+  color: var(--text-muted);
+}
+.kv dd {
+  margin: 0;
+  font-weight: 600;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.pill {
+  font-size: 0.75rem;
+  padding: 1px 8px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--hairline-strong);
+  white-space: nowrap;
+}
+.kind-income {
+  color: var(--accent);
+}
+
+@media (max-width: 640px) {
+  .admin-top {
+    position: static;
+  }
+  .admin-top__who span {
+    display: none;
+  }
+  .hbars li,
+  .hbars--wide li {
+    grid-template-columns: minmax(0, 7.5rem) minmax(0, 1fr) auto;
+  }
+  .hbars--wide .hbars__name {
+    white-space: normal;
+    line-height: 1.3;
+  }
+}
