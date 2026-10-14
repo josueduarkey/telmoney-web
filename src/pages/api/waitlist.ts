@@ -3,7 +3,7 @@
 // Mismas reglas que el endpoint del bot (telmoney-bot/src/telmoney_bot/waitlist.py):
 //   201 registrado · 200 ya estaba (se actualiza) · 413 muy grande · 415 no es JSON
 //   422 datos inválidos ({ fields }) · 429 demasiados intentos · 503 falta configurar la base
-// Contra spam, sin captcha: tope de tamaño, límite por IP y el campo trampa «company».
+// Contra spam, sin captcha: tope de tamaño, límite por IP y el campo trampa "company".
 // En los registros del servidor no va ningún dato personal.
 import type { APIRoute } from 'astro';
 import { waitlistDb } from '../../lib/db';

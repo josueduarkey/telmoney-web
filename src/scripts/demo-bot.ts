@@ -54,7 +54,7 @@ export function demoBot(root: HTMLElement, { onFirstInteraction }: { onFirstInte
   const chips = root.querySelectorAll<HTMLButtonElement>('[data-chat-chip]');
   if (!form || !input || !body || !list) return;
 
-  // Estado de ejemplo: el de la sección «Un número. Todos los días.» ($540, $21.70 por día),
+  // Estado de ejemplo: el de la sección "Un número. Todos los días." ($540, $21.70 por día),
   // después del almuerzo ($3.50) y el bus ($1.20) que muestra la conversación inicial.
   let daily = (540 - FIXED - GOALS) / DAYS; // $21.70
   let spentToday = 4.7;
@@ -109,7 +109,7 @@ export function demoBot(root: HTMLElement, { onFirstInteraction }: { onFirstInte
 
     if (/^(hola|buenas|hey|qu[eé] tal|buenos d[ií]as|buenas tardes)/.test(t)) {
       return {
-        text: '¡Hola! 👋 Soy TelMoney.\nCuéntame un gasto, por ejemplo «gasté 5 en café», o pregúntame «¿cuánto puedo gastar hoy?».',
+        text: '¡Hola! 👋 Soy TelMoney.\nCuéntame un gasto, por ejemplo "gasté 5 en café", o pregúntame "¿cuánto puedo gastar hoy?".',
         buttons: ['gasté 5 en café', '¿cuánto puedo gastar hoy?'],
       };
     }
@@ -179,7 +179,7 @@ export function demoBot(root: HTMLElement, { onFirstInteraction }: { onFirstInte
     }
 
     return {
-      text: 'En esta demo entiendo gastos («12 de gasolina»), ingresos («me pagaron 650») y preguntas como «¿cuánto puedo gastar hoy?».\nEl TelMoney real también entiende audios y fotos de recibos. 📸',
+      text: 'En esta demo entiendo gastos ("12 de gasolina"), ingresos ("me pagaron 650") y preguntas como "¿cuánto puedo gastar hoy?".\nEl TelMoney real también entiende audios y fotos de recibos. 📸',
       buttons: ['gasté 5 en café', '¿puedo comprar unos tenis de 80?'],
     };
   };

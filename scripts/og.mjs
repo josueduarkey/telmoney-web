@@ -33,7 +33,7 @@ const fonts = [
 ];
 const icon = `data:image/png;base64,${fs.readFileSync('public/app-icon.png').toString('base64')}`;
 
-// Un mini «JSX» para satori: h('div', { style }, ...hijos). Sin hijos no se pasa la lista
+// Un mini "JSX" para satori: h('div', { style }, ...hijos). Sin hijos no se pasa la lista
 // (satori trata una lista vacía como varios hijos) y con uno solo se pasa el hijo directo.
 const h = (type, props = {}, ...children) => {
   const kids = children.flat();

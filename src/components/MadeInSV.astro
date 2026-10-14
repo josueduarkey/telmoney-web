@@ -21,25 +21,25 @@ const institutions = [
 ].map(({ name, slug, scale = 1 }) => {
   const { src, width, height } = files[`../assets/bancos/${slug}.png`].default;
   const ratio = width / height;
-  // Mismo «peso» para todos: a igual área, los anchos salen más bajos y los compactos más altos.
+  // Mismo "peso" para todos: a igual área, los anchos salen más bajos y los compactos más altos.
   const k = Math.sqrt(3.2 / ratio) * scale;
   return { name, style: `--logo:url(${src});--r:${ratio.toFixed(3)};--k:${k.toFixed(3)}` };
 });
 // Cuatro vueltas de la lista: la animación recorre la mitad y así no queda hueco ni en pantallas muy anchas.
 const reel = Array.from({ length: 4 }, () => institutions).flat();
 const phrases = [
-  '«gasté 3.50 en el almuerzo»',
-  '«me cayó la quincena»',
-  '«12 de gasolina con la tarjeta»',
-  '«12.50 me dio mi mamá»',
-  '«pasé 50 del agrícola a n1co»',
-  '«le di 20 a Chepe»',
-  '«eso fue antier»',
+  '"gasté 3.50 en el almuerzo"',
+  '"me cayó la quincena"',
+  '"12 de gasolina con la tarjeta"',
+  '"12.50 me dio mi mamá"',
+  '"pasé 50 del agrícola a n1co"',
+  '"le di 20 a Chepe"',
+  '"eso fue antier"',
 ];
 const facts = [
   { t: 'Al centavo', d: 'Cada saldo cuadra, cuenta por cuenta.' },
   { t: 'Al ritmo de tu pago', d: 'Cuenta los días hasta tu próximo ingreso, sea quincena o fin de mes.' },
-  { t: 'Tus bancos y billeteras', d: 'Sabe que «BAC» y «credomatic» son la misma cuenta.' },
+  { t: 'Tus bancos y billeteras', d: 'Sabe que "BAC" y "credomatic" son la misma cuenta.' },
   { t: 'Sin aprender nada', d: 'Si sabes mandar un audio, ya sabes usar TelMoney.' },
 ];
 ---

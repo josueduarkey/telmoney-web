@@ -3,7 +3,7 @@
 // (scripts/waitlist.ts), así que se puede medir qué red trae más registros.
 import { LAUNCHED, SITE } from '../config';
 
-/** «nativo» = el menú de compartir del celular (no se sabe a qué app fue). */
+/** "nativo" = el menú de compartir del celular (no se sabe a qué app fue). */
 export type Network = 'whatsapp' | 'telegram' | 'facebook' | 'x' | 'linkedin' | 'email' | 'copy' | 'nativo';
 
 /** Link a la página con la campaña de la red que lo compartió. */

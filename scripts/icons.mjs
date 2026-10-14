@@ -49,7 +49,7 @@ await tile(32, { radius: 0.22, inset: 0.08, file: 'public/favicon-32.png' });
 await tile(192, { radius: 0.22, inset: 0.12, file: 'public/favicon-192.png' });
 await tile(512, { radius: 0.22, inset: 0.12, file: 'public/favicon-512.png' });
 await tile(180, { radius: 0, inset: 0.14, file: 'public/apple-touch-icon.png' });
-// «maskable»: Android lo recorta en círculo o gota; el dibujo queda dentro de la zona segura (80 %)
+// "maskable": Android lo recorta en círculo o gota; el dibujo queda dentro de la zona segura (80 %)
 await tile(512, { radius: 0, inset: 0.2, file: 'public/maskable-512.png' });
 
 console.log('Íconos generados desde', SRC);

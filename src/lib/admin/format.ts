@@ -25,10 +25,10 @@ const dayFmt = new Intl.DateTimeFormat('es-SV', { timeZone: 'UTC', day: 'numeric
 
 export const date = (d: string | Date | null) => (d ? dateFmt.format(new Date(d)) : '—');
 export const dateTime = (d: string | Date | null) => (d ? dateTimeFmt.format(new Date(d)) : '—');
-/** Un día «2026-10-13» (sin hora), como sale de messagesPerDay. */
+/** Un día "2026-10-13" (sin hora), como sale de messagesPerDay. */
 export const day = (iso: string) => dayFmt.format(new Date(`${iso}T00:00:00Z`));
 
-/** «hace 3 h», «hace 2 días»… para la última actividad. */
+/** "hace 3 h", "hace 2 días"… para la última actividad. */
 export function ago(d: string | Date | null): string {
   if (!d) return 'nunca';
   const min = Math.round((Date.now() - new Date(d).getTime()) / 60000);

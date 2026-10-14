@@ -11,8 +11,8 @@ export const LAUNCHED = WHATSAPP_NUMBER.length > 0;
 export const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=Hola%20TelMoney`;
 
 /** App de TelMoney (opcional: todo funciona por WhatsApp).
- *  Google Play: la ficha de la app en PUBLIC_PLAY_STORE_URL; mientras no exista, lleva a la búsqueda de «TelMoney».
- *  App Store: todavía no está; se muestra «Muy pronto» hasta que haya PUBLIC_APP_STORE_URL. */
+ *  Google Play: la ficha de la app en PUBLIC_PLAY_STORE_URL; mientras no exista, lleva a la búsqueda de "TelMoney".
+ *  App Store: todavía no está; se muestra "Muy pronto" hasta que haya PUBLIC_APP_STORE_URL. */
 export const PLAY_STORE_URL: string =
   env.PUBLIC_PLAY_STORE_URL || 'https://play.google.com/store/search?q=TelMoney&c=apps';
 export const APP_STORE_URL: string = env.PUBLIC_APP_STORE_URL ?? '';
@@ -31,12 +31,12 @@ export const RELEASE_AT = '2026-11-01T00:00:00-06:00';
 /** Datos fijos de la marca. Los textos para buscadores y redes viven en src/seo/meta.ts. */
 export const SITE = {
   name: 'TelMoney',
-  /** Dominio público (sin «/» final). Las imágenes para compartir necesitan URLs absolutas. */
+  /** Dominio público (sin "/" final). Las imágenes para compartir necesitan URLs absolutas. */
   url: (env.PUBLIC_SITE_URL || 'https://telmoney.app').replace(/\/$/, ''),
   tagline: 'Tu dinero en orden, por WhatsApp.',
   instagram: 'https://instagram.com/telmoney.sv',
   tiktok: 'https://tiktok.com/@telmoney.sv',
-  /** Usuario de X sin «@». Vacío = no se publica twitter:site. */
+  /** Usuario de X sin "@". Vacío = no se publica twitter:site. */
   x: env.PUBLIC_X_HANDLE ?? '',
   email: 'hola@telmoney.app',
 };

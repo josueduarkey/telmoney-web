@@ -42,9 +42,9 @@
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', t === 'light' ? '#ffffff' : '#000000');
   };
 
-  // «theme-switching» apaga las transiciones de color de los componentes (si no, un botón pasaría
+  // "theme-switching" apaga las transiciones de color de los componentes (si no, un botón pasaría
   // unos milisegundos con texto y fondo del mismo color) y esconde la etiqueta del cursor, que si no
-  // quedaría congelada en la «foto» que toma el navegador para animar el cambio.
+  // quedaría congelada en la "foto" que toma el navegador para animar el cambio.
   const startSwitch = () => root.classList.add('theme-switching');
   const endSwitch = () => root.classList.remove('theme-switching');
 
@@ -92,7 +92,7 @@
         return;
       }
 
-      // Antes de la «foto»: se esconde la etiqueta del cursor
+      // Antes de la "foto": se esconde la etiqueta del cursor
       startSwitch();
       // El tema nuevo entra como un círculo de borde difuminado que crece desde el botón.
       // La máscara es un degradado radial: sólido hasta el 70 % del radio y se desvanece hasta el 100 %.

@@ -4,7 +4,7 @@ type Payload = {
   name: string;
   whatsapp: string; // E.164: +50370000000
   email: string | null;
-  pains: string[]; // respuestas de «¿qué es lo que más te cuesta?» (opción múltiple)
+  pains: string[]; // respuestas de "¿qué es lo que más te cuesta?" (opción múltiple)
   source: 'landing';
   utm: Record<string, string>;
 };
@@ -20,7 +20,7 @@ class SubmitError extends Error {
   }
 }
 
-/** 8 dígitos = número salvadoreño (+503). Con «+» o 00 al inicio = otro país. */
+/** 8 dígitos = número salvadoreño (+503). Con "+" o 00 al inicio = otro país. */
 export function normalizePhone(raw: string): string | null {
   const trimmed = raw.trim();
   const digits = trimmed.replace(/\D/g, '');

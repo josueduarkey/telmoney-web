@@ -22,7 +22,7 @@ import { PAINS as pains } from '../data/pains';
       <p class="lead">
         {
           LAUNCHED
-            ? 'Escríbele «hola» y en un minuto ya estás anotando. 7 días gratis con todo lo de Pro.'
+            ? 'Escríbele "hola" y en un minuto ya estás anotando. 7 días gratis con todo lo de Pro.'
             : 'Abrimos la beta el 1 de noviembre. Déjanos tu WhatsApp y sé de los primeros en probarlo, con 7 días gratis de Pro.'
         }
       </p>
@@ -34,7 +34,7 @@ import { PAINS as pains } from '../data/pains';
           <a class="btn btn--primary btn--block" href={WHATSAPP_URL} target="_blank" rel="noopener">
             Pruébalo gratis 7 días
           </a>
-          <p class="beta__fine">Se abre WhatsApp con el mensaje «Hola TelMoney» listo para mandar.</p>
+          <p class="beta__fine">Se abre WhatsApp con el mensaje "Hola TelMoney" listo para mandar.</p>
         </div>
       ) : (
         <form class="beta__card" data-waitlist data-endpoint={WAITLIST_URL} novalidate>
@@ -324,13 +324,13 @@ import { PAINS as pains } from '../data/pains';
     color: var(--danger);
     font-size: 0.95rem;
   }
-  /* Aviso que no es error (ej. «Un momento…») */
+  /* Aviso que no es error (ej. "Un momento…") */
   .beta__status[data-tone='info'] {
     background: var(--fill);
     color: var(--text-muted);
   }
 
-  /* «Registro completado»: modal centrado, con fondo oscurecido */
+  /* "Registro completado": modal centrado, con fondo oscurecido */
   .beta-modal {
     width: min(520px, calc(100vw - 32px));
     max-height: calc(100dvh - 32px);
@@ -414,7 +414,7 @@ import { PAINS as pains } from '../data/pains';
     stroke-dashoffset: 40;
     animation: draw 0.5s 0.75s var(--ease-out) forwards;
   }
-  /* El círculo se llena de verde suave y el check «salta» al terminar de dibujarse */
+  /* El círculo se llena de verde suave y el check "salta" al terminar de dibujarse */
   .beta__check {
     display: grid;
     place-items: center;

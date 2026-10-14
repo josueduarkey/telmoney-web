@@ -1,11 +1,11 @@
-// Textos para buscadores y redes sociales. Un solo lugar para todo lo que «se ve afuera» de la página.
+// Textos para buscadores y redes sociales. Un solo lugar para todo lo que "se ve afuera" de la página.
 //
 // Por qué cada texto es distinto:
-// - <title> y meta description son para Google: llevan lo que la gente busca («control de gastos»,
-//   «WhatsApp») y caben sin cortarse (≈60 y ≈155 caracteres).
+// - <title> y meta description son para Google: llevan lo que la gente busca ("control de gastos",
+//   "WhatsApp") y caben sin cortarse (≈60 y ≈155 caracteres).
 // - og:title / og:description son para cuando alguien comparte el link (WhatsApp, Facebook, LinkedIn,
 //   X, Telegram, iMessage): van con el lema, más cortos y terminan en un llamado a la acción.
-// - Todo cambia solo el día del lanzamiento (LAUNCHED en config.ts): de «únete a la beta» a «pruébalo gratis».
+// - Todo cambia solo el día del lanzamiento (LAUNCHED en config.ts): de "únete a la beta" a "pruébalo gratis".
 import { LAUNCHED, SITE } from '../config';
 
 // Corto a propósito (≈90 caracteres): WhatsApp muestra 2 líneas y Facebook 1; el beneficio va primero.
@@ -29,14 +29,14 @@ export const SEO = {
   ogDescription: `Sabe cuánto puedes gastar hoy con un mensaje de WhatsApp. ${CTA_SOCIAL}`,
 
   /** Imagen para compartir: 1200×630 (1.91:1), JPEG liviano (WhatsApp no muestra imágenes pesadas).
-   *  Se genera con «npm run og» (scripts/og.mjs). Si cambia el diseño, sube el número de ?v=
+   *  Se genera con "npm run og" (scripts/og.mjs). Si cambia el diseño, sube el número de ?v=
    *  para que WhatsApp y Facebook no sigan mostrando la versión vieja guardada en caché. */
   image: {
     path: '/og/telmoney-og.jpg?v=3',
     width: 1200,
     height: 630,
     type: 'image/jpeg',
-    alt: 'TelMoney: tu dinero en orden, por WhatsApp. Un chat responde «Hoy puedes gastar $21.70».',
+    alt: 'TelMoney: tu dinero en orden, por WhatsApp. Un chat responde "Hoy puedes gastar $21.70".',
   },
 };
 

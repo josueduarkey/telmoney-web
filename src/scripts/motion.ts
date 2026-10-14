@@ -36,7 +36,7 @@ function smoothScroll() {
   lenis.on('scroll', ScrollTrigger.update);
   gsap.ticker.add((t) => lenis.raf(t * 1000));
   gsap.ticker.lagSmoothing(0);
-  // Un modal abierto (ej. «Registro completado») pausa el scroll de la página detrás.
+  // Un modal abierto (ej. "Registro completado") pausa el scroll de la página detrás.
   document.addEventListener('tm:scroll-lock', () => lenis.stop());
   document.addEventListener('tm:scroll-unlock', () => lenis.start());
 
@@ -143,7 +143,7 @@ function floatStickers() {
   });
 }
 
-/* Línea de progreso de «Así de simple» */
+/* Línea de progreso de "Así de simple" */
 function howItWorks() {
   // El paso activo lo marca el propio componente (HowItWorks.astro), también sin animaciones.
   // Aquí solo se anima la línea de progreso.

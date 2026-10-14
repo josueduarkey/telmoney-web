@@ -1,4 +1,4 @@
-// Normaliza los logos de bancos y billeteras de la sección «Conoce tus bancos».
+// Normaliza los logos de bancos y billeteras de la sección "Conoce tus bancos".
 // Uso: npm run bancos
 //
 // Lee los originales de src/assets/bancos/originales/ (como vengan: color, blanco, con aire)
@@ -44,7 +44,7 @@ function inkOf(r, g, b, a, lightCut) {
 }
 
 // Densidad para rasterizar un SVG lo bastante grande para recortarlo nítido, sin pasarse del
-// límite de píxeles (los SVG medidos en «pt» crecen mucho más rápido que los medidos en px).
+// límite de píxeles (los SVG medidos en "pt" crecen mucho más rápido que los medidos en px).
 async function densityFor(path) {
   let density = 72;
   if (!path.endsWith('.svg')) return density;

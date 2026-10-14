@@ -17,13 +17,13 @@
   --green: #0e9f6e; /* Verde Quincena */
   --green-deep: #057a55; /* Verde Profundo */
   --green-glow: #3ddc97;
-  --gold: #f5b83d; /* Oro: ahorro, metas y «Pro» */
+  --gold: #f5b83d; /* Oro: ahorro, metas y "Pro" */
   --mint: #ecfdf5;
   --coral: #f26b5b;
   --cloud: #f4f6f5;
   --white: #ffffff;
   --black: #000000;
-  --ink: #000000; /* «tel» del logo sobre claro */
+  --ink: #000000; /* "tel" del logo sobre claro */
 
   /* Tipografía */
   --font-display: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', system-ui, sans-serif;
@@ -100,7 +100,7 @@
   --box-bg: rgba(4, 30, 22, 0.92);
   --box-sheen: rgba(255, 255, 255, 0.07);
   --glass: rgba(7, 11, 9, 0.9);
-  /* «Sin TelMoney»: pantalla bloqueada gris */
+  /* "Sin TelMoney": pantalla bloqueada gris */
   --before-bg: #0a0a0a;
   --before-glow: rgba(255, 255, 255, 0.05);
   --before-say: rgba(255, 255, 255, 0.5);
@@ -236,7 +236,7 @@
   --tone-no: #c2410c;
 }
 
-/* Fondo de chat de WhatsApp: en claro se invierte con una mezcla «difference»
+/* Fondo de chat de WhatsApp: en claro se invierte con una mezcla "difference"
    (garabatos oscuros sobre beige), en oscuro se usa tal cual. */
 .wa-wall {
   background-color: var(--chat-bg);
@@ -534,7 +534,7 @@ html.motion [data-hero-phone] {
 }
 
 /* Mientras cambia el tema, ningún componente anima sus colores (ver ThemeToggle.astro)
-   y la etiqueta del cursor se esconde para no quedar congelada en la «foto» de la transición */
+   y la etiqueta del cursor se esconde para no quedar congelada en la "foto" de la transición */
 .theme-switching *,
 .theme-switching *::before,
 .theme-switching *::after {

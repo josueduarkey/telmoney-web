@@ -56,7 +56,7 @@ if (Astro.request.method === 'POST') {
     // Si falla, se devuelve lo escrito para no repetirlo; la llave nunca.
     avisar(
       r.ok
-        ? { tipo: 'ok', texto: `Se agregó «${r.data.nombre}» y respondió bien.` }
+        ? { tipo: 'ok', texto: `Se agregó "${r.data.nombre}" y respondió bien.` }
         : { tipo: 'error', texto: r.detail, form: { nombre, ...(modelos as Record<string, string>) } },
     );
   } else if (accion === 'editar') {
@@ -69,7 +69,7 @@ if (Astro.request.method === 'POST') {
       avisar({ tipo: 'ok', texto: 'No había nada que cambiar.' });
     } else {
       const r = await bot<Conexion>(`/admin/ia/conexiones/${id}`, { method: 'PATCH', body, email });
-      avisar(r.ok ? { tipo: 'ok', texto: `Se guardó «${r.data.nombre}».` } : { tipo: 'error', texto: r.detail });
+      avisar(r.ok ? { tipo: 'ok', texto: `Se guardó "${r.data.nombre}".` } : { tipo: 'error', texto: r.detail });
       if (!r.ok) volver = `/admin/ia?editar=${id}`;
     }
   } else if (accion === 'activar' || accion === 'apagar') {
@@ -80,7 +80,7 @@ if (Astro.request.method === 'POST') {
     });
     avisar(
       r.ok
-        ? { tipo: 'ok', texto: `«${r.data.nombre}» quedó ${r.data.activa ? 'prendida' : 'apagada'}.` }
+        ? { tipo: 'ok', texto: `"${r.data.nombre}" quedó ${r.data.activa ? 'prendida' : 'apagada'}.` }
         : { tipo: 'error', texto: r.detail },
     );
   } else if (accion === 'primero' || accion === 'subir' || accion === 'bajar') {
@@ -97,12 +97,12 @@ if (Astro.request.method === 'POST') {
       !r.ok
         ? { tipo: 'error', texto: r.detail }
         : r.data.ok
-          ? { tipo: 'ok', texto: `«${nombre}» respondió en ${(r.data.ms / 1000).toFixed(1)} s.` }
-          : { tipo: 'error', texto: `«${nombre}» no respondió: ${(r.data.error ?? r.data.estado).replace(/\.$/, '')}.` },
+          ? { tipo: 'ok', texto: `"${nombre}" respondió en ${(r.data.ms / 1000).toFixed(1)} s.` }
+          : { tipo: 'error', texto: `"${nombre}" no respondió: ${(r.data.error ?? r.data.estado).replace(/\.$/, '')}.` },
     );
   } else if (accion === 'borrar') {
     const r = await bot<{ ok: boolean }>(`/admin/ia/conexiones/${id}`, { method: 'DELETE', email });
-    avisar(r.ok ? { tipo: 'ok', texto: `Se borró «${nombre}».` } : { tipo: 'error', texto: r.detail });
+    avisar(r.ok ? { tipo: 'ok', texto: `Se borró "${nombre}".` } : { tipo: 'error', texto: r.detail });
   }
   return Astro.redirect(volver, 303);
 }
@@ -268,7 +268,7 @@ const form = aviso?.form ?? {};
                       <input type="hidden" name="accion" value="borrar" />
                       <input type="hidden" name="id" value={c.id} />
                       <input type="hidden" name="nombre" value={c.nombre} />
-                      <span>¿Borrar «{c.nombre}»?</span>
+                      <span>¿Borrar "{c.nombre}"?</span>
                       <button class="btn-quiet btn-danger" type="submit">
                         Sí, borrarla
                       </button>
@@ -284,7 +284,7 @@ const form = aviso?.form ?? {};
           editando && (
             <section class="card section" id="editar" aria-labelledby="t-editar">
               <div class="card__head">
-                <h2 id="t-editar">Editar «{editando.nombre}»</h2>
+                <h2 id="t-editar">Editar "{editando.nombre}"</h2>
                 <a class="card__sub" href="/admin/ia">
                   Cancelar
                 </a>

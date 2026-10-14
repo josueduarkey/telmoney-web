@@ -23,7 +23,7 @@ type Options = { loop?: boolean; startDelay?: number; signal?: AbortSignal };
 
 /**
  * Reproduce una conversación de <Chat scripted> dentro de un <Phone typing>:
- * los mensajes propios aparecen como enviados; los del bot, después de «escribiendo…».
+ * los mensajes propios aparecen como enviados; los del bot, después de "escribiendo…".
  */
 export async function playChat(
   root: HTMLElement,

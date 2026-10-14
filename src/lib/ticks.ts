@@ -1,4 +1,4 @@
-// Doble palomita de «leído», con la forma de WhatsApp: dos trazos finos en azul,
+// Doble palomita de "leído", con la forma de WhatsApp: dos trazos finos en azul,
 // el segundo corrido a la derecha con su patita corta escondida detrás del primero.
 // Se usa en los mensajes fijos (Chat.astro) y en los que crea la demo (scripts/demo-bot.ts).
 export const TICKS_SVG =
