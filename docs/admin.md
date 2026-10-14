@@ -43,7 +43,7 @@ Se crean con SQL, **no** desde la pantalla «Roles» de Neon: los que se crean a
    grant usage on schema public to landing_waitlist;
    grant select, insert, update on waitlist to landing_waitlist;
    ```
-3. Las dos conexiones quedan así (el mismo host del bot, con «-pooler»):
+3. Las dos conexiones quedan así. El host es el mismo del `DATABASE_URL` del bot (con «-pooler»); no se escribe aquí porque este repositorio es público:
    ```
    postgresql://panel_admin:CONTRASEÑA_1@TU-HOST-pooler.REGION.aws.neon.tech/neondb?sslmode=require
    postgresql://landing_waitlist:CONTRASEÑA_2@TU-HOST-pooler.REGION.aws.neon.tech/neondb?sslmode=require
