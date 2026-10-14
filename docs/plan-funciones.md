@@ -1,6 +1,6 @@
 # Plan de funciones: que Pro se pague solo
 
-*Octubre 2026. Decisión de Josué: empezar por la fase 1.*
+*Octubre 2026. Decisión de Josué: empezar por la fase 1. En la beta solo hay planes individuales (Starter y Pro): el plan Familia queda fuera.*
 
 ## La idea
 
@@ -44,17 +44,18 @@ La gente no paga por funciones («avisos de pagos fijos»), paga por resultados:
 - **Bot:** grupos de división (participantes, monto por persona, pagado o pendiente), rachas en la foto diaria y catálogo de retos.
 - **Web:** sección o tarjetas para jóvenes, y una conversación de ejemplo con la «vaca» en el teléfono de la página.
 
-## Fase 3: personas mayores y familia
+## Fase 3: personas mayores
 
 | Función | Plan | Qué resuelve |
 |---|---|---|
-| **Modo familiar** | **Familia** (nuevo, lo paga el hijo o la hija) | Con permiso del papá o la mamá, el familiar ve un resumen y recibe avisos: pago por vencer, gasto raro, saldo bajo. |
 | **Respuestas por voz** | Starter | Quien prefiere audio recibe la respuesta en nota de voz. |
 | **Alerta de estafas** | Todos | «Me pidieron depositar $200 para cobrar un premio» → «Eso suena a estafa, no lo hagas». |
 | **Remesas** | Starter | Registrar lo que llega del extranjero y cuánto queda de lo que mandó la familia. |
 
-- **Bot:** vínculo familiar con consentimiento explícito por WhatsApp (se puede revocar en cualquier momento), qué ve el familiar (resúmenes y avisos, nunca cada movimiento salvo que se autorice), texto a voz, reglas y modelo para detectar estafas, y categoría y cuenta de remesas.
-- **Web:** plan Familia en Precios, una sección dirigida a hijos e hijas («Ayuda a tus papás sin estar encima»), y **actualizar la política de privacidad** con lo que ve el familiar y cómo se revoca.
+- **Bot:** texto a voz, reglas y modelo para detectar estafas, y categoría y cuenta de remesas.
+- **Web:** tarjetas o sección para personas mayores (todo por audio, alerta de estafas, remesas).
+
+**Fuera de la beta:** el modo familiar (un hijo o hija ve, con permiso, el resumen y los avisos de sus papás) sería un plan Familia aparte. En la beta solo hay planes individuales; se retoma después.
 
 ## Fase 4: facturas y renta
 
