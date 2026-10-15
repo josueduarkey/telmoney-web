@@ -18,7 +18,7 @@ const r = await me<{ movimientos: Movimiento[]; hay_mas: boolean }>(
 );
 if (!r.ok && r.status === 404) return Astro.redirect('/cuenta');
 const KIND = { expense: 'Gasto', income: 'Ingreso', transfer: 'Transferencia' } as const;
-const lista = r.ok ? r.data.movimientos : [];
+const lista = r.ok ? (r.data?.movimientos ?? []) : [];
 ---
 
 <Cuenta title="Movimientos" section="movimientos">
@@ -63,7 +63,7 @@ const lista = r.ok ? r.data.movimientos : [];
   }
   <div class="filters section">
     {antes > 0 && <a class="btn-quiet" href="/cuenta/movimientos">← Los más recientes</a>}
-    {r.ok && r.data.hay_mas && lista.length > 0 && (
+    {r.ok && r.data?.hay_mas && lista.length > 0 && (
       <a class="btn-quiet" href={`/cuenta/movimientos?antes=${lista[lista.length - 1].id}`}>Anteriores →</a>
     )}
   </div>

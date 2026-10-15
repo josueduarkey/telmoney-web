@@ -26,11 +26,12 @@ if (Astro.request.method === 'POST') {
       body: { plan: String(f.get('plan') ?? '') },
     });
     // Solo se redirige a un enlace https: nunca a otra cosa que devuelva la API.
-    if (r.ok && /^https:\/\//.test(r.data.checkout_url)) return Astro.redirect(r.data.checkout_url, 303);
+    if (r.ok && r.data?.checkout_url && /^https:\/\//.test(r.data.checkout_url)) return Astro.redirect(r.data.checkout_url, 303);
     error = r.ok ? 'No pudimos crear el enlace de pago.' : r.detail;
   }
 }
 
+const pagoListo = Astro.url.searchParams.get('pago') === 'listo';
 const perfil = await me<Me>('/me', token);
 if (perfil.ok && !perfil.data.vinculado) return Astro.redirect('/cuenta');
 const datos = perfil.ok && perfil.data.vinculado ? perfil.data : null;
@@ -54,6 +55,11 @@ const nivelDe = (plan: string) => (plan.startsWith('starter') ? 'starter' : 'pro
     </div>
   </div>
 
+  {pagoListo && (
+    <p class="flash flash--ok" role="alert">
+      ¡Gracias por tu pago! En cuanto Wompi lo confirme, tu plan se actualizará aquí y TelMoney te avisará por WhatsApp.
+    </p>
+  )}
   {error && <p class="flash flash--error" role="alert">{error}</p>}
   {!perfil.ok && <p class="flash flash--error">{perfil.detail}</p>}
 
@@ -78,7 +84,7 @@ const nivelDe = (plan: string) => (plan.startsWith('starter') ? 'starter' : 'pro
             {datos.plan.estado === 'pagando' ? 'Renovar o cambiar de plan' : 'Elige tu plan'}
           </h2>
           <div class="plans">
-            {datos.precios.map((p) => (
+            {(datos.precios ?? []).map((p) => (
               <form method="post" class:list={['card', 'plan-card', { 'plan-card--pro': nivelDe(p.plan) === 'pro' }]}>
                 <input type="hidden" name="accion" value="pagar" />
                 <input type="hidden" name="plan" value={p.plan} />
@@ -97,6 +103,9 @@ const nivelDe = (plan: string) => (plan.startsWith('starter') ? 'starter' : 'pro
               </form>
             ))}
           </div>
+          {(!datos.precios || !datos.precios.length) && (
+            <p class="empty" style="margin-top: var(--s-3)">Los planes se están actualizando. Puedes consultar tu plan o pagar escribiéndole a TelMoney por WhatsApp.</p>
+          )}
           <p class="note">Te llevamos a Wompi para pagar con tarjeta. Al terminar, TelMoney te avisa por WhatsApp.</p>
         </section>
 
@@ -106,7 +115,7 @@ const nivelDe = (plan: string) => (plan.startsWith('starter') ? 'starter' : 'pro
             <table class="table">
               <tbody>
                 {pagos?.ok &&
-                  pagos.data.pagos.map((p) => (
+                  (pagos.data?.pagos ?? []).map((p) => (
                     <tr>
                       <td class="nowrap muted">{dateTime(p.fecha)}</td>
                       <td>{planLabel(p.plan, null)}</td>
@@ -116,7 +125,7 @@ const nivelDe = (plan: string) => (plan.startsWith('starter') ? 'starter' : 'pro
                   ))}
               </tbody>
             </table>
-            {pagos?.ok && !pagos.data.pagos.length && <p class="empty">Todavía no has pagado.</p>}
+            {pagos?.ok && !(pagos.data?.pagos?.length) && <p class="empty">Todavía no has pagado.</p>}
             {pagos && !pagos.ok && <p class="empty">{pagos.detail}</p>}
           </div>
         </section>

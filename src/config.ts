@@ -22,7 +22,7 @@ export const APP_STORE_URL: string = env.PUBLIC_APP_STORE_URL ?? '';
 export const WAITLIST_URL: string = env.PUBLIC_WAITLIST_URL || '/api/waitlist';
 
 export const CTA = LAUNCHED
-  ? { label: 'Pruébalo gratis 7 días', href: WHATSAPP_URL, external: true, cursor: 'Pruébalo' }
+  ? { label: 'Pruébalo gratis', href: WHATSAPP_URL, external: true, cursor: 'Pruébalo' }
   : { label: 'Únete a la beta', href: '#beta', external: false, cursor: 'Únete' };
 
 /** Apertura de la beta: 1 de noviembre de 2026, medianoche en El Salvador (UTC−6). */

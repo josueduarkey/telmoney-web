@@ -17,7 +17,7 @@ const zone = (path: string) =>
 
 // `next('/ruta')` muestra esa página sin cambiar la URL y sin volver a pasar por aquí.
 const NOTICE = '/admin/aviso';
-const SALIR = new Set(['/admin/salir', '/cuenta/salir']);
+const SALIR = new Set(['/admin/salir', '/cuenta/salir', '/admin/salir/', '/cuenta/salir/']);
 
 const api = clerkApi;
 const gate =

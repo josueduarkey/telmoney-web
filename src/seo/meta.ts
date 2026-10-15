@@ -9,7 +9,7 @@
 import { LAUNCHED, SITE } from '../config';
 
 // Corto a propósito (≈90 caracteres): WhatsApp muestra 2 líneas y Facebook 1; el beneficio va primero.
-const CTA_SOCIAL = LAUNCHED ? 'Pruébalo gratis 7 días.' : 'Beta gratis el 1 de noviembre.';
+const CTA_SOCIAL = LAUNCHED ? 'Pruébalo gratis.' : 'Beta gratis el 1 de noviembre.';
 
 export const SEO = {
   /** Idioma del contenido: español neutro (se lanza en El Salvador, pensado para Latinoamérica). */

@@ -87,7 +87,7 @@ const total = data.reduce((s, d) => s + d.n, 0);
   <summary>Ver como tabla</summary>
   <div class="table-wrap">
     <table class="table">
-      <thead><tr><th>Día</th><th class="r">{unit[0].toUpperCase() + unit.slice(1)}</th></tr></thead>
+      <thead><tr><th>Día</th><th class="r">{unit ? unit[0].toUpperCase() + unit.slice(1) : ''}</th></tr></thead>
       <tbody>
         {[...data].reverse().map((d) => <tr><td>{fmtDay(d.day)}</td><td class="r">{money ? usd(d.n) : int(d.n)}</td></tr>)}
       </tbody>

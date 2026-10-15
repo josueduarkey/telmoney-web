@@ -155,7 +155,7 @@ const waHref = (msg: string) =>
                     <p class="card__sub">Últimos 30 días · {usd(r.gastado)} en total</p>
                   </div>
                 </div>
-                <DailyColumns data={r.por_dia.map((d) => ({ day: d.dia, n: d.total }))} unit="gastado" money />
+                <DailyColumns data={(r.por_dia ?? []).map((d) => ({ day: d.dia, n: d.total }))} unit="gastado" money />
               </section>
               <section class="card" aria-labelledby="t-cat">
                 <div class="card__head">
@@ -164,17 +164,17 @@ const waHref = (msg: string) =>
                     <p class="card__sub">Últimos 30 días</p>
                   </div>
                 </div>
-                <CategoryBars data={r.por_categoria.map((c) => ({ name: c.nombre, emoji: c.emoji ?? '', total: c.total, n: c.n }))} />
+                <CategoryBars data={(r.por_categoria ?? []).map((c) => ({ name: c.nombre, emoji: c.emoji ?? '', total: c.total, n: c.n }))} />
               </section>
             </div>
 
             <div class="grid-2">
               <section class="card" aria-labelledby="t-cuentas">
                 <h2 id="t-cuentas" class="card__head">Tus cuentas</h2>
-                {r.cuentas.length ? (
+                {(r.cuentas ?? []).length ? (
                   <table class="table table--card">
                     <tbody>
-                      {r.cuentas.map((c) => (
+                      {(r.cuentas ?? []).map((c) => (
                         <tr>
                           <td>{c.nombre}</td>
                           <td class="r">{usd(c.saldo)}</td>
@@ -188,13 +188,13 @@ const waHref = (msg: string) =>
               </section>
               <section class="card" aria-labelledby="t-metas">
                 <h2 id="t-metas" class="card__head">Tus metas</h2>
-                {r.metas.length ? (
+                {(r.metas ?? []).length ? (
                   <ul class="hbars hbars--wide" role="list">
-                    {r.metas.map((m) => (
+                    {(r.metas ?? []).map((m) => (
                       <li data-tip={`${usd(m.actual)} de ${usd(m.meta)}\n${m.nombre}${m.fecha ? ` · para el ${date(m.fecha)}` : ''}`}>
                         <span class="hbars__name">{m.nombre}</span>
                         <span class="hbars__track" aria-hidden="true">
-                          <span class="hbars__bar" style={`width:${Math.min(100, (m.actual / Math.max(1, m.meta)) * 100).toFixed(1)}%`} />
+                          <span class="hbars__bar" style={`width:${Math.max(0, Math.min(100, (m.actual / Math.max(1, m.meta)) * 100)).toFixed(1)}%`} />
                         </span>
                         <span class="hbars__value">{Math.round((m.actual / Math.max(1, m.meta)) * 100)}%</span>
                       </li>
@@ -217,7 +217,7 @@ const waHref = (msg: string) =>
             <div class="table-wrap">
               <table class="table">
                 <tbody>
-                  {ultimos.data.movimientos.map((m) => (
+                  {(ultimos.data?.movimientos ?? []).map((m) => (
                     <tr>
                       <td class="nowrap muted">{dateTime(m.fecha)}</td>
                       <td>
@@ -232,7 +232,7 @@ const waHref = (msg: string) =>
                   ))}
                 </tbody>
               </table>
-              {!ultimos.data.movimientos.length && <p class="empty">Todavía no anotas nada. Escríbele a TelMoney tu primer gasto.</p>}
+              {!(ultimos.data?.movimientos?.length) && <p class="empty">Todavía no anotas nada. Escríbele a TelMoney tu primer gasto.</p>}
             </div>
           </section>
         )}
@@ -246,14 +246,30 @@ const waHref = (msg: string) =>
 <script>
   // Mientras espera que mande el código por WhatsApp, se revisa cada 3 s y se recarga al quedar conectada.
   if (document.querySelector('[data-esperando]')) {
+    let attempts = 0;
+    const maxAttempts = 200; // 10 minutos (200 * 3s)
+    let timer: ReturnType<typeof setTimeout> | null = null;
     const tick = async () => {
+      if (document.hidden) return;
+      attempts++;
+      if (attempts > maxAttempts) {
+        const note = document.querySelector<HTMLElement>('[data-esperando]');
+        if (note) note.textContent = 'El código venció. Recarga la página para generar uno nuevo.';
+        return;
+      }
       try {
         const r = await fetch('/cuenta/estado', { cache: 'no-store' });
         if (r.ok && (await r.json()).vinculado) return location.reload();
       } catch {}
-      setTimeout(tick, 3000);
+      timer = setTimeout(tick, 3000);
     };
-    setTimeout(tick, 3000);
+    timer = setTimeout(tick, 3000);
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && attempts <= maxAttempts) {
+        if (timer) clearTimeout(timer);
+        tick();
+      }
+    });
   }
 </script>
 
