@@ -1,8 +1,8 @@
 ---
-import '../styles/global.css';
-import Cursor from '../components/Cursor.astro';
-import SeoHead from '../components/seo/SeoHead.astro';
-import { SEO } from '../seo/meta';
+import "../styles/global.css";
+import Cursor from "../components/Cursor.astro";
+import SeoHead from "../components/seo/SeoHead.astro";
+import { SEO } from "../seo/meta";
 
 interface Props {
   title?: string;
@@ -22,25 +22,27 @@ const { title, description, noindex } = Astro.props;
     <SeoHead title={title} description={description} noindex={noindex} />
 
     <script is:inline>
-      // Antes de pintar:
-      // 1) el tema: lo que la persona eligió (localStorage) o, si no eligió, lo de su navegador;
-      // 2) si acepta movimiento, ocultamos lo que GSAP va a revelar.
       (function () {
         var root = document.documentElement;
         var saved = null;
         try {
-          saved = localStorage.getItem('tm-theme');
+          saved = localStorage.getItem("tm-theme");
         } catch (e) {}
         var theme =
-          saved === 'light' || saved === 'dark'
+          saved === "light" || saved === "dark"
             ? saved
-            : window.matchMedia('(prefers-color-scheme: light)').matches
-              ? 'light'
-              : 'dark';
+            : window.matchMedia("(prefers-color-scheme: light)").matches
+              ? "light"
+              : "dark";
         root.dataset.theme = theme;
         var meta = document.querySelector('meta[name="theme-color"]');
-        if (meta) meta.setAttribute('content', theme === 'light' ? '#ffffff' : '#000000');
-        if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) root.classList.add('motion');
+        if (meta)
+          meta.setAttribute(
+            "content",
+            theme === "light" ? "#ffffff" : "#000000",
+          );
+        if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+          root.classList.add("motion");
       })();
     </script>
   </head>
@@ -49,7 +51,7 @@ const { title, description, noindex } = Astro.props;
     <slot />
     <Cursor />
     <script>
-      import { initMotion } from '../scripts/motion';
+      import { initMotion } from "../scripts/motion";
       initMotion();
     </script>
   </body>
