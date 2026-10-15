@@ -11,6 +11,7 @@ export function GET() {
     'Disallow: /cuenta',
     'Disallow: /chat',
     'Disallow: /pago',
+    'Disallow: /entrar',
     'Disallow: /api/',
     '',
     `Sitemap: ${SITE.url}/sitemap-index.xml`,

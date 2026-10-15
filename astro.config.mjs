@@ -20,7 +20,7 @@ export default defineConfig({
   integrations: [
     sitemap({
       filter: (page) =>
-        !DRAFTS.some((p) => page.endsWith(p)) && !['/admin', '/cuenta', '/chat', '/pago'].some((p) => page.includes(p)),
+        !DRAFTS.some((p) => page.endsWith(p)) && !['/admin', '/cuenta', '/chat', '/pago', '/entrar'].some((p) => page.includes(p)),
     }),
   ],
   // Variables del servidor (panel y formulario). Los secretos se leen al correr, no quedan en el

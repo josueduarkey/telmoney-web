@@ -1,0 +1,168 @@
+---
+// Entrar: el formulario de Clerk dentro de telmoney.app (en vez de la página de Clerk en
+// accounts.telmoney.app). A esta página manda src/middleware.ts cuando falta sesión, con
+// ?redirect_url= a donde iba la persona. Sirve para entrar y para crear cuenta.
+import '../styles/global.css';
+import '../styles/admin.css';
+import Logo from '../components/Logo.astro';
+import ThemeToggle from '../components/ThemeToggle.astro';
+import { NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, PUBLIC_CLERK_PUBLISHABLE_KEY } from 'astro:env/server';
+
+export const prerender = false;
+
+const publishableKey = PUBLIC_CLERK_PUBLISHABLE_KEY || NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || '';
+
+// Solo rutas de este mismo sitio (nada de mandar a otra página después de entrar).
+const pedido = Astro.url.searchParams.get('redirect_url') ?? '';
+let destino = '/cuenta';
+try {
+  const u = new URL(pedido, Astro.url);
+  if (u.origin === Astro.url.origin && u.pathname !== '/entrar') destino = u.pathname + u.search;
+} catch {}
+
+Astro.response.headers.set('Cache-Control', 'no-store');
+Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="color-scheme" content="dark light" />
+    <link rel="icon" href="/favicon-32.png" type="image/png" />
+    <title>Entrar · TelMoney</title>
+    <script is:inline>
+      (function () {
+        var saved = null;
+        try {
+          saved = localStorage.getItem('tm-theme');
+        } catch (e) {}
+        document.documentElement.dataset.theme =
+          saved === 'light' || saved === 'dark'
+            ? saved
+            : window.matchMedia('(prefers-color-scheme: light)').matches
+              ? 'light'
+              : 'dark';
+      })();
+    </script>
+  </head>
+  <body class="admin">
+    <header class="admin-top">
+      <div class="container admin-top__inner">
+        <a class="admin-top__brand" href="/" aria-label="TelMoney, inicio">
+          <Logo size={30} />
+        </a>
+        <span class="admin-nav"></span>
+        <div class="admin-top__who">
+          <ThemeToggle />
+        </div>
+      </div>
+    </header>
+    <main id="main" class="admin-main container entrar">
+      <div class="entrar__box" data-entrar data-key={publishableKey} data-destino={destino}>
+        <p class="entrar__loading" data-cargando>Cargando…</p>
+      </div>
+      <p class="note entrar__legal">
+        Al entrar aceptas los <a href="/terminos">términos</a> y la <a href="/privacidad">política de privacidad</a>.
+      </p>
+    </main>
+  </body>
+</html>
+
+<script>
+  // Carga Clerk solo en esta página (la página pública no lo carga) y monta su formulario aquí.
+  import { loadClerkJSScript, loadClerkUIScript } from '@clerk/shared/loadClerkJsScript';
+  import { esMX } from '@clerk/localizations/es-MX';
+
+  const box = document.querySelector<HTMLElement>('[data-entrar]')!;
+  const loading = box.querySelector<HTMLElement>('[data-cargando]');
+  const publishableKey = box.dataset.key ?? '';
+  const destino = box.dataset.destino || '/cuenta';
+
+  // Los colores del tema actual (claro u oscuro), para que el formulario se vea de TelMoney.
+  const css = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const appearance = () => ({
+    variables: {
+      colorPrimary: css('--accent-graphic'),
+      colorPrimaryForeground: '#000000',
+      colorBackground: css('--surface'),
+      colorForeground: css('--text'),
+      colorMutedForeground: css('--text-muted'),
+      colorInput: css('--bg'),
+      colorInputForeground: css('--text'),
+      colorBorder: css('--field-border'),
+      colorDanger: css('--danger'),
+      fontFamily: css('--font-ui'),
+      borderRadius: '12px',
+    },
+  });
+
+  type ClerkLike = {
+    load(opts: Record<string, unknown>): Promise<void>;
+    mountSignIn(el: HTMLElement, props: Record<string, unknown>): void;
+    __internal_updateProps?(p: { appearance: unknown }): void;
+  };
+
+  (async () => {
+    if (!publishableKey) {
+      if (loading) loading.textContent = 'Las cuentas todavía no están disponibles.';
+      return;
+    }
+    try {
+      await Promise.all([loadClerkJSScript({ publishableKey }), loadClerkUIScript({ publishableKey })]);
+      const w = window as unknown as { Clerk: ClerkLike; __internal_ClerkUICtor: unknown };
+      const clerk = w.Clerk;
+      await clerk.load({
+        ui: { ClerkUI: w.__internal_ClerkUICtor },
+        localization: esMX,
+        appearance: appearance(),
+        signInUrl: '/entrar',
+        signUpUrl: '/entrar',
+        signInForceRedirectUrl: destino,
+        signUpForceRedirectUrl: destino,
+      });
+      loading?.remove();
+      clerk.mountSignIn(box, {
+        routing: 'hash',
+        withSignUp: true,
+        forceRedirectUrl: destino,
+        signUpForceRedirectUrl: destino,
+      });
+      // Si cambia el tema con el botón, el formulario cambia con él.
+      new MutationObserver(() => clerk.__internal_updateProps?.({ appearance: appearance() })).observe(
+        document.documentElement,
+        { attributes: true, attributeFilter: ['data-theme'] },
+      );
+    } catch {
+      if (loading) loading.textContent = 'No pudimos cargar el inicio de sesión. Recarga la página.';
+    }
+  })();
+</script>
+
+<style>
+  .entrar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--s-5);
+    padding-block: var(--s-8);
+  }
+  .entrar__box {
+    min-height: 380px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    width: 100%;
+  }
+  .entrar__loading {
+    color: var(--text-muted);
+    margin-top: var(--s-8);
+  }
+  .entrar__legal {
+    text-align: center;
+    max-width: 400px;
+  }
+</style>

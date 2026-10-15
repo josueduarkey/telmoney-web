@@ -1,7 +1,7 @@
 // Puertas de las zonas con sesión (Clerk). La página pública no pasa por aquí ni carga nada de Clerk.
 //   /admin   solo un correo verificado de ADMIN_EMAILS
 //   /cuenta  cualquier persona con sesión (su cuenta de TelMoney; docs/cuenta.md)
-// El inicio de sesión es la página de Clerk (Google o código por correo).
+// El inicio de sesión es /entrar: el formulario de Clerk dentro del sitio (Google o código por correo).
 import type { MiddlewareNext } from 'astro';
 import { defineMiddleware } from 'astro:middleware';
 import { clerkMiddleware } from '@clerk/astro/server';
@@ -49,7 +49,7 @@ const gate =
           return show(NOTICE);
         }
         return next();
-      }, clerkKeys)
+      }, { ...clerkKeys, signInUrl: '/entrar', signUpUrl: '/entrar' })
     : null;
 
 export const onRequest = defineMiddleware(async (context, next) => {
