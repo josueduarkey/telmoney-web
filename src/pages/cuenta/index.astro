@@ -1,0 +1,276 @@
+---
+// Mi cuenta: si todavía no conecta su WhatsApp, cómo hacerlo; si ya, su resumen.
+// Los datos los da el bot (/me), con el token de sesión de Clerk de la persona (docs/cuenta.md).
+import Cuenta from '../../layouts/Cuenta.astro';
+import DailyColumns from '../../components/admin/DailyColumns.astro';
+import CategoryBars from '../../components/admin/CategoryBars.astro';
+import { me, type Me, type Movimiento, type Resumen } from '../../lib/admin/bot';
+import { tokenOf, planLabel } from '../../lib/cuenta/session';
+import { date, dateTime, phone, usd, usdShort } from '../../lib/admin/format';
+import { WHATSAPP_NUMBER } from '../../config';
+
+export const prerender = false;
+
+// Segunda llave (la primera es src/middleware.ts).
+if (!Astro.locals.cuenta) return new Response('No autorizado', { status: 401 });
+const token = await tokenOf(Astro.locals);
+if (!token) return Astro.redirect('/cuenta/salir');
+
+const perfil = await me<Me>('/me', token);
+const datos = perfil.ok && perfil.data.vinculado ? perfil.data : null;
+
+// Sin vincular: un código de un solo uso para mandarlo por WhatsApp.
+const vinculo =
+  perfil.ok && !perfil.data.vinculado
+    ? await me<{ codigo: string; mensaje: string; expira: string }>('/me/vincular', token, { method: 'POST' })
+    : null;
+
+const [resumen, ultimos] = datos
+  ? await Promise.all([
+      me<Resumen>('/me/resumen?dias=30', token),
+      me<{ movimientos: Movimiento[] }>('/me/movimientos?limite=8', token),
+    ])
+  : [null, null];
+const r = resumen?.ok ? resumen.data : null;
+
+const ESTADO = { prueba: 'En prueba', pagando: 'Activo', vencido: 'Vencido', equipo: 'Equipo' } as const;
+const CHIP = { prueba: 'warn', pagando: 'ok', vencido: 'danger', equipo: 'ok' } as const;
+const vence = datos ? (datos.plan.estado === 'prueba' ? datos.plan.prueba_hasta : datos.plan.pagado_hasta) : null;
+const diasPara = (iso: string | null) => (iso ? Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000) : null);
+const faltan = diasPara(vence);
+const KIND = { expense: 'Gasto', income: 'Ingreso', transfer: 'Transferencia' } as const;
+const waHref = (msg: string) =>
+  WHATSAPP_NUMBER ? `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}` : null;
+---
+
+<Cuenta title="Mi cuenta" section="resumen" bare={!datos}>
+  {
+    !perfil.ok && (
+      <div class="card notice" role="alert" style="max-width: none">
+        <h1>No pudimos cargar tu cuenta</h1>
+        <p>{perfil.detail}</p>
+      </div>
+    )
+  }
+
+  {
+    vinculo && (
+      <div class="notice connect">
+        <h1>Conecta tu WhatsApp</h1>
+        <p>
+          Así vemos que el número es tuyo y aquí aparece lo que llevas con TelMoney. Solo tienes que mandar un mensaje.
+        </p>
+        {vinculo.ok ? (
+          <>
+            <p class="connect__code" aria-label={`Código ${vinculo.data.codigo.split('').join(' ')}`}>
+              {vinculo.data.codigo}
+            </p>
+            {waHref(vinculo.data.mensaje) ? (
+              <a class="btn btn--primary btn--block connect__btn" href={waHref(vinculo.data.mensaje)!} target="_blank" rel="noopener">
+                Abrir WhatsApp y mandar "{vinculo.data.mensaje}"
+              </a>
+            ) : (
+              <p>
+                Mándale <code>{vinculo.data.mensaje}</code> a TelMoney por WhatsApp.
+              </p>
+            )}
+            <p class="note" data-esperando>
+              TelMoney te va a preguntar en WhatsApp si quieres conectar esta cuenta: confírmalo ahí y esta página se
+              actualiza sola. El código vence en 10 minutos.
+            </p>
+          </>
+        ) : (
+          <p class="flash flash--error">{vinculo.detail}</p>
+        )}
+      </div>
+    )
+  }
+
+  {
+    datos && (
+      <>
+        <div class="admin-head">
+          <div>
+            <h1>Hola{datos.usuario.nombre ? `, ${datos.usuario.nombre.split(' ')[0]}` : ''}</h1>
+            <p>Lo que llevas con TelMoney, al día.</p>
+          </div>
+          <span class={`chip chip--${CHIP[datos.plan.estado]}`}>
+            {planLabel(datos.plan.plan, datos.plan.nivel)} · {ESTADO[datos.plan.estado]}
+          </span>
+        </div>
+
+        {datos.plan.estado === 'vencido' ? (
+          <p class="flash flash--error">
+            Tu plan venció y TelMoney ya no anota lo que le mandas. Tus datos siguen aquí.{' '}
+            <a href="/cuenta/plan">Renuévalo</a>
+          </p>
+        ) : (
+          faltan !== null &&
+          faltan <= 3 && (
+            <p class="flash flash--error">
+              {datos.plan.estado === 'prueba' ? 'Tu prueba' : 'Tu plan'} vence{' '}
+              {faltan <= 0 ? 'hoy' : faltan === 1 ? 'mañana' : `en ${faltan} días`}. <a href="/cuenta/plan">Elige tu plan</a>
+            </p>
+          )
+        )}
+
+        <div class="cards">
+          <div class="card">
+            <p class="stat__label">Puedes gastar hoy</p>
+            <p class="stat__value">{datos.hoy.disponible === null ? '—' : usd(datos.hoy.disponible)}</p>
+            <p class="stat__note">
+              {datos.hoy.disponible === null ? (
+                <>Dile a TelMoney cuánto tienes y cuándo te pagan, y aquí sale tu número del día.</>
+              ) : (
+                <>
+                  hoy llevas <b>{usd(datos.hoy.gastado)}</b>
+                </>
+              )}
+            </p>
+          </div>
+          <div class="card">
+            <p class="stat__label">Gastado este mes</p>
+            <p class="stat__value">{usdShort(datos.mes.gastado)}</p>
+            <p class="stat__note">
+              ingresos <b>{usdShort(datos.mes.ingresos)}</b>
+            </p>
+          </div>
+          <div class="card">
+            <p class="stat__label">{datos.plan.estado === 'prueba' ? 'Tu prueba termina' : 'Tu plan vence'}</p>
+            <p class="stat__value">{vence ? date(vence) : '—'}</p>
+            <p class="stat__note">
+              <a href="/cuenta/plan">{datos.plan.estado === 'pagando' ? 'Ver mi plan' : 'Elegir plan'}</a>
+            </p>
+          </div>
+        </div>
+
+        {!r && resumen && !resumen.ok && <p class="flash flash--error section">{resumen.detail}</p>}
+        {r && (
+          <>
+            <div class="grid-2">
+              <section class="card" aria-labelledby="t-dia">
+                <div class="card__head">
+                  <div>
+                    <h2 id="t-dia">Lo que gastaste cada día</h2>
+                    <p class="card__sub">Últimos 30 días · {usd(r.gastado)} en total</p>
+                  </div>
+                </div>
+                <DailyColumns data={r.por_dia.map((d) => ({ day: d.dia, n: d.total }))} unit="gastado" money />
+              </section>
+              <section class="card" aria-labelledby="t-cat">
+                <div class="card__head">
+                  <div>
+                    <h2 id="t-cat">En qué se te va</h2>
+                    <p class="card__sub">Últimos 30 días</p>
+                  </div>
+                </div>
+                <CategoryBars data={r.por_categoria.map((c) => ({ name: c.nombre, emoji: c.emoji ?? '', total: c.total, n: c.n }))} />
+              </section>
+            </div>
+
+            <div class="grid-2">
+              <section class="card" aria-labelledby="t-cuentas">
+                <h2 id="t-cuentas" class="card__head">Tus cuentas</h2>
+                {r.cuentas.length ? (
+                  <table class="table table--card">
+                    <tbody>
+                      {r.cuentas.map((c) => (
+                        <tr>
+                          <td>{c.nombre}</td>
+                          <td class="r">{usd(c.saldo)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p class="empty">Dile a TelMoney cuánto tienes en cada cuenta y aparecen aquí.</p>
+                )}
+              </section>
+              <section class="card" aria-labelledby="t-metas">
+                <h2 id="t-metas" class="card__head">Tus metas</h2>
+                {r.metas.length ? (
+                  <ul class="hbars hbars--wide" role="list">
+                    {r.metas.map((m) => (
+                      <li data-tip={`${usd(m.actual)} de ${usd(m.meta)}\n${m.nombre}${m.fecha ? ` · para el ${date(m.fecha)}` : ''}`}>
+                        <span class="hbars__name">{m.nombre}</span>
+                        <span class="hbars__track" aria-hidden="true">
+                          <span class="hbars__bar" style={`width:${Math.min(100, (m.actual / Math.max(1, m.meta)) * 100).toFixed(1)}%`} />
+                        </span>
+                        <span class="hbars__value">{Math.round((m.actual / Math.max(1, m.meta)) * 100)}%</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p class="empty">Escríbele a TelMoney "quiero ahorrar para…" y tu meta aparece aquí.</p>
+                )}
+              </section>
+            </div>
+          </>
+        )}
+
+        {ultimos?.ok && (
+          <section class="section" aria-labelledby="t-mov">
+            <div class="card__head">
+              <h2 id="t-mov" class="section-title">Últimos movimientos</h2>
+              <a class="card__sub" href="/cuenta/movimientos">Ver todos</a>
+            </div>
+            <div class="table-wrap">
+              <table class="table">
+                <tbody>
+                  {ultimos.data.movimientos.map((m) => (
+                    <tr>
+                      <td class="nowrap muted">{dateTime(m.fecha)}</td>
+                      <td>
+                        {m.emoji && <span aria-hidden="true">{m.emoji} </span>}
+                        {m.descripcion || m.categoria || KIND[m.tipo]}
+                      </td>
+                      <td class:list={['r', { 'kind-income': m.tipo === 'income' }]}>
+                        {m.tipo === 'income' ? '+' : m.tipo === 'expense' ? '−' : ''}
+                        {usd(m.monto)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {!ultimos.data.movimientos.length && <p class="empty">Todavía no anotas nada. Escríbele a TelMoney tu primer gasto.</p>}
+            </div>
+          </section>
+        )}
+
+        <p class="note">WhatsApp conectado: {phone(datos.usuario.whatsapp)}</p>
+      </>
+    )
+  }
+</Cuenta>
+
+<script>
+  // Mientras espera que mande el código por WhatsApp, se revisa cada 3 s y se recarga al quedar conectada.
+  if (document.querySelector('[data-esperando]')) {
+    const tick = async () => {
+      try {
+        const r = await fetch('/cuenta/estado', { cache: 'no-store' });
+        if (r.ok && (await r.json()).vinculado) return location.reload();
+      } catch {}
+      setTimeout(tick, 3000);
+    };
+    setTimeout(tick, 3000);
+  }
+</script>
+
+<style>
+  .connect {
+    text-align: center;
+    max-width: 520px;
+  }
+  .connect__code {
+    font-family: var(--font-display);
+    font-size: clamp(2.4rem, 8vw, 3.4rem);
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    margin: var(--s-6) 0 var(--s-4);
+    font-variant-numeric: tabular-nums;
+  }
+  .connect__btn {
+    margin-top: var(--s-2);
+  }
+</style>

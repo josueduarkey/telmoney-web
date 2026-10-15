@@ -1,16 +1,23 @@
-// Puerta del panel (/admin). Solo entra quien inicia sesión con Clerk usando un correo verificado
-// de ADMIN_EMAILS. El inicio de sesión es la página de Clerk (con Google): aquí no se carga
-// ningún script de Clerk, y la página pública ni pasa por este archivo.
+// Puertas de las zonas con sesión (Clerk). La página pública no pasa por aquí ni carga nada de Clerk.
+//   /admin   solo un correo verificado de ADMIN_EMAILS
+//   /cuenta  cualquier persona con sesión (su cuenta de TelMoney; docs/cuenta.md)
+// El inicio de sesión es la página de Clerk (Google o código por correo).
 import type { MiddlewareNext } from 'astro';
 import { defineMiddleware } from 'astro:middleware';
 import { clerkMiddleware } from '@clerk/astro/server';
 import { adminEmails, clerkApi, clerkKeys } from './lib/admin/clerk';
 import { adminDb } from './lib/db';
 
-const isAdminPath = (path: string) => path === '/admin' || path.startsWith('/admin/');
+const zone = (path: string) =>
+  path === '/admin' || path.startsWith('/admin/')
+    ? 'admin'
+    : path === '/cuenta' || path.startsWith('/cuenta/')
+      ? 'cuenta'
+      : null;
 
 // `next('/ruta')` muestra esa página sin cambiar la URL y sin volver a pasar por aquí.
 const NOTICE = '/admin/aviso';
+const SALIR = new Set(['/admin/salir', '/cuenta/salir']);
 
 const api = clerkApi;
 const gate =
@@ -20,8 +27,13 @@ const gate =
         const { userId, sessionId, redirectToSignIn } = auth();
         // Salir siempre se puede, aunque la cuenta no tenga acceso (así se cambia de cuenta);
         // sin sesión no hay nada que cerrar: al inicio.
-        if (context.url.pathname === '/admin/salir') return userId ? next() : context.redirect('/', 303);
+        if (SALIR.has(context.url.pathname)) return userId ? next() : context.redirect('/', 303);
         if (!userId || !sessionId) return redirectToSignIn();
+
+        if (zone(context.url.pathname) === 'cuenta') {
+          context.locals.cuenta = { userId, sessionId };
+          return next();
+        }
 
         const user = await api.users.getUser(userId);
         const email = user.emailAddresses.find(
@@ -41,14 +53,20 @@ const gate =
     : null;
 
 export const onRequest = defineMiddleware(async (context, next) => {
-  if (context.isPrerendered || !isAdminPath(context.url.pathname)) return next();
+  const area = zone(context.url.pathname);
+  if (context.isPrerendered || !area) return next();
 
   let response: Response;
   if (gate) {
     response = (await gate(context, next)) ?? (await next());
-  } else {
+  } else if (area === 'admin') {
     context.locals.adminNotice = 'not-configured';
     response = await next(NOTICE);
+  } else {
+    response = new Response('Las cuentas todavía no están disponibles.', {
+      status: 503,
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    });
   }
   // Datos privados: que ningún navegador, CDN ni buscador los guarde.
   const headers = new Headers(response.headers);

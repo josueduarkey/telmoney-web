@@ -19,7 +19,8 @@ export default defineConfig({
   adapter: vercel(),
   integrations: [
     sitemap({
-      filter: (page) => !DRAFTS.some((p) => page.endsWith(p)) && !page.includes('/admin'),
+      filter: (page) =>
+        !DRAFTS.some((p) => page.endsWith(p)) && !['/admin', '/cuenta', '/chat', '/pago'].some((p) => page.includes(p)),
     }),
   ],
   // Variables del servidor (panel y formulario). Los secretos se leen al correr, no quedan en el

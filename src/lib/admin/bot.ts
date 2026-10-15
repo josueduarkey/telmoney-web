@@ -83,3 +83,74 @@ export type Evento = {
 };
 
 export type Ia = { conexiones: Conexion[]; en_uso: number | null; puede_guardar_llaves: boolean; eventos: Evento[] };
+
+// ─────────────────────────────────────── cuentas de usuario (/me, docs/cuenta.md)
+// Aquí no va el token del panel: va el token de sesión de Clerk de la persona, y el bot responde
+// solo lo suyo. Es la misma API que usará la app móvil.
+
+export async function me<T>(
+  path: string,
+  token: string,
+  { method = 'GET', body }: { method?: string; body?: unknown } = {},
+): Promise<BotOk<T> | BotError> {
+  if (!BOT_API_URL) return { ok: false, status: 0, detail: 'Las cuentas todavía no están conectadas con el bot.' };
+  const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
+  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  try {
+    const res = await fetch(`${BOT_API_URL.replace(/\/$/, '')}${path}`, {
+      method,
+      headers,
+      body: body === undefined ? undefined : JSON.stringify(body),
+      signal: AbortSignal.timeout(12000),
+    });
+    const data = await res.json().catch(() => null);
+    if (res.ok) return { ok: true, status: res.status, data: data as T };
+    const porCodigo: Record<number, string> = {
+      401: 'Tu sesión venció. Vuelve a entrar.',
+      429: 'Demasiadas solicitudes. Espera un momento.',
+    };
+    return { ok: false, status: res.status, detail: data?.detail || porCodigo[res.status] || 'Algo falló. Intenta de nuevo.', campo: data?.campo };
+  } catch {
+    return { ok: false, status: 0, detail: 'No pudimos conectar con TelMoney. Intenta de nuevo en un momento.' };
+  }
+}
+
+export type Plan = {
+  estado: 'prueba' | 'pagando' | 'vencido' | 'equipo';
+  nivel: 'starter' | 'pro' | null;
+  plan: string | null;
+  prueba_hasta: string | null;
+  pagado_hasta: string | null;
+  renovacion_automatica: boolean;
+};
+export type Precio = { plan: string; nombre: string; monto: number; periodo: 'mes' | 'año' };
+export type Me =
+  | { vinculado: false }
+  | {
+      vinculado: true;
+      usuario: { nombre: string | null; whatsapp: string | null; zona: string; desde: string };
+      plan: Plan;
+      hoy: { disponible: number | null; gastado: number };
+      mes: { gastado: number; ingresos: number };
+      precios: Precio[];
+    };
+export type Resumen = {
+  gastado: number;
+  ingresos: number;
+  por_dia: { dia: string; total: number }[];
+  por_categoria: { nombre: string; emoji: string | null; total: number; n: number }[];
+  cuentas: { nombre: string; tipo: string; saldo: number }[];
+  metas: { nombre: string; meta: number; actual: number; fecha: string | null }[];
+};
+export type Movimiento = {
+  id: number;
+  fecha: string;
+  tipo: 'expense' | 'income' | 'transfer';
+  monto: number;
+  categoria: string | null;
+  emoji: string | null;
+  cuenta: string | null;
+  a_cuenta: string | null;
+  descripcion: string | null;
+};
+export type Pago = { fecha: string; plan: string; monto: number; estado: 'approved' | 'pending' | 'failed' };

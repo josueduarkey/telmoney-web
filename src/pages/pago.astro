@@ -1,0 +1,67 @@
+---
+// A dónde vuelve la persona después de pagar en Wompi (WOMPI_REDIRECT_URL del bot). No pide sesión:
+// también vuelven aquí los pagos que empiezan en WhatsApp. No muestra datos: el bot activa el plan
+// cuando Wompi le confirma el pago.
+import Base from '../layouts/Base.astro';
+import { WHATSAPP_URL, LAUNCHED } from '../config';
+---
+
+<Base title="Pago recibido" description="Tu pago a TelMoney." noindex>
+  <main id="main" class="pago container">
+    <span class="pago__check" aria-hidden="true">
+      <svg viewBox="0 0 52 52" width="72" height="72">
+        <circle cx="26" cy="26" r="24"></circle>
+        <path d="m15 27 7 7 15-16"></path>
+      </svg>
+    </span>
+    <h1>¡Gracias por tu pago!</h1>
+    <p>
+      En cuanto Wompi lo confirme, TelMoney activa tu plan y te avisa por WhatsApp. Suele tardar unos segundos.
+    </p>
+    <div class="pago__actions">
+      {LAUNCHED && <a class="btn btn--primary" href={WHATSAPP_URL} target="_blank" rel="noopener">Volver a WhatsApp</a>}
+      <a class="btn" href="/cuenta/plan">Ver mi plan</a>
+    </div>
+    <p class="pago__fine">¿El pago no se completó? Puedes intentarlo otra vez desde WhatsApp o desde tu cuenta.</p>
+  </main>
+</Base>
+
+<style>
+  .pago {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: var(--s-4);
+    padding-block: var(--s-8);
+  }
+  .pago h1 {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+  }
+  .pago p {
+    color: var(--text-muted);
+    max-width: 42ch;
+  }
+  .pago__actions {
+    display: flex;
+    gap: var(--s-3);
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: var(--s-2);
+  }
+  .pago__fine {
+    font-size: var(--fs-small);
+  }
+  .pago__check svg {
+    fill: none;
+    stroke: var(--accent-graphic);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+</style>

@@ -1,0 +1,22 @@
+---
+// telmoney.app/chat: el enlace corto para compartir. Abre el chat de TelMoney en WhatsApp con
+// "Hola TelMoney" listo. Antes del lanzamiento (sin número oficial) lleva a la lista de espera.
+import { LAUNCHED, WHATSAPP_URL } from '../config';
+
+const destino = LAUNCHED ? WHATSAPP_URL : '/#beta';
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <meta http-equiv="refresh" content={`0;url=${destino}`} />
+    <title>Abriendo TelMoney en WhatsApp…</title>
+    <script is:inline define:vars={{ destino }}>location.replace(destino);</script>
+  </head>
+  <body style="font-family: system-ui, sans-serif; background: #000; color: #fff; display: grid; place-items: center; min-height: 100vh; margin: 0">
+    <p><a href={destino} style="color: #3ddc97">Abrir TelMoney en WhatsApp</a></p>
+  </body>
+</html>

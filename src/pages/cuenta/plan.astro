@@ -1,0 +1,183 @@
+---
+// Mi plan: cuál tiene, cuándo vence, pasar a Pro o renovar (pago con Wompi, lo arma el bot) y sus pagos.
+// Los pagos son de una vez (no se cobran solos): al vencer, se renueva desde aquí o por WhatsApp.
+import Cuenta from '../../layouts/Cuenta.astro';
+import { me, type Me, type Pago } from '../../lib/admin/bot';
+import { tokenOf, planLabel } from '../../lib/cuenta/session';
+import { date, dateTime, phone, usd } from '../../lib/admin/format';
+
+export const prerender = false;
+
+if (!Astro.locals.cuenta) return new Response('No autorizado', { status: 401 });
+const token = await tokenOf(Astro.locals);
+if (!token) return Astro.redirect('/cuenta/salir');
+
+// Pagar: el bot crea el enlace de Wompi y se manda a la persona ahí.
+let error = '';
+if (Astro.request.method === 'POST') {
+  const f = await Astro.request.formData();
+  if (f.get('accion') === 'desvincular') {
+    const r = await me('/me/vincular', token, { method: 'DELETE' });
+    if (r.ok) return Astro.redirect('/cuenta', 303);
+    error = r.detail;
+  } else {
+    const r = await me<{ checkout_url: string }>('/me/pagar', token, {
+      method: 'POST',
+      body: { plan: String(f.get('plan') ?? '') },
+    });
+    // Solo se redirige a un enlace https: nunca a otra cosa que devuelva la API.
+    if (r.ok && /^https:\/\//.test(r.data.checkout_url)) return Astro.redirect(r.data.checkout_url, 303);
+    error = r.ok ? 'No pudimos crear el enlace de pago.' : r.detail;
+  }
+}
+
+const perfil = await me<Me>('/me', token);
+if (perfil.ok && !perfil.data.vinculado) return Astro.redirect('/cuenta');
+const datos = perfil.ok && perfil.data.vinculado ? perfil.data : null;
+const pagos = datos ? await me<{ pagos: Pago[] }>('/me/pagos', token) : null;
+
+const ESTADO = { prueba: 'En prueba', pagando: 'Activo', vencido: 'Vencido', equipo: 'Equipo' } as const;
+const PAGO = { approved: 'Aprobado', pending: 'Pendiente', failed: 'No se completó' } as const;
+const vence = datos ? (datos.plan.estado === 'prueba' ? datos.plan.prueba_hasta : datos.plan.pagado_hasta) : null;
+const BENEFICIOS: Record<string, string[]> = {
+  starter: ['Anota por texto, foto y audio', 'Cuentas, metas, límites y deudas', 'Cuánto puedes gastar hoy', '5 preguntas libres al día'],
+  pro: ['Todo lo de Starter', 'Avisos antes de cada pago fijo y de tu tarjeta', 'Cobros a quien te debe', 'Preguntas sin límite', 'Excel, PDF y gráficas'],
+};
+const nivelDe = (plan: string) => (plan.startsWith('starter') ? 'starter' : 'pro');
+---
+
+<Cuenta title="Mi plan" section="plan">
+  <div class="admin-head">
+    <div>
+      <h1>Mi plan</h1>
+      <p>Pagas una vez por mes o por año, con Wompi. No se cobra solo: al vencer, lo renuevas aquí o por WhatsApp.</p>
+    </div>
+  </div>
+
+  {error && <p class="flash flash--error" role="alert">{error}</p>}
+  {!perfil.ok && <p class="flash flash--error">{perfil.detail}</p>}
+
+  {
+    datos && (
+      <>
+        <div class="cards">
+          <div class="card">
+            <p class="stat__label">Tu plan</p>
+            <p class="stat__value">{planLabel(datos.plan.plan, datos.plan.nivel)}</p>
+            <p class="stat__note">{ESTADO[datos.plan.estado]}</p>
+          </div>
+          <div class="card">
+            <p class="stat__label">{datos.plan.estado === 'prueba' ? 'La prueba termina' : 'Vence'}</p>
+            <p class="stat__value">{vence ? date(vence) : '—'}</p>
+            <p class="stat__note">{datos.plan.renovacion_automatica ? 'Se renueva solo' : 'No se cobra solo'}</p>
+          </div>
+        </div>
+
+        <section class="section" aria-labelledby="t-planes">
+          <h2 id="t-planes" class="section-title card__head">
+            {datos.plan.estado === 'pagando' ? 'Renovar o cambiar de plan' : 'Elige tu plan'}
+          </h2>
+          <div class="plans">
+            {datos.precios.map((p) => (
+              <form method="post" class:list={['card', 'plan-card', { 'plan-card--pro': nivelDe(p.plan) === 'pro' }]}>
+                <input type="hidden" name="accion" value="pagar" />
+                <input type="hidden" name="plan" value={p.plan} />
+                <h3>{p.nombre}</h3>
+                <p class="plan-card__price">
+                  {usd(p.monto)} <span>/ {p.periodo}</span>
+                </p>
+                <ul>
+                  {(BENEFICIOS[nivelDe(p.plan)] ?? []).map((b) => (
+                    <li>{b}</li>
+                  ))}
+                </ul>
+                <button class="btn-quiet btn-main" type="submit">
+                  Pagar {usd(p.monto)} con Wompi
+                </button>
+              </form>
+            ))}
+          </div>
+          <p class="note">Te llevamos a Wompi para pagar con tarjeta. Al terminar, TelMoney te avisa por WhatsApp.</p>
+        </section>
+
+        <section class="section" aria-labelledby="t-pagos">
+          <h2 id="t-pagos" class="section-title card__head">Tus pagos</h2>
+          <div class="table-wrap">
+            <table class="table">
+              <tbody>
+                {pagos?.ok &&
+                  pagos.data.pagos.map((p) => (
+                    <tr>
+                      <td class="nowrap muted">{dateTime(p.fecha)}</td>
+                      <td>{planLabel(p.plan, null)}</td>
+                      <td>{PAGO[p.estado] ?? p.estado}</td>
+                      <td class="r">{usd(p.monto)}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+            {pagos?.ok && !pagos.data.pagos.length && <p class="empty">Todavía no has pagado.</p>}
+            {pagos && !pagos.ok && <p class="empty">{pagos.detail}</p>}
+          </div>
+        </section>
+
+        <section class="section card" aria-labelledby="t-wa">
+          <h2 id="t-wa" class="card__head">Tu WhatsApp</h2>
+          <p>Conectado: {phone(datos.usuario.whatsapp)}</p>
+          <details class="ia-delete" style="margin-top: var(--s-3)">
+            <summary class="btn-quiet">Desconectar</summary>
+            <form method="post">
+              <input type="hidden" name="accion" value="desvincular" />
+              <span>Tu WhatsApp y tus datos siguen en TelMoney; solo esta cuenta deja de verlos.</span>
+              <button class="btn-quiet btn-danger" type="submit">Sí, desconectar</button>
+            </form>
+          </details>
+        </section>
+      </>
+    )
+  }
+</Cuenta>
+
+<style>
+  .plans {
+    display: grid;
+    gap: var(--s-4);
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+  }
+  .plan-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+  }
+  .plan-card h3 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1.15rem;
+  }
+  .plan-card--pro {
+    box-shadow: inset 0 0 0 1px var(--accent-graphic);
+  }
+  .plan-card__price {
+    font-family: var(--font-display);
+    font-size: 1.8rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .plan-card__price span {
+    font-size: var(--fs-small);
+    font-weight: 500;
+    color: var(--text-muted);
+  }
+  .plan-card ul {
+    margin: 0;
+    padding-left: 1.1em;
+    color: var(--text-muted);
+    font-size: var(--fs-small);
+    display: grid;
+    gap: 4px;
+    flex: 1;
+  }
+  .plan-card .btn-quiet {
+    justify-content: center;
+  }
+</style>

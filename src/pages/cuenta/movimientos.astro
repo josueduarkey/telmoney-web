@@ -1,0 +1,70 @@
+---
+// Todos los movimientos de la persona, de 50 en 50 (el bot pagina con "antes=<id>").
+import Cuenta from '../../layouts/Cuenta.astro';
+import { me, type Movimiento } from '../../lib/admin/bot';
+import { tokenOf } from '../../lib/cuenta/session';
+import { dateTime, usd } from '../../lib/admin/format';
+
+export const prerender = false;
+
+if (!Astro.locals.cuenta) return new Response('No autorizado', { status: 401 });
+const token = await tokenOf(Astro.locals);
+if (!token) return Astro.redirect('/cuenta/salir');
+
+const antes = Number(Astro.url.searchParams.get('antes')) || 0;
+const r = await me<{ movimientos: Movimiento[]; hay_mas: boolean }>(
+  `/me/movimientos?limite=50${antes ? `&antes=${antes}` : ''}`,
+  token,
+);
+if (!r.ok && r.status === 404) return Astro.redirect('/cuenta');
+const KIND = { expense: 'Gasto', income: 'Ingreso', transfer: 'Transferencia' } as const;
+const lista = r.ok ? r.data.movimientos : [];
+---
+
+<Cuenta title="Movimientos" section="movimientos">
+  <div class="admin-head">
+    <div>
+      <h1>Movimientos</h1>
+      <p>Todo lo que le has contado a TelMoney. Para corregir algo, díselo por WhatsApp.</p>
+    </div>
+  </div>
+  {!r.ok && <p class="flash flash--error">{r.detail}</p>}
+  {
+    r.ok && (
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Qué</th>
+              <th>Categoría</th>
+              <th>Cuenta</th>
+              <th class="r">Monto</th>
+            </tr>
+          </thead>
+          <tbody>
+            {lista.map((m) => (
+              <tr>
+                <td class="nowrap muted">{dateTime(m.fecha)}</td>
+                <td>{m.descripcion || KIND[m.tipo]}</td>
+                <td class="nowrap">{m.categoria ? `${m.emoji ?? ''} ${m.categoria}`.trim() : '—'}</td>
+                <td class="nowrap">{m.a_cuenta ? `${m.cuenta ?? 'afuera'} → ${m.a_cuenta}` : (m.cuenta ?? '—')}</td>
+                <td class:list={['r', { 'kind-income': m.tipo === 'income' }]}>
+                  {m.tipo === 'income' ? '+' : m.tipo === 'expense' ? '−' : ''}
+                  {usd(m.monto)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {!lista.length && <p class="empty">Todavía no anotas nada. Escríbele a TelMoney tu primer gasto.</p>}
+      </div>
+    )
+  }
+  <div class="filters section">
+    {antes > 0 && <a class="btn-quiet" href="/cuenta/movimientos">← Los más recientes</a>}
+    {r.ok && r.data.hay_mas && lista.length > 0 && (
+      <a class="btn-quiet" href={`/cuenta/movimientos?antes=${lista[lista.length - 1].id}`}>Anteriores →</a>
+    )}
+  </div>
+</Cuenta>

@@ -2,14 +2,18 @@
 // Columnas por día (una sola serie: el título de la tarjeta dice qué es, sin leyenda).
 // Barras de máximo 24px con la punta redondeada y la base recta, 2px de aire entre barras,
 // guías finas y pocas etiquetas: los valores exactos van en el tooltip y en la tabla de abajo.
-import { day as fmtDay, int } from '../../lib/admin/format';
+import { day as fmtDay, int, usd, usdShort } from '../../lib/admin/format';
 
 interface Props {
   data: { day: string; n: number }[];
   /** Cómo se llama lo que se cuenta, en el tooltip y la tabla ("mensajes"). */
   unit: string;
+  /** Los valores son dólares (eje, tooltip y tabla en $). */
+  money?: boolean;
 }
-const { data, unit } = Astro.props;
+const { data, unit, money = false } = Astro.props;
+const fmt = (v: number) => (money ? usd(v) : `${int(v)} ${unit}`);
+const tick = (v: number) => (money ? usdShort(v).replace('.00', '') : int(v));
 
 const W = 720;
 const H = 200;
@@ -40,13 +44,13 @@ function barPath(x: number, h: number) {
 const total = data.reduce((s, d) => s + d.n, 0);
 ---
 
-<svg class="cols" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${int(total)} ${unit} en ${data.length} días`}>
+<svg class="cols" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${fmt(total)} en ${data.length} días`}>
   {
     ticks.map((t) => (
       <>
         <line class="cols__grid" x1={pad.left} x2={W - pad.right} y1={y(t)} y2={y(t)} />
         <text class="cols__tick" x={pad.left - 8} y={y(t) + 4} text-anchor="end">
-          {int(t)}
+          {tick(t)}
         </text>
       </>
     ))
@@ -65,8 +69,8 @@ const total = data.reduce((s, d) => s + d.n, 0);
             width={band}
             height={plotH}
             tabindex="0"
-            data-tip={`${int(d.n)} ${unit}\n${fmtDay(d.day)}`}
-            aria-label={`${fmtDay(d.day)}: ${int(d.n)} ${unit}`}
+            data-tip={`${fmt(d.n)}\n${fmtDay(d.day)}`}
+            aria-label={`${fmtDay(d.day)}: ${fmt(d.n)}`}
           />
           {labelAt.has(i) && (
             <text class="cols__xlabel" x={x + barW / 2} y={H - 6} text-anchor={i === 0 ? 'start' : i === data.length - 1 ? 'end' : 'middle'}>
@@ -85,7 +89,7 @@ const total = data.reduce((s, d) => s + d.n, 0);
     <table class="table">
       <thead><tr><th>Día</th><th class="r">{unit[0].toUpperCase() + unit.slice(1)}</th></tr></thead>
       <tbody>
-        {[...data].reverse().map((d) => <tr><td>{fmtDay(d.day)}</td><td class="r">{int(d.n)}</td></tr>)}
+        {[...data].reverse().map((d) => <tr><td>{fmtDay(d.day)}</td><td class="r">{money ? usd(d.n) : int(d.n)}</td></tr>)}
       </tbody>
     </table>
   </div>
