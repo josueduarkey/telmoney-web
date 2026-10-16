@@ -44,13 +44,13 @@ export const SITE = {
 // Planes. Las claves (gratis, starter, pro) son las del bot y de los pagos; `name` es lo que ve la gente.
 // Los límites del plan gratis los aplica el bot (telmoney-bot/docs/precios-y-pagos.md); aquí solo se muestran.
 export const PLANS = {
-  gratis: { name: 'Cora', monthly: 0, annual: 0 },
-  starter: { name: 'Pisto', monthly: 4.99, annual: 49.9 },
-  pro: { name: 'Billete', monthly: 9.99, annual: 99.9 },
+  gratis: { name: 'Free', monthly: 0, annual: 0 },
+  starter: { name: 'Plus', monthly: 4.99, annual: 49.9 },
+  pro: { name: 'Pro', monthly: 9.99, annual: 99.9 },
 };
 export const FREE_LIMITS = { perDay: 10, questions: 2 };
 
-/** "pro_mensual" → "Billete mensual"; "pro" → "Billete". */
+/** "pro_mensual" → "Pro mensual"; "pro" → "Pro". */
 export const planDisplay = (id: string) => {
   const [nivel, periodo] = id.split('_');
   const name = PLANS[nivel as keyof typeof PLANS]?.name ?? nivel.charAt(0).toUpperCase() + nivel.slice(1);

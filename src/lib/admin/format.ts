@@ -48,6 +48,6 @@ export const phone = (p: string | null) =>
 /** Enlace para escribirle por WhatsApp. */
 export const waLink = (p: string) => `https://wa.me/${p.replace(/\D/g, '')}`;
 
-/** "pro_mensual" → "Billete mensual" (los nombres viven en src/config.ts). */
+/** "pro_mensual" → "Pro mensual" (los nombres viven en src/config.ts). */
 export const planName = (p: string | null) =>
   !p ? '—' : p === 'mensual' ? 'Mensual' : p === 'anual' ? 'Anual' : planDisplay(p);

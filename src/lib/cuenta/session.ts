@@ -11,6 +11,6 @@ export async function tokenOf(locals: App.Locals): Promise<string | null> {
   }
 }
 
-/** "pro_mensual" → "Billete mensual" (los nombres viven en src/config.ts). */
+/** "pro_mensual" → "Pro mensual" (los nombres viven en src/config.ts). */
 export const planLabel = (plan: string | null, nivel: string | null) =>
   plan ? planDisplay(plan) : nivel ? planDisplay(nivel) : 'Sin plan';

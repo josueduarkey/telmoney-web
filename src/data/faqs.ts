@@ -15,11 +15,11 @@ export const faqs: Faq[] = [
   },
   {
     q: '¿Qué pasa cuando termina la prueba?',
-    a: 'Sigues gratis con el plan Cora: hasta 10 mensajes al día para anotar y saber cuánto puedes gastar. Si quieres más, pasas a Pisto o a Billete. Tus datos siguen ahí.',
+    a: 'Sigues gratis con el plan Free: hasta 10 mensajes al día para anotar y saber cuánto puedes gastar. Si quieres más, pasas a Plus o a Pro. Tus datos siguen ahí.',
   },
   {
     q: '¿TelMoney le escribe a la persona que me debe?',
-    a: 'Por WhatsApp no: te arma el mensaje y lo mandas tú con un toque. Por correo sí lo puede mandar, siempre con tu confirmación (plan Billete).',
+    a: 'Por WhatsApp no: te arma el mensaje y lo mandas tú con un toque. Por correo sí lo puede mandar, siempre con tu confirmación (plan Pro).',
   },
   { q: '¿Cómo pago?', a: 'Con tarjeta de crédito o débito, por Wompi.' },
   { q: '¿Puedo cancelar?', a: 'Sí, cuando quieras. No hay contratos.' },
