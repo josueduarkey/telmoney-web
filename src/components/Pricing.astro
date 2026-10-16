@@ -1,15 +1,21 @@
 ---
-import { PLANS, CTA } from '../config';
+import { PLANS, FREE_LIMITS, CTA } from '../config';
 
-const both = [
-  'Anota por texto, foto y audio',
-  'Cuentas, metas, límites y deudas',
+const cora = [
+  `Anota por texto, foto y audio: hasta ${FREE_LIMITS.perDay} al día`,
   'Cuánto puedes gastar hoy',
-  'Reporte de cada noche',
+  'Cuentas, metas y deudas',
+  'Tu resumen cada semana',
+  `${FREE_LIMITS.questions} preguntas libres al día`,
 ];
-const starter = [...both, '5 preguntas libres al día'];
-const pro = [
-  'Todo lo de Starter',
+const pisto = [
+  `Todo lo de ${PLANS.gratis.name}, hasta 30 al día`,
+  'Reporte de cada noche',
+  'Límites de gasto que te avisan',
+  '5 preguntas libres al día',
+];
+const billete = [
+  `Todo lo de ${PLANS.starter.name}, sin tope diario`,
   'Avisos antes de cada pago fijo y de tu tarjeta: adiós a la mora',
   'Tu puntaje de salud financiera y qué mejorar',
   'Cobros a quien te debe, listos para mandar',
@@ -18,6 +24,8 @@ const pro = [
 ];
 const usd = (n: number) => n.toFixed(2);
 const linkAttrs = CTA.external ? { target: '_blank', rel: 'noopener' } : {};
+// "$0.17 al día": lo que cuesta cada plan por día, al mes y al año.
+const daily = (n: number, days: number) => `$${(n / days).toFixed(2)} al día`;
 ---
 
 <!-- tone-invert: blanca en modo oscuro, negra en modo claro; el plan Pro se invierte otra vez -->
@@ -26,8 +34,8 @@ const linkAttrs = CTA.external ? { target: '_blank', rel: 'noopener' } : {};
     <header class="pricing__head">
       <h2 class="display">Se paga solo<span class="pd">.</span></h2>
       <p class="lead">
-        Con evitar un solo recargo por pagar tarde la tarjeta, ya se pagó. Empiezas con 7 días de Pro,
-        gratis y sin tarjeta.
+        Empiezas con 7 días de todo, gratis y sin tarjeta. Después sigues gratis con {PLANS.gratis.name}, o
+        pasas a un plan con más: con evitar un solo recargo por pagar tarde la tarjeta, ya se pagó.
       </p>
     </header>
 
@@ -41,7 +49,21 @@ const linkAttrs = CTA.external ? { target: '_blank', rel: 'noopener' } : {};
 
     <div class="plans">
       <article class="plan">
-        <h3 class="plan__name">Starter</h3>
+        <h3 class="plan__name">{PLANS.gratis.name}</h3>
+        <p class="plan__for">Para empezar a ordenarte, sin pagar nada.</p>
+        <p class="plan__price num">
+          <span class="plan__cur">$</span><span>0</span>
+          <span class="plan__per">gratis</span>
+        </p>
+        <p class="plan__daily">Sin tarjeta</p>
+        <a class="btn btn--ghost btn--block" href={CTA.href} data-cursor={CTA.cursor} {...linkAttrs}>{CTA.label}</a>
+        <ul class="plan__list" role="list">
+          {cora.map((f) => <li>{f}</li>)}
+        </ul>
+      </article>
+
+      <article class="plan">
+        <h3 class="plan__name">{PLANS.starter.name}</h3>
         <p class="plan__for">Para anotar todo y saber cuánto puedes gastar.</p>
         <p class="plan__price num">
           <span class="plan__cur">$</span><span
@@ -51,16 +73,23 @@ const linkAttrs = CTA.external ? { target: '_blank', rel: 'noopener' } : {};
           >
           <span class="plan__per" data-per>al mes</span>
         </p>
-        <p class="plan__daily num" data-daily data-monthly="$0.17 al día" data-annual="$0.14 al día">$0.17 al día</p>
+        <p
+          class="plan__daily num"
+          data-daily
+          data-monthly={daily(PLANS.starter.monthly, 30)}
+          data-annual={daily(PLANS.starter.annual, 365)}
+        >
+          {daily(PLANS.starter.monthly, 30)}
+        </p>
         <a class="btn btn--solid btn--block" href={CTA.href} data-cursor={CTA.cursor} {...linkAttrs}>{CTA.label}</a>
         <ul class="plan__list" role="list">
-          {starter.map((f) => <li>{f}</li>)}
+          {pisto.map((f) => <li>{f}</li>)}
         </ul>
       </article>
 
       <article class="plan plan--pro tone-invert">
         <span class="plan__badge">El más completo</span>
-        <h3 class="plan__name">Pro</h3>
+        <h3 class="plan__name">{PLANS.pro.name}</h3>
         <p class="plan__for">Para que no se te pase un pago ni un cobro.</p>
         <p class="plan__price num">
           <span class="plan__cur">$</span><span
@@ -70,10 +99,17 @@ const linkAttrs = CTA.external ? { target: '_blank', rel: 'noopener' } : {};
           >
           <span class="plan__per" data-per>al mes</span>
         </p>
-        <p class="plan__daily num" data-daily data-monthly="$0.33 al día" data-annual="$0.27 al día">$0.33 al día</p>
+        <p
+          class="plan__daily num"
+          data-daily
+          data-monthly={daily(PLANS.pro.monthly, 30)}
+          data-annual={daily(PLANS.pro.annual, 365)}
+        >
+          {daily(PLANS.pro.monthly, 30)}
+        </p>
         <a class="btn btn--solid btn--block" href={CTA.href} data-cursor={CTA.cursor} {...linkAttrs}>{CTA.label}</a>
         <ul class="plan__list" role="list">
-          {pro.map((f) => <li>{f}</li>)}
+          {billete.map((f) => <li>{f}</li>)}
         </ul>
       </article>
     </div>
@@ -206,9 +242,9 @@ const linkAttrs = CTA.external ? { target: '_blank', rel: 'noopener' } : {};
 
   .plans {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--s-5);
-    max-width: 920px;
+    max-width: 1180px;
     margin: var(--s-7) auto 0;
   }
   .plan {
@@ -325,9 +361,10 @@ const linkAttrs = CTA.external ? { target: '_blank', rel: 'noopener' } : {};
     color: var(--text-muted);
   }
 
-  @media (max-width: 767px) {
+  @media (max-width: 1023px) {
     .plans {
       grid-template-columns: 1fr;
+      max-width: 520px;
     }
     .plan--pro {
       order: -1;

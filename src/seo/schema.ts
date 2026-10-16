@@ -91,8 +91,9 @@ export function pageSchema(path = '/', { title = SEO.title, description = SEO.de
           'Exportación a Excel, PDF y CSV',
         ],
         offers: [
-          plan('Starter', PLANS.starter.monthly, 'Anota todo y sabe cuánto puedes gastar hoy.'),
-          plan('Pro', PLANS.pro.monthly, 'Todo Starter más avisos de pagos, cobros y análisis con IA.'),
+          plan(PLANS.gratis.name, PLANS.gratis.monthly, 'Anota lo básico y sabe cuánto puedes gastar hoy, gratis.'),
+          plan(PLANS.starter.name, PLANS.starter.monthly, 'Anota todo, con reporte de cada noche.'),
+          plan(PLANS.pro.name, PLANS.pro.monthly, 'Todo lo anterior más avisos de pagos, cobros y análisis con IA.'),
         ],
       },
       {

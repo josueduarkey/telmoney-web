@@ -99,18 +99,17 @@ const usd = (n: number) => `$${n.toFixed(2)}`;
   <h2>5. Prueba gratis, planes y pagos</h2>
   <ul>
     <li>
-      Al escribir por primera vez tienes una prueba gratis por tiempo limitado,
-      con límites de uso diario. Al terminar, eliges un plan para seguir
-      usándolo; si no, TelMoney deja de responder, pero tus datos se conservan
-      como dice la política de privacidad.
+      Al escribir por primera vez tienes una prueba gratis por tiempo limitado, con límites de uso diario. Al terminar,
+      sigues en el plan gratis ({PLANS.gratis.name}), que tiene menos funciones y un límite de mensajes al día, o eliges
+      un plan de pago.
     </li>
     <li>
-      Precios vigentes: Starter {usd(PLANS.starter.monthly)} al mes o {
-        usd(PLANS.starter.annual)
-      } al año; Pro
-      {usd(PLANS.pro.monthly)} al mes o {usd(PLANS.pro.annual)} al año, en dólares
-      de Estados Unidos. Lo que incluye cada plan y sus límites de uso justo se muestran
-      en el sitio y en el bot.
+      Precios vigentes: {PLANS.starter.name} {usd(PLANS.starter.monthly)} al mes o {usd(PLANS.starter.annual)} al año;
+      {PLANS.pro.name} {usd(PLANS.pro.monthly)} al mes o {usd(PLANS.pro.annual)} al año, en dólares de Estados Unidos.
+      Lo que incluye cada plan y sus límites de uso justo se muestran en el sitio y en el bot.
+    </li>
+    <li>
+      Podemos cambiar las funciones y los límites del plan gratis, o dejar de ofrecerlo, avisando con anticipación.
     </li>
     <li>
       Los pagos los procesa Wompi. TelMoney no ve ni guarda los datos de tu

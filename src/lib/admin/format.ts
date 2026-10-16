@@ -1,5 +1,6 @@
 // Formatos del panel: dinero en USD, números, fechas en hora de El Salvador y teléfonos.
 import { TZ } from './queries';
+import { planDisplay } from '../../config';
 
 const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 const moneyRound = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
@@ -47,12 +48,6 @@ export const phone = (p: string | null) =>
 /** Enlace para escribirle por WhatsApp. */
 export const waLink = (p: string) => `https://wa.me/${p.replace(/\D/g, '')}`;
 
-const PLAN_NAMES: Record<string, string> = {
-  starter_mensual: 'Starter mensual',
-  starter_anual: 'Starter anual',
-  pro_mensual: 'Pro mensual',
-  pro_anual: 'Pro anual',
-  mensual: 'Mensual',
-  anual: 'Anual',
-};
-export const planName = (p: string | null) => (p ? (PLAN_NAMES[p] ?? p) : '—');
+/** "pro_mensual" → "Billete mensual" (los nombres viven en src/config.ts). */
+export const planName = (p: string | null) =>
+  !p ? '—' : p === 'mensual' ? 'Mensual' : p === 'anual' ? 'Anual' : planDisplay(p);

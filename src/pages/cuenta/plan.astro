@@ -1,10 +1,11 @@
 ---
-// Mi plan: cuál tiene, cuándo vence, pasar a Pro o renovar (pago con Wompi, lo arma el bot) y sus pagos.
+// Mi plan: cuál tiene, cuándo vence, pasar a un plan de pago o renovar (pago con Wompi, lo arma el bot) y sus pagos.
 // Los pagos son de una vez (no se cobran solos): al vencer, se renueva desde aquí o por WhatsApp.
 import Cuenta from '../../layouts/Cuenta.astro';
 import { me, type Me, type Pago } from '../../lib/admin/bot';
 import { tokenOf, planLabel } from '../../lib/cuenta/session';
 import { date, dateTime, phone, usd } from '../../lib/admin/format';
+import { PLANS } from '../../config';
 
 export const prerender = false;
 
@@ -41,8 +42,8 @@ const ESTADO = { prueba: 'En prueba', pagando: 'Activo', vencido: 'Vencido', equ
 const PAGO = { approved: 'Aprobado', pending: 'Pendiente', failed: 'No se completó' } as const;
 const vence = datos ? (datos.plan.estado === 'prueba' ? datos.plan.prueba_hasta : datos.plan.pagado_hasta) : null;
 const BENEFICIOS: Record<string, string[]> = {
-  starter: ['Anota por texto, foto y audio', 'Cuentas, metas, límites y deudas', 'Cuánto puedes gastar hoy', '5 preguntas libres al día'],
-  pro: ['Todo lo de Starter', 'Avisos antes de cada pago fijo y de tu tarjeta', 'Cobros a quien te debe', 'Preguntas sin límite', 'Excel, PDF y gráficas'],
+  starter: ['Hasta 30 mensajes al día', 'Cuentas, metas, límites y deudas', 'Reporte de cada noche', '5 preguntas libres al día'],
+  pro: [`Todo lo de ${PLANS.starter.name}, sin tope diario`, 'Avisos antes de cada pago fijo y de tu tarjeta', 'Cobros a quien te debe', 'Preguntas sin límite', 'Excel, PDF y gráficas'],
 };
 const nivelDe = (plan: string) => (plan.startsWith('starter') ? 'starter' : 'pro');
 ---
@@ -84,7 +85,7 @@ const nivelDe = (plan: string) => (plan.startsWith('starter') ? 'starter' : 'pro
             {datos.plan.estado === 'pagando' ? 'Renovar o cambiar de plan' : 'Elige tu plan'}
           </h2>
           <div class="plans">
-            {(datos.precios ?? []).map((p) => (
+            {(datos.precios ?? []).filter((p) => p.monto > 0).map((p) => (
               <form method="post" class:list={['card', 'plan-card', { 'plan-card--pro': nivelDe(p.plan) === 'pro' }]}>
                 <input type="hidden" name="accion" value="pagar" />
                 <input type="hidden" name="plan" value={p.plan} />
