@@ -21,7 +21,7 @@ const links = [
       {links.map((l) => <a href={l.href}>{l.label}</a>)}
     </nav>
     <ThemeToggle />
-    <a class="nav__login" href="/cuenta" rel="nofollow">Entrar</a>
+    <a class="nav__login" href="/entrar" rel="nofollow">Entrar</a>
     <a
       class="btn nav__cta"
       href={CTA.href}
@@ -35,7 +35,7 @@ const links = [
   </div>
   <div class="nav__menu" id="nav-menu" hidden data-nav-menu>
     {links.map((l) => <a href={l.href}>{l.label}</a>)}
-    <a href="/cuenta" rel="nofollow">Entrar a mi cuenta</a>
+    <a href="/entrar" rel="nofollow">Entrar a mi cuenta</a>
     <a class="btn btn--block" href={CTA.href}>{CTA.label}</a>
   </div>
 </header>

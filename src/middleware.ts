@@ -5,7 +5,7 @@
 import type { MiddlewareNext } from 'astro';
 import { defineMiddleware } from 'astro:middleware';
 import { clerkMiddleware } from '@clerk/astro/server';
-import { adminEmails, clerkApi, clerkKeys } from './lib/admin/clerk';
+import { adminEmailOf, clerkApi, clerkKeys } from './lib/admin/clerk';
 import { adminDb } from './lib/db';
 
 const zone = (path: string) =>
@@ -35,15 +35,12 @@ const gate =
           return next();
         }
 
-        const user = await api.users.getUser(userId);
-        const email = user.emailAddresses.find(
-          (e) => e.verification?.status === 'verified' && adminEmails.has(e.emailAddress.toLowerCase()),
-        );
+        const email = await adminEmailOf(userId);
         if (!email) {
           context.locals.adminNotice = 'forbidden';
           return show(NOTICE);
         }
-        context.locals.admin = { email: email.emailAddress, sessionId };
+        context.locals.admin = { email, sessionId };
         if (!adminDb()) {
           context.locals.adminNotice = 'not-configured';
           return show(NOTICE);

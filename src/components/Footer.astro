@@ -87,19 +87,6 @@ const front = (x: number) => 70 + 12 * t(x, 2, 0.6) + 6 * t(x, 3, 1.9);
         <Logo size={36} />
         <p>Tu dinero en orden, por WhatsApp.</p>
         <ShareButtons class="footer__share" label="Comparte TelMoney" />
-        <!-- Entrada al panel (/admin): pide iniciar sesión con la cuenta de administración. -->
-        <a class="footer__team" href="/admin" rel="nofollow">
-          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-            <path
-              d="M7 10V7a5 5 0 0 1 10 0v3M6 10h12a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1Z"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-              stroke-linejoin="round"></path>
-          </svg>
-          Acceso del equipo
-        </a>
       </div>
       <nav aria-label="Producto">
         <p class="footer__label">Producto</p>
@@ -280,23 +267,6 @@ const front = (x: number) => 70 + 12 * t(x, 2, 0.6) + 6 * t(x, 3, 1.9);
   }
   .footer__brand :global(.footer__share) {
     margin-top: var(--s-5);
-  }
-  .footer__team {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--s-2);
-    margin-top: var(--s-5);
-    padding: 8px 14px;
-    border: 1px solid var(--hairline-strong);
-    border-radius: var(--r-full);
-    color: var(--text-muted);
-    font-size: var(--fs-small);
-    font-weight: 600;
-    text-decoration: none;
-  }
-  .footer__team:hover {
-    color: var(--text);
-    border-color: var(--text-muted);
   }
   .footer nav {
     display: flex;

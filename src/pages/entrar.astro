@@ -14,7 +14,8 @@ const publishableKey = PUBLIC_CLERK_PUBLISHABLE_KEY || NEXT_PUBLIC_CLERK_PUBLISH
 
 // Solo rutas de este mismo sitio (nada de mandar a otra página después de entrar).
 const pedido = Astro.url.searchParams.get('redirect_url') ?? '';
-let destino = '/cuenta';
+// Sin destino: /cuenta/ir decide (el panel para el equipo, Mi cuenta para los demás).
+let destino = '/cuenta/ir';
 try {
   const u = new URL(pedido, Astro.url);
   if (u.origin === Astro.url.origin && u.pathname !== '/entrar') destino = u.pathname + u.search;
@@ -79,7 +80,7 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
   const box = document.querySelector<HTMLElement>('[data-entrar]')!;
   const loading = box.querySelector<HTMLElement>('[data-cargando]');
   const publishableKey = box.dataset.key ?? '';
-  const destino = box.dataset.destino || '/cuenta';
+  const destino = box.dataset.destino || '/cuenta/ir';
 
   // Los colores del tema actual (claro u oscuro), para que el formulario se vea de TelMoney.
   const css = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();

@@ -27,3 +27,13 @@ export const adminEmails = new Set(
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean),
 );
+
+/** El correo verificado con acceso al panel (ADMIN_EMAILS), o null si la persona no es del equipo. */
+export async function adminEmailOf(userId: string): Promise<string | null> {
+  if (!clerkApi) return null;
+  const user = await clerkApi.users.getUser(userId);
+  const email = user.emailAddresses.find(
+    (e) => e.verification?.status === 'verified' && adminEmails.has(e.emailAddress.toLowerCase()),
+  );
+  return email?.emailAddress ?? null;
+}
