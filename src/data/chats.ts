@@ -78,7 +78,7 @@ export const heroScript: Msg[] = [
   { from: 'me', voice: '0:04', time: '12:58' },
   {
     from: 'bot',
-    text: '✅ $1.20 · transporte · n1co\n🟢 Hoy te quedan *$17.00* de $21.70.',
+    text: '✅ $1.20 · transporte · billetera\n🟢 Hoy te quedan *$17.00* de $21.70.',
     time: '12:58',
   },
   ...tenis,

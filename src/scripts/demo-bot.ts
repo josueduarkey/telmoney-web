@@ -22,11 +22,9 @@ const CATEGORIES: [RegExp, string, string][] = [
   [/alquiler|renta/i, 'vivienda', '🏠'],
 ];
 const ACCOUNTS: [RegExp, string][] = [
-  [/n1co/i, 'n1co'],
+  [/billetera/i, 'billetera'],
   [/tarjeta/i, 'tarjeta'],
-  [/agr[ií]cola/i, 'Banco Agrícola'],
-  [/bac|credomatic/i, 'BAC Credomatic'],
-  [/tigo/i, 'Tigo Money'],
+  [/banco|cuenta/i, 'banco'],
 ];
 
 const usd = (n: number) =>

@@ -9,7 +9,8 @@ const site = (env.PUBLIC_SITE_URL || 'https://telmoney.app').replace(/\/$/, '');
 
 // Páginas que todavía no deben entrar al sitemap: las mismas que llevan `draft` en <Legal>.
 // Cuando tengan su texto definitivo, se quitan de aquí y del `draft`.
-const DRAFTS = ['/privacidad/', '/terminos/'];
+/** @type {string[]} */
+const DRAFTS = [];
 
 // https://astro.build/config
 // La página sigue siendo estática. Solo el panel (/admin) y /api/waitlist corren en el servidor

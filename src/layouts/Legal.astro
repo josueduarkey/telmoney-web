@@ -7,14 +7,17 @@ interface Props {
   description: string;
   /** Texto provisional: no se indexa en Google ni entra al sitemap hasta que esté el definitivo */
   draft?: boolean;
+  /** Fecha de la última versión, tal como se lee ("16 de octubre de 2026") */
+  updated?: string;
 }
-const { title, description, draft = false } = Astro.props;
+const { title, description, draft = false, updated } = Astro.props;
 ---
 
 <Base title={`${title} · TelMoney`} description={description} noindex={draft}>
   <main id="main" class="legal container">
     <a href="/" class="legal__home" aria-label="Volver al inicio"><Logo /></a>
     <h1 class="display">{title}</h1>
+    {updated && <p class="legal__updated">Última actualización: {updated}</p>}
     <slot />
   </main>
 </Base>
@@ -32,9 +35,35 @@ const { title, description, draft = false } = Astro.props;
   .legal h1 {
     margin-bottom: 32px;
   }
+  .legal__updated {
+    margin-top: -16px;
+    margin-bottom: 40px;
+    font-size: 0.95rem !important;
+  }
+  .legal :global(h2) {
+    font-family: var(--font-display);
+    font-size: clamp(1.25rem, 2.4vw, 1.6rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin: 48px 0 12px;
+  }
+  .legal :global(ul) {
+    margin: 12px 0;
+    padding-left: 1.2em;
+    color: var(--text-muted);
+    font-size: 1.05rem;
+    line-height: 1.75;
+  }
+  .legal :global(li) {
+    margin-bottom: 8px;
+  }
+  .legal :global(strong) {
+    color: var(--text);
+  }
   .legal :global(p) {
     color: var(--text-muted);
     font-size: 1.05rem;
     line-height: 1.75;
+    margin: 12px 0;
   }
 </style>

@@ -3,11 +3,168 @@ import Legal from '../layouts/Legal.astro';
 import { SITE } from '../config';
 ---
 
-<!-- TODO: reemplazar por el aviso de privacidad aprobado antes del lanzamiento. -->
-<!-- draft: quitarlo cuando esté el texto aprobado (entonces la página entra a Google y al sitemap) -->
-<Legal title="Política de privacidad" description="Cómo TelMoney cuida tus datos: qué guardamos, para qué y cómo los borras o descargas cuando quieras." draft>
+<Legal
+  title="Política de privacidad"
+  description="Cómo TelMoney cuida tus datos: qué guardamos, para qué y cómo los borras o descargas cuando quieras."
+  updated="16 de octubre de 2026"
+>
   <p>
-    Estamos terminando el aviso de privacidad completo; se publica aquí antes de abrir la beta. Mientras
-    tanto, si tienes una duda sobre tus datos, escríbenos a <a href={`mailto:${SITE.email}`}>{SITE.email}</a>.
+    Esta política explica qué datos trata TelMoney cuando usas el asistente por WhatsApp, el sitio
+    {SITE.url.replace('https://', '')} y tu cuenta en él, para qué los usamos y qué puedes hacer con ellos. Al usar el
+    servicio, aceptas que tratemos tus datos como se describe aquí.
+  </p>
+
+  <h2>1. Lo corto</h2>
+  <ul>
+    <li>Usamos tus datos solo para darte el servicio. No los vendemos ni los usamos para publicidad.</li>
+    <li>No nos conectamos a tu banco ni te pedimos claves, PIN ni números de tarjeta.</li>
+    <li>
+      Escribe "exportar" y te mandamos tus movimientos en CSV. Escribe "borrar mis datos" y se eliminan.
+    </li>
+  </ul>
+
+  <h2>2. Qué datos tratamos</h2>
+  <ul>
+    <li>
+      <strong>Contacto:</strong> tu número de WhatsApp, el nombre de tu perfil o el que nos digas, y, si creas una cuenta
+      en el sitio, tu correo.
+    </li>
+    <li>
+      <strong>Lo que le cuentas a TelMoney:</strong> mensajes, audios y fotos (por ejemplo, de recibos), y lo que se
+      anota con ellos: gastos, ingresos, cuentas y saldos, deudas, cobros, gastos fijos, metas y preferencias.
+    </li>
+    <li>
+      <strong>Datos de terceros que tú registras:</strong> si anotas que alguien te debe o le mandas un cobro, guardamos
+      el nombre y el contacto que nos des. Asegúrate de tener derecho a compartirlos.
+    </li>
+    <li>
+      <strong>Plan y pagos:</strong> qué plan tienes, cuándo vence y el estado de tus pagos. Los datos de tu tarjeta los
+      maneja Wompi; nosotros no los vemos ni los guardamos.
+    </li>
+    <li>
+      <strong>Lista de espera:</strong> si te anotaste en el sitio, tu nombre, WhatsApp, correo (si lo diste), lo que
+      marcaste en el formulario y de dónde llegaste.
+    </li>
+    <li>
+      <strong>Uso y técnica:</strong> qué funciones usas y cuántas veces, fechas de uso y registros técnicos para que el
+      servicio funcione y sea seguro. En los registros los números de teléfono aparecen ocultos en parte.
+    </li>
+  </ul>
+  <p>
+    Si nos mandas una clave, un PIN o un número completo de tarjeta, el sistema lo tapa antes de guardarlo o de
+    procesarlo y no lo usa. Aun así, por favor no los mandes.
+  </p>
+
+  <h2>3. Para qué los usamos</h2>
+  <ul>
+    <li>Anotar tus movimientos y darte saldos, resúmenes, reportes, avisos y respuestas.</li>
+    <li>Recordarte pagos y mandarte el reporte de la noche o del mes, si los tienes activos.</li>
+    <li>Gestionar tu prueba, tu plan y tus pagos.</li>
+    <li>Mostrarte tus datos en tu cuenta del sitio cuando conectas tu WhatsApp.</li>
+    <li>Proteger el servicio: evitar abusos, fraude y accesos indebidos.</li>
+    <li>
+      Mejorar el servicio con estadísticas internas de uso (por ejemplo, qué funciones se usan más). No publicamos datos
+      que te identifiquen.
+    </li>
+    <li>Cumplir obligaciones legales y responder a autoridades cuando la ley lo exija.</li>
+  </ul>
+
+  <h2>4. Inteligencia artificial</h2>
+  <p>
+    Para entender tus mensajes, audios y fotos, TelMoney los envía, junto con el contexto necesario de tu cuenta, a un
+    proveedor de inteligencia artificial (hoy, Google Gemini). Usamos una cuenta de pago, cuyas condiciones no permiten
+    que el proveedor use esos datos para entrenar sus modelos. El modelo no guarda tu información entre un mensaje y
+    otro. Lo que te responde sobre tus números lo calcula nuestro sistema, no el modelo.
+  </p>
+
+  <h2>5. Con quién los compartimos</h2>
+  <p>
+    Solo con los proveedores que necesitamos para dar el servicio, que tratan tus datos por cuenta nuestra y para ese
+    fin:
+  </p>
+  <ul>
+    <li>Meta (WhatsApp), para recibir y enviar los mensajes.</li>
+    <li>Google (Gemini), para entender mensajes, audios y fotos.</li>
+    <li>Neon, para la base de datos.</li>
+    <li>Vercel y el servicio donde se aloja el bot, para hacerlos funcionar.</li>
+    <li>Clerk, para el inicio de sesión en el sitio.</li>
+    <li>Wompi, para procesar los pagos.</li>
+    <li>Un servicio de correo, si le pides a TelMoney mandar un cobro por correo.</li>
+  </ul>
+  <p>
+    También podemos compartir datos si lo exige la ley o una autoridad competente, para defender nuestros derechos o si
+    TelMoney pasa a otra empresa (en ese caso, esta política se mantiene y te avisamos). Nunca vendemos tus datos.
+  </p>
+
+  <h2>6. Datos fuera de El Salvador</h2>
+  <p>
+    Varios de estos proveedores guardan o procesan datos en servidores de otros países, principalmente Estados Unidos.
+    Al usar el servicio, aceptas esa transferencia. Elegimos proveedores con medidas de seguridad reconocidas.
+  </p>
+
+  <h2>7. Cuánto tiempo los guardamos</h2>
+  <ul>
+    <li>
+      <strong>Historial de la conversación:</strong> se borra automáticamente a los 30 días.
+    </li>
+    <li>
+      <strong>Tus movimientos y datos financieros:</strong> mientras tengas cuenta, aunque tu prueba o tu plan venzan,
+      para que no pierdas nada si vuelves. Se eliminan cuando escribes "borrar mis datos".
+    </li>
+    <li>
+      <strong>Archivos que te generamos</strong> (Excel, PDF, gráficas): el enlace vence a las 24 horas.
+    </li>
+    <li>
+      <strong>Registros de pagos:</strong> el tiempo que exijan las leyes contables y tributarias, aunque borres el
+      resto.
+    </li>
+    <li>
+      Después de borrar, pueden quedar copias en respaldos técnicos por un tiempo limitado, hasta que se renuevan. No
+      las usamos para nada más.
+    </li>
+  </ul>
+
+  <h2>8. Tus derechos</h2>
+  <p>Puedes, cuando quieras y sin costo:</p>
+  <ul>
+    <li><strong>Ver</strong> tus datos: pregúntale a TelMoney o entra a tu cuenta en el sitio.</li>
+    <li><strong>Descargarlos:</strong> escribe "exportar".</li>
+    <li><strong>Corregirlos:</strong> pídele a TelMoney que corrija o borre cualquier movimiento.</li>
+    <li><strong>Borrarlos:</strong> escribe "borrar mis datos".</li>
+    <li>
+      <strong>Retirar tu consentimiento o hacer cualquier otra solicitud</strong>, por ejemplo sobre la lista de espera:
+      escríbenos a <a href={`mailto:${SITE.email}`}>{SITE.email}</a>. Te respondemos en un plazo razonable, y
+      podemos pedirte confirmar que eres tú.
+    </li>
+  </ul>
+
+  <h2>9. Seguridad</h2>
+  <p>
+    Las conexiones van cifradas, cada persona solo puede ver lo suyo, las claves del sistema se guardan cifradas y
+    fuera del código, y el acceso interno está limitado. Ningún sistema es 100% seguro: si ocurriera un incidente que
+    afecte tus datos, te avisaremos y tomaremos las medidas a nuestro alcance. Cuida también tu teléfono y tu WhatsApp:
+    quien tenga acceso a ellos puede ver lo que le cuentas a TelMoney.
+  </p>
+
+  <h2>10. Sitio web</h2>
+  <p>
+    El sitio no usa herramientas de publicidad ni de seguimiento. Guarda en tu navegador si prefieres el tema claro u
+    oscuro, y, si inicias sesión, las cookies necesarias para mantener tu sesión.
+  </p>
+
+  <h2>11. Menores de edad</h2>
+  <p>
+    TelMoney es solo para mayores de 18 años. Si sabemos que una persona menor nos dio datos, los borramos.
+  </p>
+
+  <h2>12. Cambios</h2>
+  <p>
+    Si cambiamos esta política, actualizamos la fecha de arriba. Si el cambio es importante, te avisamos por el bot o
+    por correo antes de que aplique.
+  </p>
+
+  <h2>13. Contacto</h2>
+  <p>
+    Para cualquier duda sobre tus datos: <a href={`mailto:${SITE.email}`}>{SITE.email}</a>.
   </p>
 </Legal>

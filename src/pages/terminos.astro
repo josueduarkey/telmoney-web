@@ -1,13 +1,180 @@
 ---
 import Legal from '../layouts/Legal.astro';
-import { SITE } from '../config';
+import { SITE, PLANS } from '../config';
+
+const usd = (n: number) => `$${n.toFixed(2)}`;
 ---
 
-<!-- TODO: reemplazar por los términos aprobados antes del lanzamiento. -->
-<!-- draft: quitarlo cuando esté el texto aprobado (entonces la página entra a Google y al sitemap) -->
-<Legal title="Términos y condiciones" description="Las condiciones de uso de TelMoney, tu asistente de control de gastos por WhatsApp." draft>
+<Legal
+  title="Términos y condiciones"
+  description="Las condiciones de uso de TelMoney, tu asistente de control de gastos por WhatsApp."
+  updated="16 de octubre de 2026"
+>
   <p>
-    Los términos y condiciones se publican aquí antes de abrir la beta. Si tienes una pregunta, escríbenos a
-    <a href={`mailto:${SITE.email}`}>{SITE.email}</a>.
+    Estos términos regulan el uso de TelMoney: el asistente por WhatsApp, el sitio {SITE.url.replace('https://', '')} y
+    tu cuenta en él (juntos, "el servicio"). Al escribirle a TelMoney, crear tu cuenta o pagar un plan, aceptas estos
+    términos y la <a href="/privacidad">política de privacidad</a>. Si no estás de acuerdo, no uses el servicio.
+  </p>
+
+  <h2>1. Qué es TelMoney y qué no es</h2>
+  <p>
+    TelMoney es una herramienta para anotar y ordenar tu dinero: registra lo que tú le cuentas (gastos, ingresos,
+    cuentas, deudas, metas) y con eso te da resúmenes, cálculos, recordatorios y sugerencias generales.
+  </p>
+  <ul>
+    <li>
+      <strong>No es un banco ni una entidad financiera.</strong> No recibe, guarda, transfiere ni invierte dinero, no
+      da créditos y no hace pagos por ti.
+    </li>
+    <li>
+      <strong>No se conecta a tus bancos.</strong> Solo sabe lo que tú le escribes, le dices en un audio o le mandas en
+      una foto.
+    </li>
+    <li>
+      <strong>No es asesoría financiera, legal, contable ni fiscal.</strong> Lo que te dice es información general y
+      automática para ayudarte a organizarte. Las decisiones sobre tu dinero son tuyas; si necesitas asesoría
+      profesional, consulta a alguien autorizado.
+    </li>
+  </ul>
+
+  <h2>2. Quién puede usarlo</h2>
+  <p>
+    Debes tener 18 años o más y usar el servicio para tus finanzas personales. Tu cuenta es personal: eres responsable
+    de lo que se haga desde tu número de WhatsApp y desde tu cuenta, y de mantener seguro tu teléfono y tu correo.
+  </p>
+
+  <h2>3. Tu información y los cálculos</h2>
+  <ul>
+    <li>
+      Los resultados dependen de lo que tú registras. Si un dato está incompleto o mal, los saldos, el "disponible",
+      los reportes y los avisos también lo estarán.
+    </li>
+    <li>
+      TelMoney usa inteligencia artificial para entender tus mensajes, fotos y audios. Puede equivocarse al leer un
+      monto, una fecha o una categoría. Revisa lo que anota: cada movimiento se puede corregir o borrar.
+    </li>
+    <li>
+      Las cifras de ahorro (por ejemplo, "este mes te ahorré $X"), los intereses de tarjeta y cualquier proyección son
+      <strong>estimaciones</strong> hechas con supuestos generales. No son una promesa de ahorro ni de resultado.
+    </li>
+    <li>
+      Los recordatorios son una ayuda. No reemplazan tu propio control de fechas de pago: TelMoney no responde por
+      moras, recargos ni intereses si un aviso no llega, llega tarde o el dato estaba mal.
+    </li>
+  </ul>
+
+  <h2>4. Uso permitido</h2>
+  <p>No puedes usar el servicio para:</p>
+  <ul>
+    <li>actividades ilegales, fraude o lavado de dinero;</li>
+    <li>registrar datos de otras personas sin derecho a hacerlo;</li>
+    <li>
+      mandar claves, PIN, números completos de tarjeta o contraseñas (no los necesitamos; si llegan, se tapan y no se
+      usan);
+    </li>
+    <li>intentar acceder a datos ajenos, saltarte los límites, sobrecargar el servicio o copiarlo de forma automática;</li>
+    <li>mandar contenido ofensivo, amenazas o spam, incluido a través de los cobros o recordatorios a terceros.</li>
+  </ul>
+  <p>
+    Si incumples estos términos, podemos limitar, suspender o cerrar tu acceso, con o sin aviso previo según la
+    gravedad.
+  </p>
+
+  <h2>5. Prueba gratis, planes y pagos</h2>
+  <ul>
+    <li>
+      Al escribir por primera vez tienes una prueba gratis por tiempo limitado, con límites de uso diario. Al terminar,
+      eliges un plan para seguir usándolo; si no, TelMoney deja de responder, pero tus datos se conservan como dice la
+      política de privacidad.
+    </li>
+    <li>
+      Precios vigentes: Starter {usd(PLANS.starter.monthly)} al mes o {usd(PLANS.starter.annual)} al año; Pro
+      {usd(PLANS.pro.monthly)} al mes o {usd(PLANS.pro.annual)} al año, en dólares de Estados Unidos. Lo que incluye
+      cada plan y sus límites de uso justo se muestran en el sitio y en el bot.
+    </li>
+    <li>
+      Los pagos los procesa Wompi. TelMoney no ve ni guarda los datos de tu tarjeta.
+    </li>
+    <li>
+      <strong>No hay renovación automática.</strong> Pagas por un periodo (un mes o un año) y, cuando vence, decides si
+      vuelves a pagar.
+    </li>
+    <li>
+      Como tienes una prueba gratis antes de pagar, los pagos no son reembolsables, salvo cuando la ley aplicable lo
+      exija o cuando un cobro se haya hecho por error de nuestra parte.
+    </li>
+    <li>
+      Podemos cambiar precios y planes. El cambio no afecta un periodo que ya pagaste y lo anunciamos antes de que
+      aplique.
+    </li>
+  </ul>
+
+  <h2>6. Servicio en beta y servicios de terceros</h2>
+  <p>
+    TelMoney está en beta: puede tener errores, cambiar funciones, interrumpirse por mantenimiento o dejar de ofrecer
+    algo. Funciona sobre servicios de terceros (WhatsApp de Meta, proveedores de inteligencia artificial,
+    alojamiento, base de datos, inicio de sesión y pagos). Si alguno falla, cambia sus reglas o limita su servicio, el
+    nuestro puede verse afectado sin que esté en nuestras manos. No garantizamos que el servicio funcione sin
+    interrupciones ni errores.
+  </p>
+
+  <h2>7. Responsabilidad</h2>
+  <p>
+    El servicio se ofrece "tal cual" y "según disponibilidad". En la medida que lo permita la ley:
+  </p>
+  <ul>
+    <li>
+      TelMoney no responde por decisiones financieras que tomes con base en el servicio, ni por pérdidas, moras,
+      intereses, recargos, lucro cesante o daños indirectos.
+    </li>
+    <li>
+      No respondemos por fallas, demoras o cambios de servicios de terceros, ni por accesos a tu cuenta causados por
+      que otra persona tenga tu teléfono, tu WhatsApp o tu correo.
+    </li>
+    <li>
+      Si se determinara alguna responsabilidad, su monto máximo será lo que hayas pagado a TelMoney en los 3 meses
+      anteriores al hecho que la causó.
+    </li>
+  </ul>
+  <p>
+    Nada en estos términos limita los derechos que la ley de protección al consumidor te da y que no se pueden
+    renunciar.
+  </p>
+  <p>
+    Si usas el servicio en contra de estos términos o de la ley y eso provoca un reclamo de un tercero contra
+    TelMoney, te haces responsable de los daños y gastos que cause.
+  </p>
+
+  <h2>8. Propiedad</h2>
+  <p>
+    Tus datos son tuyos: puedes exportarlos o borrarlos cuando quieras. El nombre, la marca, el diseño, el software y
+    los textos de TelMoney son nuestros; no puedes copiarlos ni usarlos sin permiso por escrito. Si nos mandas ideas o
+    sugerencias, podemos usarlas sin obligación de pago.
+  </p>
+
+  <h2>9. Terminar</h2>
+  <p>
+    Puedes dejar de usar TelMoney cuando quieras y borrar tus datos escribiendo "borrar mis datos". Podemos terminar
+    el servicio o tu acceso por las razones de la sección 4, o dejar de ofrecer el servicio en general avisando con
+    tiempo razonable; en ese caso, te daremos forma de exportar tus datos.
+  </p>
+
+  <h2>10. Cambios a estos términos</h2>
+  <p>
+    Podemos actualizar estos términos. La fecha de arriba indica la última versión. Si el cambio es importante, te
+    avisamos por el bot o por correo antes de que aplique. Si sigues usando el servicio después, aceptas la versión
+    nueva.
+  </p>
+
+  <h2>11. Ley aplicable</h2>
+  <p>
+    Estos términos se rigen por las leyes de la República de El Salvador. Cualquier controversia se intentará resolver
+    primero escribiéndonos; si no se resuelve, se someterá a los tribunales competentes de San Salvador, sin perjuicio
+    de los derechos que como consumidor te dé la ley.
+  </p>
+
+  <h2>12. Contacto</h2>
+  <p>
+    Para cualquier pregunta o reclamo: <a href={`mailto:${SITE.email}`}>{SITE.email}</a>.
   </p>
 </Legal>

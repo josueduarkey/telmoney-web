@@ -24,8 +24,7 @@ pnpm-debug.log*
 # jetbrains setting folder
 .idea/
 
-# originales de los logos de bancos: solo se usan para correr npm run bancos
-src/assets/bancos/originales/
 
 # salida del adaptador de Vercel
 .vercel/
+.court/
