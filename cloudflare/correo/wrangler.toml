@@ -1,0 +1,17 @@
+# Worker de correo de TelMoney: recibe lo que llega a <alias>@gastos.telmoney.app (Cloudflare Email
+# Routing, regla catch-all del subdominio) y se lo pasa al bot. Explicación completa: docs/correo.md.
+#   npm install && npx wrangler login
+#   npx wrangler secret put CORREO_TOKEN     (el mismo valor que CORREO_TOKEN en el bot)
+#   npm run deploy
+name = "telmoney-correo"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+workers_dev = false
+
+[vars]
+# URL fija del bot (la misma que BOT_API_URL en Vercel), sin "/" al final.
+BOT_URL = "https://CAMBIAR-POR-LA-URL-DEL-BOT"
+DOMINIO = "gastos.telmoney.app"
+
+[observability]
+enabled = true

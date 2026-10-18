@@ -36,6 +36,7 @@ Errores: `{detail, campo?}` en español. 401 token inválido o vencido. Fechas I
 | `GET /me/movimientos?limite=50&antes=<id>` | `{movimientos: [{id, fecha, tipo: "expense"\|"income"\|"transfer", monto, categoria, emoji, cuenta, a_cuenta, descripcion}], hay_mas}` |
 | `POST /me/pagar` `{plan}` | `{checkout_url}` del enlace de Wompi. 422 si el plan no existe. |
 | `GET /me/pagos` | `{pagos: [{fecha, plan, monto, estado: "approved"\|"pending"\|"failed"}]}` |
+| `GET/POST/DELETE /me/correo` | La dirección para reenviar los correos del banco: ver `docs/correo.md`. |
 
 Mientras la cuenta no esté vinculada, todo lo que no sea `GET /me` y `POST /me/vincular` responde 404 `{detail: "Conecta tu WhatsApp primero."}`.
 
@@ -54,6 +55,7 @@ Mientras la cuenta no esté vinculada, todo lo que no sea `GET /me` y `POST /me/
 
 - `/cuenta`: conectar WhatsApp (si falta) o el resumen: plan y vencimiento, cuánto puedes gastar hoy, gasto del mes, gasto por día y por categoría, cuentas, metas.
 - `/cuenta/movimientos`: la lista completa.
+- `/cuenta/correo`: conectar el correo del banco (docs/correo.md).
 - `/cuenta/plan`: tu plan, cuándo vence, pasar a Pro o renovar (Wompi), historial de pagos.
 - Botón "Entrar" en el menú de la página. `/chat`: enlace corto que abre el bot en WhatsApp (para compartir). `/pago`: a donde vuelve Wompi.
 - Fuera de Google (`noindex`, `robots.txt`), sin caché.

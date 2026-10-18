@@ -8,7 +8,7 @@ import ThemeToggle from '../components/ThemeToggle.astro';
 
 interface Props {
   title: string;
-  section?: 'resumen' | 'movimientos' | 'plan';
+  section?: 'resumen' | 'movimientos' | 'correo' | 'plan';
   /** Sin menú (ej. mientras conecta su WhatsApp). */
   bare?: boolean;
 }
@@ -17,6 +17,7 @@ const { title, section, bare = false } = Astro.props;
 const nav = [
   { id: 'resumen', label: 'Resumen', href: '/cuenta' },
   { id: 'movimientos', label: 'Movimientos', href: '/cuenta/movimientos' },
+  { id: 'correo', label: 'Correo', href: '/cuenta/correo' },
   { id: 'plan', label: 'Mi plan', href: '/cuenta/plan' },
 ] as const;
 ---

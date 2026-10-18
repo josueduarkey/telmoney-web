@@ -155,3 +155,24 @@ export type Movimiento = {
   descripcion: string | null;
 };
 export type Pago = { fecha: string; plan: string; monto: number; estado: 'approved' | 'pending' | 'failed' };
+
+// ─────────────────────────────────────── correo del banco (/me/correo, docs/correo.md)
+
+export type Recibido = {
+  fecha: string;
+  de: string;
+  asunto: string;
+  /** pendiente: le preguntó por WhatsApp · anotado · descartado (dijo que no) · ignorado (no era un movimiento) */
+  estado: 'pendiente' | 'anotado' | 'descartado' | 'ignorado';
+  monto: number | null;
+  comercio: string | null;
+};
+export type Correo = {
+  /** null mientras no la crea (o después de desconectarla). */
+  direccion: string | null;
+  creada: string | null;
+  /** El código que manda Gmail para confirmar el reenvío (llega a la dirección y el bot lo guarda). */
+  confirmacion: { codigo: string | null; enlace: string | null; llego: string } | null;
+  ultimo_correo: string | null;
+  recibidos: Recibido[];
+};

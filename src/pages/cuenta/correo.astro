@@ -1,0 +1,290 @@
+---
+// Correo del banco: la persona recibe una dirección propia (<alias>@gastos.telmoney.app) y, con un filtro
+// de Gmail u Outlook, le reenvía ahí las notificaciones de su banco. TelMoney lee cada compra y le pregunta
+// por WhatsApp si la anota. Sin pedirle acceso a su correo: solo llega lo que ella decide reenviar.
+// Cómo funciona por dentro (Cloudflare → bot): docs/correo.md.
+import Cuenta from '../../layouts/Cuenta.astro';
+import { me, type Correo, type Me } from '../../lib/admin/bot';
+import { tokenOf } from '../../lib/cuenta/session';
+import { dateTime, usd } from '../../lib/admin/format';
+
+export const prerender = false;
+
+if (!Astro.locals.cuenta) return new Response('No autorizado', { status: 401 });
+const token = await tokenOf(Astro.locals);
+if (!token) return Astro.redirect('/cuenta/salir');
+
+let error = '';
+if (Astro.request.method === 'POST') {
+  const accion = (await Astro.request.formData()).get('accion');
+  const r =
+    accion === 'crear'
+      ? await me('/me/correo', token, { method: 'POST' })
+      : accion === 'desconectar'
+        ? await me('/me/correo', token, { method: 'DELETE' })
+        : null;
+  if (r?.ok) return Astro.redirect('/cuenta/correo', 303);
+  error = r ? r.detail : 'Acción no válida.';
+}
+
+const perfil = await me<Me>('/me', token);
+if (perfil.ok && !perfil.data.vinculado) return Astro.redirect('/cuenta');
+const correo = perfil.ok ? await me<Correo>('/me/correo', token) : null;
+const c = correo?.ok ? correo.data : null;
+const esperandoCodigo = Boolean(c?.direccion && !c.confirmacion?.codigo && !c.ultimo_correo);
+
+const ESTADO = { pendiente: 'Te preguntamos', anotado: 'Anotado', descartado: 'No lo anotaste', ignorado: 'No era un movimiento' } as const;
+const CHIP = { pendiente: 'warn', anotado: 'ok', descartado: 'muted', ignorado: 'muted' } as const;
+---
+
+<Cuenta title="Correo del banco" section="correo">
+  <div class="admin-head">
+    <div>
+      <h1>Correo del banco</h1>
+      <p>Tu banco te manda un correo con cada compra. Reenvíaselo a TelMoney y te pregunta por WhatsApp si lo anota.</p>
+    </div>
+  </div>
+
+  {error && <p class="flash flash--error" role="alert">{error}</p>}
+  {!perfil.ok && <p class="flash flash--error">{perfil.detail}</p>}
+  {correo && !correo.ok && <p class="flash flash--error">{correo.detail}</p>}
+
+  {
+    c && !c.direccion && (
+      <section class="card mail-intro">
+        <h2>Así funciona</h2>
+        <ol class="steps">
+          <li>Te damos una dirección de correo solo tuya.</li>
+          <li>En tu Gmail u Outlook creas un filtro: los correos de tu banco se reenvían solos a esa dirección.</li>
+          <li>Cada vez que llega una compra, TelMoney te pregunta por WhatsApp: "¿La anoto?". Nada se anota sin tu sí.</li>
+        </ol>
+        <ul class="facts">
+          <li>No te pedimos tu contraseña ni acceso a tu correo: solo nos llega lo que tú reenvías.</li>
+          <li>Leemos el monto, el comercio y la fecha. El texto del correo se borra en 7 días.</li>
+          <li>Lo desconectas cuando quieras y la dirección deja de funcionar.</li>
+        </ul>
+        <form method="post">
+          <input type="hidden" name="accion" value="crear" />
+          <button class="btn btn--primary" type="submit">Crear mi dirección</button>
+        </form>
+      </section>
+    )
+  }
+
+  {
+    c?.direccion && (
+      <>
+        <section class="card">
+          <p class="stat__label">Tu dirección de TelMoney</p>
+          <div class="address">
+            <code data-copy-src>{c.direccion}</code>
+            <button class="btn-quiet" type="button" data-copy={c.direccion}>
+              Copiar
+            </button>
+          </div>
+          <p class="stat__note">
+            {c.ultimo_correo ? <>Último correo recibido: {dateTime(c.ultimo_correo)}</> : <>Todavía no recibe correos.</>}
+          </p>
+        </section>
+
+        <section class="section card" aria-labelledby="t-gmail">
+          <h2 id="t-gmail" class="card__head">Con Gmail</h2>
+          <p class="hint">
+            Hazlo desde una computadora, o desde el navegador del celular en "versión de escritorio": la app de Gmail no tiene
+            estas opciones. Es una sola vez.
+          </p>
+          <ol class="steps">
+            <li>
+              <strong>Agrega tu dirección para reenviar.</strong> Abre{' '}
+              <a href="https://mail.google.com/mail/u/0/#settings/fwdandpop" target="_blank" rel="noopener">
+                Gmail → Configuración → Reenvío y correo POP/IMAP
+              </a>
+              , toca <em>Agregar una dirección de reenvío</em>, pega tu dirección de arriba y confirma.
+            </li>
+            <li>
+              <strong>Pega el código que te manda Google.</strong>
+              {c.confirmacion?.codigo ? (
+                <span class="code-box">
+                  <code class="code">{c.confirmacion.codigo}</code>
+                  <button class="btn-quiet" type="button" data-copy={c.confirmacion.codigo}>
+                    Copiar
+                  </button>
+                </span>
+              ) : (
+                <span class="code-box code-box--wait" data-esperando-codigo={esperandoCodigo ? '' : undefined}>
+                  {esperandoCodigo ? 'Esperando el código de Google… aparece aquí solo.' : 'Aquí aparece el código cuando Google lo mande.'}
+                </span>
+              )}
+              Ponlo en Gmail y toca <em>Verificar</em>. Deja marcado <em>Inhabilitar el reenvío</em>: así no se reenvía todo tu
+              correo, solo lo del filtro.
+            </li>
+            <li>
+              <strong>Crea el filtro.</strong> Abre un correo de tu banco, toca <em>⋮</em> → <em>Filtrar mensajes similares</em>{' '}
+              → <em>Crear filtro</em>, marca <em>Reenviar a</em>, elige tu dirección de TelMoney y toca <em>Crear filtro</em>.
+              Repítelo con cada banco o billetera.
+            </li>
+          </ol>
+          <p class="hint">Listo: desde la próxima compra, TelMoney te escribe. Los correos viejos no se reenvían.</p>
+        </section>
+
+        <details class="section card other">
+          <summary>
+            <h2 class="card__head">Con Outlook o Hotmail</h2>
+          </summary>
+          <ol class="steps">
+            <li>
+              Abre{' '}
+              <a href="https://outlook.live.com/mail/0/options/mail/rules" target="_blank" rel="noopener">
+                Outlook → Configuración → Correo → Reglas
+              </a>{' '}
+              y toca <em>Agregar nueva regla</em>.
+            </li>
+            <li>Condición: <em>De</em> → el correo de tu banco.</li>
+            <li>Acción: <em>Reenviar a</em> → tu dirección de TelMoney. Guarda. Outlook no pide código.</li>
+          </ol>
+        </details>
+
+        <section class="section" aria-labelledby="t-recibidos">
+          <h2 id="t-recibidos" class="section-title card__head">Lo que ha llegado</h2>
+          <div class="table-wrap">
+            <table class="table">
+              <tbody>
+                {(c.recibidos ?? []).map((m) => (
+                  <tr>
+                    <td class="nowrap muted">{dateTime(m.fecha)}</td>
+                    <td>{m.comercio || m.asunto || m.de}</td>
+                    <td class="r">{m.monto === null ? '' : usd(m.monto)}</td>
+                    <td class="r">
+                      <span class={`chip chip--${CHIP[m.estado] ?? 'muted'}`}>{ESTADO[m.estado] ?? m.estado}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {!(c.recibidos ?? []).length && <p class="empty">Cuando llegue el primer correo de tu banco, aparece aquí.</p>}
+          </div>
+        </section>
+
+        <section class="section card" aria-labelledby="t-off">
+          <h2 id="t-off" class="card__head">Desconectar</h2>
+          <p class="hint">La dirección deja de recibir correos. Lo que ya se anotó se queda. Borra también el filtro en tu correo.</p>
+          <details class="ia-delete" style="margin-top: var(--s-3)">
+            <summary class="btn-quiet">Desconectar mi correo</summary>
+            <form method="post">
+              <input type="hidden" name="accion" value="desconectar" />
+              <span>Si vuelves a conectar, te damos una dirección nueva.</span>
+              <button class="btn-quiet btn-danger" type="submit">Sí, desconectar</button>
+            </form>
+          </details>
+        </section>
+      </>
+    )
+  }
+</Cuenta>
+
+<script>
+  // Copiar la dirección o el código.
+  document.addEventListener('click', async (e) => {
+    const btn = (e.target as Element).closest<HTMLButtonElement>('[data-copy]');
+    if (!btn) return;
+    try {
+      await navigator.clipboard.writeText(btn.dataset.copy ?? '');
+      const label = btn.textContent;
+      btn.textContent = 'Copiado';
+      setTimeout(() => (btn.textContent = label), 1600);
+    } catch {}
+  });
+
+  // Mientras Google no manda el código, se revisa cada 4 s (hasta 15 min) y se recarga cuando llega.
+  if (document.querySelector('[data-esperando-codigo]')) {
+    let attempts = 0;
+    const tick = async () => {
+      if (++attempts > 225) return;
+      if (!document.hidden) {
+        try {
+          const r = await fetch('/cuenta/correo/estado', { cache: 'no-store' });
+          if (r.ok && (await r.json()).codigo) return location.reload();
+        } catch {}
+      }
+      setTimeout(tick, 4000);
+    };
+    setTimeout(tick, 4000);
+  }
+</script>
+
+<style>
+  .mail-intro {
+    max-width: 680px;
+    display: grid;
+    gap: var(--s-4);
+  }
+  .steps {
+    margin: 0;
+    padding-left: 1.3em;
+    display: grid;
+    gap: var(--s-3);
+  }
+  .steps strong {
+    display: block;
+  }
+  .facts {
+    margin: 0;
+    padding-left: 1.1em;
+    color: var(--text-muted);
+    font-size: var(--fs-small);
+    display: grid;
+    gap: 4px;
+  }
+  .hint {
+    color: var(--text-muted);
+    font-size: var(--fs-small);
+    margin-bottom: var(--s-3);
+  }
+  .steps + .hint {
+    margin: var(--s-4) 0 0;
+  }
+  .address {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s-3);
+    margin: var(--s-2) 0;
+  }
+  .address code {
+    font-size: clamp(1rem, 4vw, 1.35rem);
+    font-weight: 700;
+    overflow-wrap: anywhere;
+  }
+  .code-box {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s-3);
+    margin: var(--s-2) 0;
+  }
+  .code-box .code {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    font-variant-numeric: tabular-nums;
+  }
+  .code-box--wait {
+    color: var(--text-muted);
+    font-style: italic;
+  }
+  .other summary {
+    cursor: pointer;
+    list-style: none;
+  }
+  .other summary::-webkit-details-marker {
+    display: none;
+  }
+  .other summary h2::after {
+    content: ' ›';
+    color: var(--text-muted);
+  }
+  .other[open] summary h2::after {
+    content: ' ⌄';
+  }
+</style>
