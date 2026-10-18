@@ -18,9 +18,13 @@ const env = Object.fromEntries(
     ? fs.readFileSync('.env', 'utf8').split('\n').filter((l) => l.includes('=') && !l.trim().startsWith('#')).map((l) => [l.slice(0, l.indexOf('=')).trim(), l.slice(l.indexOf('=') + 1).trim()])
     : [],
 );
-const LAUNCHED = Boolean(process.env.PUBLIC_WHATSAPP_NUMBER || env.PUBLIC_WHATSAPP_NUMBER);
+// OG_LAUNCHED=0|1 fuerza la versión (las imágenes se publican tal cual: deben coincidir con producción,
+// no con el .env local). Ej.: OG_LAUNCHED=0 npm run og antes del lanzamiento.
+const LAUNCHED = process.env.OG_LAUNCHED
+  ? process.env.OG_LAUNCHED === '1'
+  : Boolean(process.env.PUBLIC_WHATSAPP_NUMBER || env.PUBLIC_WHATSAPP_NUMBER);
 const DOMAIN = (process.env.PUBLIC_SITE_URL || env.PUBLIC_SITE_URL || 'https://telmoney.app').replace(/^https?:\/\//, '').replace(/\/$/, '');
-const CTA = LAUNCHED ? ['Pruébalo gratis 7 días', 'sin tarjeta'] : ['Únete gratis a la beta', '2 de noviembre'];
+const CTA = LAUNCHED ? ['Pruébalo gratis', 'sin tarjeta'] : ['Únete gratis a la beta', '2 de noviembre'];
 
 const font = (pkg, file) => fs.readFileSync(`node_modules/@fontsource/${pkg}/files/${file}`);
 const fonts = [
@@ -45,8 +49,8 @@ const C = { black: '#000000', green: '#0e9f6e', glow: '#3ddc97', text: '#ffffff'
 
 const logo = (size) =>
   h('div', { style: { display: 'flex', alignItems: 'center', gap: size * 0.32 } },
-    h('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'center', width: size, height: size, borderRadius: size * 0.26, background: '#ffffff' } },
-      h('img', { src: icon, width: size * 0.8, height: size * 0.8 })),
+    h('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'center', width: size, height: size, borderRadius: size * 0.26, background: C.green } },
+      h('img', { src: icon, width: size * 0.7, height: size * 0.7 })),
     h('div', { style: { display: 'flex', fontFamily: 'Jakarta', fontSize: size * 0.72, letterSpacing: -size * 0.03, color: C.text } },
       h('span', { style: { fontWeight: 700 } }, 'tel'),
       h('span', { style: { fontWeight: 800, color: C.green } }, 'money')));
@@ -75,7 +79,7 @@ const bubble = (from, children, time) =>
 const chat = (w) =>
   h('div', { style: { display: 'flex', flexDirection: 'column', width: w, borderRadius: 34, overflow: 'hidden', background: C.chatBg, border: '6px solid #2b2d30' } },
     h('div', { style: { display: 'flex', alignItems: 'center', gap: 12, padding: '16px 18px', background: C.head } },
-      h('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'center', width: 44, height: 44, borderRadius: 22, background: '#ffffff' } }, h('img', { src: icon, width: 34, height: 34 })),
+      h('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'center', width: 44, height: 44, borderRadius: 22, background: C.green } }, h('img', { src: icon, width: 30, height: 30 })),
       h('div', { style: { display: 'flex', flexDirection: 'column' } },
         h('span', { style: { fontFamily: 'Inter', fontWeight: 700, fontSize: 21, color: C.chatText } }, 'TelMoney'),
         h('span', { style: { fontFamily: 'Inter', fontSize: 15, color: C.meta } }, 'en línea'))),

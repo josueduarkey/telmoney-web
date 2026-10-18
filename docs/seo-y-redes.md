@@ -68,7 +68,7 @@ src/data/faqs.ts             preguntas: las usa la sección y los datos estructu
 src/pages/robots.txt.ts      robots.txt
 src/pages/site.webmanifest.ts manifiesto (íconos al guardar en la pantalla de inicio)
 scripts/og.mjs               imágenes sociales (npm run og)
-scripts/icons.mjs            íconos desde public/favicon.png (npm run icons)
+scripts/icons.mjs            íconos desde public/logo-mark.svg (npm run icons)
 astro.config.mjs             dominio y sitemap (excluye las páginas en borrador)
 ```
 
