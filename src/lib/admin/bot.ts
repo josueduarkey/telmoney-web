@@ -116,8 +116,9 @@ export async function me<T>(
 }
 
 export type Plan = {
-  estado: 'prueba' | 'pagando' | 'vencido' | 'equipo';
-  nivel: 'starter' | 'pro' | null;
+  /** "gratis" = plan Free (al terminar la prueba o vencer un plan pagado). "vencido" solo si el bot apaga Free. */
+  estado: 'prueba' | 'pagando' | 'gratis' | 'vencido' | 'equipo';
+  nivel: 'gratis' | 'starter' | 'pro' | null;
   plan: string | null;
   prueba_hasta: string | null;
   pagado_hasta: string | null;

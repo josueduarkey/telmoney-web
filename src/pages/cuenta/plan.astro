@@ -38,7 +38,7 @@ if (perfil.ok && !perfil.data.vinculado) return Astro.redirect('/cuenta');
 const datos = perfil.ok && perfil.data.vinculado ? perfil.data : null;
 const pagos = datos ? await me<{ pagos: Pago[] }>('/me/pagos', token) : null;
 
-const ESTADO = { prueba: 'En prueba', pagando: 'Activo', vencido: 'Vencido', equipo: 'Equipo' } as const;
+const ESTADO = { prueba: 'En prueba', pagando: 'Activo', gratis: 'Gratis, con límite diario', vencido: 'Vencido', equipo: 'Equipo' } as const;
 const PAGO = { approved: 'Aprobado', pending: 'Pendiente', failed: 'No se completó' } as const;
 const vence = datos ? (datos.plan.estado === 'prueba' ? datos.plan.prueba_hasta : datos.plan.pagado_hasta) : null;
 const BENEFICIOS: Record<string, string[]> = {
@@ -73,11 +73,13 @@ const nivelDe = (plan: string) => (plan.startsWith('starter') ? 'starter' : 'pro
             <p class="stat__value">{planLabel(datos.plan.plan, datos.plan.nivel)}</p>
             <p class="stat__note">{ESTADO[datos.plan.estado]}</p>
           </div>
-          <div class="card">
-            <p class="stat__label">{datos.plan.estado === 'prueba' ? 'La prueba termina' : 'Vence'}</p>
-            <p class="stat__value">{vence ? date(vence) : '—'}</p>
-            <p class="stat__note">{datos.plan.renovacion_automatica ? 'Se renueva solo' : 'No se cobra solo'}</p>
-          </div>
+          {datos.plan.estado !== 'gratis' && (
+            <div class="card">
+              <p class="stat__label">{datos.plan.estado === 'prueba' ? 'La prueba termina' : 'Vence'}</p>
+              <p class="stat__value">{vence ? date(vence) : '—'}</p>
+              <p class="stat__note">{datos.plan.renovacion_automatica ? 'Se renueva solo' : 'No se cobra solo'}</p>
+            </div>
+          )}
         </div>
 
         <section class="section" aria-labelledby="t-planes">
