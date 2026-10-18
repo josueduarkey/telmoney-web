@@ -71,7 +71,7 @@ La guía completa está en [`seo-y-redes.md`](seo-y-redes.md). En resumen:
   - robots.txt y sitemap.
   - Páginas legales provisionales con `noindex`.
 - **Al compartir** (WhatsApp, Facebook, LinkedIn, X, Telegram):
-  - Imagen de 1200×630 (70 KB) con el lema, un chat que responde «Hoy puedes gastar $21.70» y «Únete gratis a la beta · 1 de noviembre».
+  - Imagen de 1200×630 (70 KB) con el lema, un chat que responde «Hoy puedes gastar $21.70» y «Únete gratis a la beta · 2 de noviembre».
   - Título «Tu dinero en orden, por WhatsApp» y una descripción que entra completa en WhatsApp.
 - **Botones para compartir:**
   - Están en el «¡Listo!» de la beta y en el footer.

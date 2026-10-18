@@ -20,7 +20,7 @@ const env = Object.fromEntries(
 );
 const LAUNCHED = Boolean(process.env.PUBLIC_WHATSAPP_NUMBER || env.PUBLIC_WHATSAPP_NUMBER);
 const DOMAIN = (process.env.PUBLIC_SITE_URL || env.PUBLIC_SITE_URL || 'https://telmoney.app').replace(/^https?:\/\//, '').replace(/\/$/, '');
-const CTA = LAUNCHED ? ['Pruébalo gratis 7 días', 'sin tarjeta'] : ['Únete gratis a la beta', '1 de noviembre'];
+const CTA = LAUNCHED ? ['Pruébalo gratis 7 días', 'sin tarjeta'] : ['Únete gratis a la beta', '2 de noviembre'];
 
 const font = (pkg, file) => fs.readFileSync(`node_modules/@fontsource/${pkg}/files/${file}`);
 const fonts = [

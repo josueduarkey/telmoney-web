@@ -23,15 +23,15 @@ Cómo encuentra Google a TelMoney, cómo se ve el link cuando alguien lo compart
 
 - **Lema:** «Tu dinero en orden, por WhatsApp.» Se usa «dinero» y no modismos locales, para que lo entienda gente de cualquier país.
 - **Promesa en una línea:** «Sabe cuánto puedes gastar hoy con un mensaje de WhatsApp.»
-- **Llamado a la acción:** hasta el 1/11, «Únete gratis a la beta · 1 de noviembre». Desde el lanzamiento, «Pruébalo gratis 7 días». Cambia solo con `PUBLIC_WHATSAPP_NUMBER`.
+- **Llamado a la acción:** hasta el 1/11, «Únete gratis a la beta · 2 de noviembre». Desde el lanzamiento, «Pruébalo gratis 7 días». Cambia solo con `PUBLIC_WHATSAPP_NUMBER`.
 
 | Dónde | Texto | Por qué |
 |---|---|---|
 | Google (título) | TelMoney: control de gastos por WhatsApp \| Tu dinero en orden | Lo que se busca va al principio; el lema da la personalidad |
 | Google (descripción) | Anota tus gastos con un mensaje, un audio o la foto del recibo… Únete a la beta. | Cómo se usa, el beneficio y la acción |
 | Al compartir (título) | Tu dinero en orden, por WhatsApp | El nombre ya aparece aparte (`og:site_name`) |
-| Al compartir (descripción) | Sabe cuánto puedes gastar hoy con un mensaje de WhatsApp. Beta gratis el 1 de noviembre. | Entra completa en las 2 líneas de WhatsApp |
-| Botón WhatsApp / Telegram | Mira esto 👀 TelMoney te dice cuánto puedes gastar hoy… La beta abre el 1 de noviembre y es gratis: | Suena a un amigo, no a un anuncio |
+| Al compartir (descripción) | Sabe cuánto puedes gastar hoy con un mensaje de WhatsApp. Beta gratis el 2 de noviembre. | Entra completa en las 2 líneas de WhatsApp |
+| Botón WhatsApp / Telegram | Mira esto 👀 TelMoney te dice cuánto puedes gastar hoy… La beta abre el 2 de noviembre y es gratis: | Suena a un amigo, no a un anuncio |
 | Botón X | Tu dinero en orden, por WhatsApp 💚 … 👇 | Corto, con el lema |
 | Correo | Asunto: «Para que el dinero te alcance todo el mes» | Beneficio en el asunto |
 

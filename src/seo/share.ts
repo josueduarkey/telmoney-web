@@ -17,7 +17,7 @@ export const shareUrl = (network: Network) => {
 
 /** Mensajes: cercanos, en español neutro, con el beneficio concreto y la acción al final.
  *  WhatsApp y Telegram son conversaciones: van en primera persona, como lo diría un amigo. */
-const CTA = LAUNCHED ? 'Pruébalo gratis' : 'La beta abre el 1 de noviembre y es gratis';
+const CTA = LAUNCHED ? 'Pruébalo gratis' : 'La beta abre el 2 de noviembre y es gratis';
 
 export const shareText = {
   chat: `Mira esto 👀 TelMoney te dice cuánto puedes gastar hoy, solo con mensajes de WhatsApp. ${CTA}:`,

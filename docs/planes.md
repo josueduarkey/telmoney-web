@@ -2,6 +2,8 @@
 
 *16 de octubre de 2026. Decisión de Josué: agregar un plan gratis con límites; los de pago no cambian de precio. Se revisa según la cantidad de usuarios.*
 
+**Beta:** abre el **2 de noviembre de 2026** y dura hasta inicios de diciembre. Durante la beta, Free se queda generoso (10 interacciones al día) para que la gente lo pruebe de verdad; los límites se ajustan con los datos reales al terminar.
+
 | Plan (clave interna) | Precio | Para quién |
 |---|---|---|
 | **Free** (`gratis`) | $0 | Empezar a ordenarse sin pagar |

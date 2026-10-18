@@ -25,8 +25,8 @@ export const CTA = LAUNCHED
   ? { label: 'Pruébalo gratis', href: WHATSAPP_URL, external: true, cursor: 'Pruébalo' }
   : { label: 'Únete a la beta', href: '#beta', external: false, cursor: 'Únete' };
 
-/** Apertura de la beta: 1 de noviembre de 2026, medianoche en El Salvador (UTC−6). */
-export const RELEASE_AT = '2026-11-01T00:00:00-06:00';
+/** Apertura de la beta: 2 de noviembre de 2026, medianoche en El Salvador (UTC−6). */
+export const RELEASE_AT = '2026-11-02T00:00:00-06:00';
 
 /** Datos fijos de la marca. Los textos para buscadores y redes viven en src/seo/meta.ts. */
 export const SITE = {

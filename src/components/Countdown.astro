@@ -9,7 +9,7 @@ interface Props {
   /** md: en línea · lg: centrada en cajas (inicio) · xl: centrada y protagonista (beta) */
   size?: 'md' | 'lg' | 'xl';
 }
-const { class: cls = '', label = 'La beta abre el 1 de noviembre', size = 'md' } = Astro.props;
+const { class: cls = '', label = 'La beta abre el 2 de noviembre', size = 'md' } = Astro.props;
 
 const left = Math.max(0, new Date(RELEASE_AT).getTime() - Date.now());
 const parts = [
