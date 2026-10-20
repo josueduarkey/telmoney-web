@@ -373,6 +373,15 @@ const suggestions = [
   .phone__body::-webkit-scrollbar {
     display: none;
   }
+  /* En pantallas táctiles el chat no se desliza por dentro: el dedo sobre el teléfono mueve la página
+     (si no, se queda "trabado" y hay que deslizar por los bordes). El script lo baja solo a lo último. */
+  @media (hover: none) and (pointer: coarse) {
+    .phone__body {
+      overflow-y: hidden;
+      overscroll-behavior: auto;
+      touch-action: pan-y;
+    }
+  }
   .phone__day {
     align-self: center;
     margin-top: auto;

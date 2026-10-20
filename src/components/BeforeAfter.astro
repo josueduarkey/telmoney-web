@@ -30,7 +30,7 @@ const scenes: Scene[] = [
     id: "pago",
     tab: "Día de pago",
     before: {
-      say: "Te pagan y no sabes cuánto puedes gastar.",
+      say: "Te pagan y no sabes cuánto gastar.",
       notes: [
         {
           app: "Banco",
@@ -47,7 +47,7 @@ const scenes: Scene[] = [
       ],
     },
     after: {
-      say: "Sabes cuánto tienes por día hasta tu próximo pago.",
+      say: "Sabes cuánto tienes por día.",
       chat: salario,
     },
   },
@@ -55,7 +55,7 @@ const scenes: Scene[] = [
     id: "compra",
     tab: "¿Lo compro?",
     before: {
-      say: "Compras por impulso y a mitad de mes ya no alcanza.",
+      say: "Compras por impulso y no alcanza.",
       notes: [
         {
           app: "Banco",
@@ -73,7 +73,7 @@ const scenes: Scene[] = [
       ],
     },
     after: {
-      say: "Antes de comprar, sabes cómo te deja el resto del mes.",
+      say: "Antes de comprar, sabes si te alcanza.",
       chat: tenis,
     },
   },
@@ -81,7 +81,7 @@ const scenes: Scene[] = [
     id: "fijos",
     tab: "Pagos fijos",
     before: {
-      say: "Se te pasa una fecha y terminas pagando recargos.",
+      say: "Se te pasa una fecha y pagas recargos.",
       notes: [
         {
           app: "Tarjeta",
@@ -100,7 +100,7 @@ const scenes: Scene[] = [
       ],
     },
     after: {
-      say: "Te avisa 2 días antes y lo marcas como pagado.",
+      say: "Te avisa 2 días antes.",
       chat: alquiler,
     },
   },
@@ -125,7 +125,7 @@ const scenes: Scene[] = [
       ],
     },
     after: {
-      say: "Te arma un mensaje amable y lo mandas con un toque.",
+      say: "Te arma el cobro y lo mandas.",
       chat: juan,
     },
   },
@@ -133,7 +133,7 @@ const scenes: Scene[] = [
     id: "mes",
     tab: "Fin de mes",
     before: {
-      say: "Llega fin de mes y no sabes en qué se fue tu dinero.",
+      say: "No sabes en qué se fue tu dinero.",
       notes: [
         {
           app: "Banco",
@@ -151,7 +151,7 @@ const scenes: Scene[] = [
       ],
     },
     after: {
-      say: "Cada noche sabes cómo te fue y cuánto tienes para mañana.",
+      say: "Cada noche sabes cómo te fue.",
       chat: reporte,
     },
   },
@@ -164,7 +164,7 @@ const scenes: Scene[] = [
       <h2 class="display">
         El mismo sueldo. <br />Otro fin de mes<span class="pd">.</span>
       </h2>
-      <p class="lead">Elige una situación y mira cómo cambia con TelMoney.</p>
+      <p class="lead">Elige una situación.</p>
     </header>
 
     <div

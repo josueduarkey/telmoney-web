@@ -16,11 +16,11 @@ const pisto = [
 ];
 const billete = [
   `Todo lo de ${PLANS.starter.name}, sin tope diario`,
-  'Avisos antes de cada pago fijo y de tu tarjeta: adiós a la mora',
-  'Tu puntaje de salud financiera y qué mejorar',
-  'Cobros a quien te debe, listos para mandar',
-  'Pregúntale lo que quieras, sin límite',
-  'Excel, PDF y gráficas para el banco o tu contador',
+  'Avisos antes de cada pago fijo y de tu tarjeta',
+  'Tu puntaje de salud financiera',
+  'Cobros a quien te debe',
+  'Preguntas sin límite',
+  'Excel, PDF y gráficas',
 ];
 const usd = (n: number) => n.toFixed(2);
 const linkAttrs = CTA.external ? { target: '_blank', rel: 'noopener' } : {};
@@ -34,8 +34,7 @@ const daily = (n: number, days: number) => `$${(n / days).toFixed(2)} al día`;
     <header class="pricing__head">
       <h2 class="display">Se paga solo<span class="pd">.</span></h2>
       <p class="lead">
-        Empiezas con 7 días de todo, gratis y sin tarjeta. Después sigues gratis con {PLANS.gratis.name}, o
-        pasas a un plan con más: con evitar un solo recargo por pagar tarde la tarjeta, ya se pagó.
+        7 días de todo, gratis y sin tarjeta. Después sigues en {PLANS.gratis.name} o pasas a más.
       </p>
     </header>
 
@@ -47,7 +46,7 @@ const daily = (n: number, days: number) => `$${(n / days).toFixed(2)} al día`;
       <span class="period__pill" aria-hidden="true"></span>
     </div>
 
-    <div class="plans">
+    <div class="plans" data-plans>
       <article class="plan">
         <h3 class="plan__name">{PLANS.gratis.name}</h3>
         <p class="plan__for">Para empezar a ordenarte, sin pagar nada.</p>
@@ -114,6 +113,10 @@ const daily = (n: number, days: number) => `$${(n / days).toFixed(2)} al día`;
       </article>
     </div>
 
+    <div class="plans__dots" aria-hidden="true">
+      <i class="is-on"></i><i></i><i></i>
+    </div>
+
     <p class="pricing__fine">
       Pagas con tarjeta de crédito o débito, por Wompi. Sin contratos: si no
       renuevas, tus datos quedan guardados para cuando vuelvas.
@@ -131,6 +134,22 @@ const daily = (n: number, days: number) => `$${(n / days).toFixed(2)} al día`;
     const dailies = root.querySelectorAll<HTMLElement>('[data-daily]');
     const group = root.querySelector<HTMLElement>('.period')!;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Puntos debajo del carrusel (celular): marcan la tarjeta que se ve.
+    const track = root.querySelector<HTMLElement>('[data-plans]')!;
+    const dots = root.querySelectorAll<HTMLElement>('.plans__dots i');
+    const cards = Array.from(track.children) as HTMLElement[];
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.intersectionRatio < 0.6) continue;
+          const i = cards.indexOf(e.target as HTMLElement);
+          dots.forEach((d, j) => d.classList.toggle('is-on', j === i));
+        }
+      },
+      { root: track, threshold: 0.6 },
+    );
+    cards.forEach((c) => io.observe(c));
 
     const pill = group.querySelector<HTMLElement>('.period__pill')!;
     const movePill = () => {
@@ -361,13 +380,89 @@ const daily = (n: number, days: number) => `$${(n / days).toFixed(2)} al día`;
     color: var(--text-muted);
   }
 
+  .plans__dots {
+    display: none;
+  }
+
+  /* Celular y tableta: las tarjetas se deslizan de lado (primero Free) y la siguiente se asoma.
+     Cada una cabe en la pantalla: más compactas que en escritorio. */
   @media (max-width: 1023px) {
     .plans {
-      grid-template-columns: 1fr;
-      max-width: 520px;
+      display: flex;
+      gap: 12px;
+      max-width: none;
+      margin: var(--s-6) calc(var(--gutter) * -1) 0;
+      padding: 8px var(--gutter) 24px;
+      overflow-x: auto;
+      align-items: flex-start;
+      scroll-snap-type: x mandatory;
+      scroll-padding-inline: var(--gutter);
+      overscroll-behavior-x: contain;
+      scrollbar-width: none;
+    }
+    .plans::-webkit-scrollbar {
+      display: none;
+    }
+    .plan {
+      flex: 0 0 min(84vw, 360px);
+      scroll-snap-align: start;
+      padding: 22px 20px;
+      border-radius: var(--r-xl);
     }
     .plan--pro {
-      order: -1;
+      box-shadow: 0 20px 40px -24px var(--shadow);
+    }
+    .plan__badge {
+      top: 20px;
+      right: 20px;
+    }
+    .plan__name {
+      font-size: 1.35rem;
+    }
+    .plan__for {
+      margin-top: 4px;
+      font-size: var(--fs-small);
+    }
+    .plan__price {
+      margin-top: var(--s-4);
+      font-size: 2.8rem;
+    }
+    .plan__daily {
+      margin: 4px 0 var(--s-4);
+    }
+    .plan__list {
+      margin-top: var(--s-4);
+      padding-top: var(--s-4);
+      gap: 8px;
+      font-size: var(--fs-small);
+    }
+    .plan__list li::before,
+    .plan__list li::after {
+      top: 1px;
+      width: 18px;
+      height: 18px;
+    }
+    .plan__list li {
+      padding-left: 26px;
+    }
+    .plans__dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+    }
+    .plans__dots i {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--hairline-strong);
+      transition:
+        width 0.3s var(--ease-out),
+        background 0.3s;
+    }
+    .plans__dots i.is-on {
+      width: 20px;
+      border-radius: 4px;
+      background: var(--text);
     }
   }
 </style>
