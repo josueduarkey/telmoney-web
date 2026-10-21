@@ -9,6 +9,7 @@ const GOALS = 1.3; // apartado para metas
 const DAYS = 11; // días hasta el próximo ingreso (15/10)
 const PAYDAY = '15/10';
 
+type Link = { label: string; href: string; external?: boolean };
 type Move = { amount: number; kind: 'expense' | 'income'; category: string; account: string };
 
 const CATEGORIES: [RegExp, string, string][] = [
@@ -73,7 +74,15 @@ export function demoBot(root: HTMLElement, { onFirstInteraction }: { onFirstInte
 
   const scrollDown = () => body.scrollTo({ top: body.scrollHeight, behavior: 'smooth' });
 
-  const bubble = (from: 'me' | 'bot', html: string, buttons: string[] = []) => {
+  // Lo que la demo no entiende se pregunta en el WhatsApp de verdad (con el texto ya escrito).
+  // Antes del lanzamiento no hay número: el botón lleva a la lista de espera.
+  const waNumber = root.dataset.wa;
+  const askLink = (question: string): Link =>
+    waNumber
+      ? { label: 'Preguntar en WhatsApp', href: `https://wa.me/${waNumber}?text=${encodeURIComponent(question)}`, external: true }
+      : { label: 'Únete a la beta', href: root.dataset.ctaHref || '#beta' };
+
+  const bubble = (from: 'me' | 'bot', html: string, buttons: string[] = [], link?: Link) => {
     const li = document.createElement('li');
     li.className = `msg msg--${from}`;
     const ticks = from === 'me' ? TICKS_SVG : '';
@@ -81,6 +90,9 @@ export function demoBot(root: HTMLElement, { onFirstInteraction }: { onFirstInte
       `<div class="bubble"><span class="text">${html}</span><span class="time num">${now()}${ticks}</span></div>` +
       (buttons.length
         ? `<div class="quick">${buttons.map((b) => `<button type="button" class="quick__btn" data-chat-say="${escape(b)}">${escape(b)}</button>`).join('')}</div>`
+        : '') +
+      (link
+        ? `<div class="quick"><a class="quick__btn quick__btn--link" href="${escape(link.href)}"${link.external ? ' target="_blank" rel="noopener"' : ''}>${escape(link.label)}</a></div>`
         : '');
     list.appendChild(li);
     gsap.fromTo(
@@ -101,7 +113,7 @@ export function demoBot(root: HTMLElement, { onFirstInteraction }: { onFirstInte
     }
   };
 
-  const reply = (text: string): { text: string; buttons?: string[] } => {
+  const reply = (text: string): { text: string; buttons?: string[]; link?: Link } => {
     const t = text.toLowerCase().trim();
     const amount = amountIn(t);
 
@@ -177,8 +189,10 @@ export function demoBot(root: HTMLElement, { onFirstInteraction }: { onFirstInte
     }
 
     return {
-      text: 'En esta demo entiendo gastos ("12 de gasolina"), ingresos ("me pagaron 650") y preguntas como "¿cuánto puedo gastar hoy?".\nEl TelMoney real también entiende audios y fotos de recibos. 📸',
-      buttons: ['gasté 5 en café', '¿puedo comprar unos tenis de 80?'],
+      text: waNumber
+        ? 'Eso pregúntamelo en WhatsApp 👇\nAhí te respondo con tus números de verdad.'
+        : 'Eso te lo respondo en WhatsApp cuando abra la beta 👇\nAquí puedes probar con un gasto o "¿cuánto puedo gastar hoy?".',
+      link: askLink(text),
     };
   };
 
@@ -195,7 +209,7 @@ export function demoBot(root: HTMLElement, { onFirstInteraction }: { onFirstInte
     const r = reply(text);
     await wait(700 + Math.min(r.text.length * 4, 700));
     setTyping(false);
-    bubble('bot', fmt(r.text), r.buttons);
+    bubble('bot', fmt(r.text), r.buttons, r.link);
     busy = false;
   };
 

@@ -3,7 +3,7 @@ import Phone from './Phone.astro';
 import Chat from './Chat.astro';
 import Sticker from './Sticker.astro';
 import { heroScript } from '../data/chats';
-import { CTA, LAUNCHED } from '../config';
+import { CTA, LAUNCHED, WHATSAPP_NUMBER } from '../config';
 
 // Máximo 3 frases. La primera es el tagline y es la que queda si no hay movimiento.
 const phrases = ['en orden,', 'sin sorpresas,', 'bajo control,'];
@@ -64,7 +64,11 @@ const phrases = ['en orden,', 'sin sorpresas,', 'bajo control,'];
       </p>
     </div>
 
-    <div class="hero__stage" data-hero-phone>
+    <div
+      class="hero__stage"
+      data-hero-phone
+      data-wa={LAUNCHED ? WHATSAPP_NUMBER : undefined}
+      data-cta-href={LAUNCHED ? undefined : CTA.href}>
       <Phone
         typing
         interactive
