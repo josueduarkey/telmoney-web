@@ -37,7 +37,7 @@ export default defineConfig({
       // API de administración del bot (sección IA del panel; telmoney-bot/docs/ia.md). Solo Production.
       BOT_API_URL: envField.string({ context: 'server', access: 'secret', optional: true }),
       BOT_ADMIN_TOKEN: envField.string({ context: 'server', access: 'secret', optional: true }),
-      ADMIN_EMAILS: envField.string({ context: 'server', access: 'public', default: 'josueduardo.dev@gmail.com' }),
+      ADMIN_EMAILS: envField.string({ context: 'server', access: 'public', default: 'josueduardo.dev@gmail.com,telmoneyapp@gmail.com' }),
       FREE_NUMBERS: envField.string({ context: 'server', access: 'public', default: '' }),
       // Costo por mensaje (USD), de telmoney-bot/docs/precios-y-pagos.md. Al pasar a la API de
       // Meta directa, COST_TWILIO_PER_MESSAGE=0.
