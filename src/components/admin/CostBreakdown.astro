@@ -1,0 +1,143 @@
+---
+// Desglose del costo estimado: cuánto es de Meta (mensajes del bot) y cuánto de Gemini (mensajes de la
+// persona), con la cuenta a la vista (mensajes × tarifa). Las tarifas: astro.config.mjs (COST_*).
+import type { Cost } from '../../lib/admin/queries';
+import { int, usdCost } from '../../lib/admin/format';
+import { COST_GEMINI_PER_MESSAGE, COST_META_PER_REPLY } from 'astro:env/server';
+
+interface Props {
+  cost: Cost;
+  title?: string;
+  sub?: string;
+  /** Cuánto saldría con los 1,000 mensajes gratis al mes de Meta (solo tiene sentido en el resumen de 30 días). */
+  metaFree?: boolean;
+}
+const { cost, title = 'Desglose del costo', sub, metaFree = false } = Astro.props;
+// Tarifa por mensaje con todos sus decimales ($0.0113, no $0.011).
+const rate = (n: number) => `$${n}`;
+
+const rows = [
+  {
+    name: 'Meta (WhatsApp)',
+    detail: `${int(cost.meta.n)} ${cost.meta.n === 1 ? 'mensaje' : 'mensajes'} del bot × ${rate(COST_META_PER_REPLY)}`,
+    usd: cost.meta.usd,
+  },
+  {
+    name: 'Gemini (IA)',
+    detail: `${int(cost.gemini.n)} ${cost.gemini.n === 1 ? 'mensaje' : 'mensajes'} de usuarios × ${rate(COST_GEMINI_PER_MESSAGE)}`,
+    usd: cost.gemini.usd,
+  },
+  ...(cost.twilio > 0 ? [{ name: 'Twilio', detail: 'mensajes de ida y vuelta', usd: cost.twilio }] : []),
+];
+const pct = (n: number) => (cost.total > 0 ? Math.round((n / cost.total) * 100) : 0);
+const FREE = 1000;
+const metaAfterFree = Math.max(0, cost.meta.n - FREE) * COST_META_PER_REPLY;
+---
+
+<section class="card cost" aria-label={title}>
+  <div class="card__head">
+    <div>
+      <h2>{title}</h2>
+      {sub && <p class="card__sub">{sub}</p>}
+    </div>
+    <p class="cost__total">{usdCost(cost.total)}</p>
+  </div>
+
+  <div class="cost__stack" aria-hidden="true">
+    {rows.map((r, i) => r.usd > 0 && <span class={`cost__seg cost__seg--${i}`} style={`width:${pct(r.usd)}%`} />)}
+  </div>
+
+  <ul class="cost__rows" role="list">
+    {
+      rows.map((r, i) => (
+        <li>
+          <span class={`cost__dot cost__seg--${i}`} aria-hidden="true" />
+          <span class="cost__name">
+            {r.name}
+            <small>{r.detail}</small>
+          </span>
+          <span class="cost__pct">{pct(r.usd)}%</span>
+          <span class="cost__usd">{usdCost(r.usd)}</span>
+        </li>
+      ))
+    }
+  </ul>
+
+  {
+    metaFree && (
+      <p class="cost__note">
+        Meta regala 1,000 mensajes al mes por número: con eso, lo de Meta sería <b>{usdCost(metaAfterFree)}</b> y el total{' '}
+        <b>{usdCost(cost.total - cost.meta.usd + metaAfterFree)}</b>.
+      </p>
+    )
+  }
+</section>
+
+<style>
+  .cost__total {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .cost__stack {
+    display: flex;
+    height: 10px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: var(--fill-strong);
+    margin: var(--s-2) 0 var(--s-4);
+  }
+  .cost__seg--0 {
+    background: var(--accent);
+  }
+  .cost__seg--1 {
+    background: var(--gold);
+  }
+  .cost__seg--2 {
+    background: var(--text-muted);
+  }
+  .cost__rows {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--s-3);
+  }
+  .cost__rows li {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    align-items: center;
+    gap: var(--s-3);
+  }
+  .cost__dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+  }
+  .cost__name {
+    display: grid;
+    font-weight: 600;
+  }
+  .cost__name small {
+    font-weight: 400;
+    color: var(--text-muted);
+    font-size: var(--fs-small);
+  }
+  .cost__pct {
+    color: var(--text-muted);
+    font-size: var(--fs-small);
+    font-variant-numeric: tabular-nums;
+  }
+  .cost__usd {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    min-width: 5.5ch;
+    text-align: right;
+  }
+  .cost__note {
+    margin-top: var(--s-4);
+    color: var(--text-muted);
+    font-size: var(--fs-small);
+  }
+</style>

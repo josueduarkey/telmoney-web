@@ -4,6 +4,7 @@ import Admin from '../../layouts/Admin.astro';
 import DailyColumns from '../../components/admin/DailyColumns.astro';
 import CategoryBars from '../../components/admin/CategoryBars.astro';
 import DbError from '../../components/admin/DbError.astro';
+import CostBreakdown from '../../components/admin/CostBreakdown.astro';
 import { RANGES, messagesPerDay, spendingByCategory, summary, type Range, type Status } from '../../lib/admin/queries';
 import { int, usd, usdCost, usdShort } from '../../lib/admin/format';
 import { COST_GEMINI_PER_MESSAGE, COST_META_PER_REPLY } from 'astro:env/server';
@@ -71,9 +72,10 @@ const perActive = (n: number) => (s && s.messages.active ? n / s.messages.active
           </div>
           <div class="card">
             <p class="stat__label">Costo estimado</p>
-            <p class="stat__value">{usdCost(s.cost)}</p>
+            <p class="stat__value">{usdCost(s.cost.total)}</p>
             <p class="stat__note">
-              <b>{usdCost(perActive(s.cost))}</b> por persona activa
+              Meta <b>{usdCost(s.cost.meta.usd)}</b> · Gemini <b>{usdCost(s.cost.gemini.usd)}</b> ·{' '}
+              <a href="#costo">desglose</a>
             </p>
           </div>
           <div class="card">
@@ -81,7 +83,7 @@ const perActive = (n: number) => (s && s.messages.active ? n / s.messages.active
             <p class="stat__value">{usdShort(s.sales.revenue)}</p>
             <p class="stat__note">
               <b>{int(s.sales.purchases)}</b> {s.sales.purchases === 1 ? 'compra' : 'compras'} · margen{' '}
-              {usd(s.sales.revenue - s.cost)}
+              {usd(s.sales.revenue - s.cost.total)}
             </p>
           </div>
           <div class="card">
@@ -105,6 +107,15 @@ const perActive = (n: number) => (s && s.messages.active ? n / s.messages.active
               <b>+{int(s.waitlist.new)}</b> en {days} días · <a href="/admin/interesados">ver lista</a>
             </p>
           </div>
+        </div>
+
+        <div id="costo" class="section">
+          <CostBreakdown
+            cost={s.cost}
+            title="En qué se va el costo"
+            sub={`Últimos ${days} días · ${usdCost(perActive(s.cost.total))} por persona activa`}
+            metaFree={days === 30}
+          />
         </div>
 
         <div class="card" style="margin-top: var(--s-4)">

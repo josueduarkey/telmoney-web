@@ -1,5 +1,6 @@
 ---
 // Una persona: su actividad, lo que le cuesta a TelMoney, sus cuentas y sus movimientos.
+import CostBreakdown from '../../../components/admin/CostBreakdown.astro';
 import Admin from '../../../layouts/Admin.astro';
 import StatusChip from '../../../components/admin/StatusChip.astro';
 import DailyColumns from '../../../components/admin/DailyColumns.astro';
@@ -80,8 +81,10 @@ const PAYMENT: Record<string, string> = { approved: 'Aprobado', pending: 'Pendie
           </div>
           <div class="card">
             <p class="stat__label">Costo estimado (30 días)</p>
-            <p class="stat__value">{usdCost(t.cost)}</p>
-            <p class="stat__note">lo que te cuesta atenderlo</p>
+            <p class="stat__value">{usdCost(t.cost.total)}</p>
+            <p class="stat__note">
+              Meta <b>{usdCost(t.cost.meta.usd)}</b> · Gemini <b>{usdCost(t.cost.gemini.usd)}</b>
+            </p>
           </div>
           <div class="card">
             <p class="stat__label">Pagó en total</p>
@@ -95,6 +98,10 @@ const PAYMENT: Record<string, string> = { approved: 'Aprobado', pending: 'Pendie
               )}
             </p>
           </div>
+        </div>
+
+        <div class="section">
+          <CostBreakdown cost={t.cost} title="Lo que cuesta atenderlo" sub="Últimos 30 días" />
         </div>
 
         <div class="grid-2">
@@ -120,8 +127,6 @@ const PAYMENT: Record<string, string> = { approved: 'Aprobado', pending: 'Pendie
             <dl class="kv">
               <dt>WhatsApp</dt>
               <dd>{phone(u.whatsapp_number)}</dd>
-              <dt>Telegram</dt>
-              <dd>{u.telegram_id ?? '—'}</dd>
               <dt>Prueba hasta</dt>
               <dd>{date(u.trial_ends_at)}</dd>
               <dt>Pagado hasta</dt>

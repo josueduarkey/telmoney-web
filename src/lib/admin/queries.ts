@@ -39,12 +39,25 @@ function db() {
 
 /** Costo estimado: Gemini por cada mensaje que entra y Meta por cada mensaje del bot. Twilio ya no se usa
  *  (COST_TWILIO_PER_MESSAGE = 0); tgIn son usuarios viejos de Telegram, que solo cuestan Gemini. */
-export function estimateCost(m: { waIn: number; waOut: number; tgIn: number }) {
-  return (
-    m.waIn * (COST_TWILIO_PER_MESSAGE + COST_GEMINI_PER_MESSAGE) +
-    m.waOut * (COST_TWILIO_PER_MESSAGE + COST_META_PER_REPLY) +
-    m.tgIn * COST_GEMINI_PER_MESSAGE
-  );
+export type Cost = {
+  total: number;
+  /** Mensajes que manda el bot (respuestas, reportes y avisos), a la tarifa de Meta. */
+  meta: { n: number; usd: number };
+  /** Mensajes que escribe la persona: cada uno pasa por Gemini. */
+  gemini: { n: number; usd: number };
+  /** Solo si COST_TWILIO_PER_MESSAGE > 0 (cuando el bot usaba Twilio). */
+  twilio: number;
+};
+export function estimateCost(m: { waIn: number; waOut: number; tgIn: number }): Cost {
+  const meta = m.waOut * COST_META_PER_REPLY;
+  const gemini = (m.waIn + m.tgIn) * COST_GEMINI_PER_MESSAGE;
+  const twilio = (m.waIn + m.waOut) * COST_TWILIO_PER_MESSAGE;
+  return {
+    total: meta + gemini + twilio,
+    meta: { n: m.waOut, usd: meta },
+    gemini: { n: m.waIn + m.tgIn, usd: gemini },
+    twilio,
+  };
 }
 
 // ─────────────────────────────────────────────────────────── resumen
