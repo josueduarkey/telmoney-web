@@ -13,7 +13,7 @@ if (!Astro.locals.admin) return new Response('No autorizado', { status: 401 });
 
 const q = (Astro.url.searchParams.get('q') ?? '').slice(0, 80);
 const asked = Astro.url.searchParams.get('estado') ?? '';
-const estado = ['prueba', 'pagando', 'vencido', 'invitado'].includes(asked) ? asked : '';
+const estado = ['prueba', 'pagando', 'gratis', 'invitado'].includes(asked) ? asked : '';
 
 let rows: UserRow[] = [];
 let error = '';
@@ -40,7 +40,7 @@ try {
       <option value="">Todos los estados</option>
       <option value="prueba" selected={estado === 'prueba'}>En prueba</option>
       <option value="pagando" selected={estado === 'pagando'}>Pagando</option>
-      <option value="vencido" selected={estado === 'vencido'}>Vencidos</option>
+      <option value="gratis" selected={estado === 'gratis'}>Free</option>
       <option value="invitado" selected={estado === 'invitado'}>Invitados</option>
     </select>
     <button class="btn-quiet" type="submit">Buscar</button>

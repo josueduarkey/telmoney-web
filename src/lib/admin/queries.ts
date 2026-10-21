@@ -12,13 +12,15 @@ export const TZ = 'America/El_Salvador';
 export const RANGES = [7, 30] as const;
 export type Range = (typeof RANGES)[number];
 
-export type Status = 'invitado' | 'pagando' | 'prueba' | 'vencido';
+/** gratis = plan Free: terminó la prueba (o venció un plan pagado) y sigue con límite diario. */
+export type Status = 'invitado' | 'pagando' | 'prueba' | 'gratis';
 
 const freeNumbers = FREE_NUMBERS.split(',')
   .map((n) => n.trim())
   .filter(Boolean);
 
-// Invitados y equipo no tienen prueba ni límite (billing/access.py: _exempt).
+// Invitados y equipo no tienen prueba ni límite (billing/access.py: _exempt). En el bot el equipo es
+// FREE_NUMBERS + ADMIN_NUMBERS: aquí FREE_NUMBERS tiene que traer los dos.
 const STATUS_SQL = `
   case
     when u.whatsapp_number = any($1::text[])
@@ -26,7 +28,7 @@ const STATUS_SQL = `
                   where a.phone = u.whatsapp_number and a.exempt and a.revoked_at is null) then 'invitado'
     when u.paid_until > now() then 'pagando'
     when u.trial_ends_at > now() then 'prueba'
-    else 'vencido'
+    else 'gratis'
   end`;
 
 function db() {
@@ -35,7 +37,8 @@ function db() {
   return sql;
 }
 
-/** Costo estimado de un grupo de mensajes, separado por canal. Telegram no cobra por mensaje. */
+/** Costo estimado: Gemini por cada mensaje que entra y Meta por cada mensaje del bot. Twilio ya no se usa
+ *  (COST_TWILIO_PER_MESSAGE = 0); tgIn son usuarios viejos de Telegram, que solo cuestan Gemini. */
 export function estimateCost(m: { waIn: number; waOut: number; tgIn: number }) {
   return (
     m.waIn * (COST_TWILIO_PER_MESSAGE + COST_GEMINI_PER_MESSAGE) +
@@ -88,7 +91,7 @@ export async function summary(days: Range) {
     `select ${STATUS_SQL} as status, count(*)::int as n from users u group by 1`,
     [freeNumbers],
   );
-  const byStatus: Record<Status, number> = { prueba: 0, pagando: 0, vencido: 0, invitado: 0 };
+  const byStatus: Record<Status, number> = { prueba: 0, pagando: 0, gratis: 0, invitado: 0 };
   for (const r of statusRows) byStatus[r.status as Status] = r.n;
 
   const waOut = row.wa_out + row.wa_sent;

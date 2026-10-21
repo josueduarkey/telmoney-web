@@ -6,7 +6,7 @@ import CategoryBars from '../../components/admin/CategoryBars.astro';
 import DbError from '../../components/admin/DbError.astro';
 import { RANGES, messagesPerDay, spendingByCategory, summary, type Range, type Status } from '../../lib/admin/queries';
 import { int, usd, usdCost, usdShort } from '../../lib/admin/format';
-import { COST_GEMINI_PER_MESSAGE, COST_META_PER_REPLY, COST_TWILIO_PER_MESSAGE } from 'astro:env/server';
+import { COST_GEMINI_PER_MESSAGE, COST_META_PER_REPLY } from 'astro:env/server';
 
 export const prerender = false;
 
@@ -28,8 +28,8 @@ const [s, perDay, cats] = data ?? [];
 const STATUS_LABEL: Record<Status, string> = {
   prueba: 'En prueba',
   pagando: 'Pagando',
-  vencido: 'Vencidos',
-  invitado: 'Invitados',
+  gratis: 'Free',
+  invitado: 'Equipo e invitados',
 };
 const perActive = (n: number) => (s && s.messages.active ? n / s.messages.active : 0);
 ---
@@ -54,7 +54,7 @@ const perActive = (n: number) => (s && s.messages.active ? n / s.messages.active
             <p class="stat__label">Usuarios</p>
             <p class="stat__value">{int(s.users.total)}</p>
             <p class="stat__note">
-              <b>+{int(s.users.new)}</b> en {days} días · {int(s.users.whatsapp)} WhatsApp · {int(s.users.telegram)} Telegram
+              <b>+{int(s.users.new)}</b> en {days} días
             </p>
           </div>
           <div class="card">
@@ -143,10 +143,10 @@ const perActive = (n: number) => (s && s.messages.active ? n / s.messages.active
         </div>
 
         <p class="note">
-          El costo es un estimado: Twilio {usdCost(COST_TWILIO_PER_MESSAGE)} por mensaje (entrante y saliente), Meta{' '}
-          {usdCost(COST_META_PER_REPLY)} por mensaje del bot y Gemini {usdCost(COST_GEMINI_PER_MESSAGE)} por mensaje del
-          usuario, sin descontar los 1,000 mensajes gratis al mes de Meta. Telegram solo cuenta Gemini. El bot guarda el
-          detalle de los mensajes 30 días.
+          El costo es un estimado: Meta {usdCost(COST_META_PER_REPLY)} por cada mensaje del bot (respuestas, reportes y
+          avisos) y Gemini {usdCost(COST_GEMINI_PER_MESSAGE)} por cada mensaje del usuario, sin descontar los 1,000
+          mensajes gratis al mes de Meta. El bot guarda el detalle de los mensajes 30
+          días.
         </p>
       </>
     )

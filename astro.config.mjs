@@ -41,7 +41,7 @@ export default defineConfig({
       FREE_NUMBERS: envField.string({ context: 'server', access: 'public', default: '' }),
       // Costo por mensaje (USD), de telmoney-bot/docs/precios-y-pagos.md. Al pasar a la API de
       // Meta directa, COST_TWILIO_PER_MESSAGE=0.
-      COST_TWILIO_PER_MESSAGE: envField.number({ context: 'server', access: 'public', default: 0.005 }),
+      COST_TWILIO_PER_MESSAGE: envField.number({ context: 'server', access: 'public', default: 0 }),
       COST_META_PER_REPLY: envField.number({ context: 'server', access: 'public', default: 0.0113 }),
       COST_GEMINI_PER_MESSAGE: envField.number({ context: 'server', access: 'public', default: 0.001 }),
     },

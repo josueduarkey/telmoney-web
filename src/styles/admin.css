@@ -275,6 +275,9 @@
 .chip--vencido {
   color: var(--text-muted);
 }
+.chip--gratis {
+  color: var(--text-muted);
+}
 .chip--invitado {
   color: var(--text);
 }
