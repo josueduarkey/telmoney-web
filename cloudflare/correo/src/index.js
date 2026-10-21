@@ -7,6 +7,7 @@
 //
 //   404 del bot  → la dirección no existe o se desconectó: se rechaza (el remitente recibe el rebote)
 //   429 del bot  → pasó el límite del día: se rechaza
+//   422 del bot  → no pudo leer el correo: se rechaza
 //   otro error   → se lanza: Cloudflare responde con un error temporal y el servidor que lo mandó
 //                  (Gmail, Outlook) lo vuelve a intentar más tarde. Así no se pierde si el bot se cae.
 import PostalMime from 'postal-mime';
@@ -63,6 +64,9 @@ export default {
     if (res.ok) return;
     if (res.status === 404) return message.setReject('Esta dirección no existe.');
     if (res.status === 429) return message.setReject('Esta dirección recibió demasiados correos hoy.');
+    // Un correo que el bot no puede leer no se arregla reintentando. (Un 401, token mal puesto, sí se
+    // reintenta: así no se pierde nada mientras se corrige.)
+    if (res.status === 422) return message.setReject('No pudimos leer este correo.');
     throw new Error(`El bot respondió ${res.status}`);
   },
 };
