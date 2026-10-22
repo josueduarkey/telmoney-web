@@ -10,12 +10,13 @@ const cuentale: Msg[] = [
   { from: 'me', receipt: { merchant: 'SÚPER SELECTOS', total: '$27.35' }, time: '12:45' },
   almuerzo[1],
 ];
-const onboarding = ['Tu nombre', 'Cuánto ganas y qué días te pagan', 'Tu meta de ahorro', 'Qué % quieres ahorrar'];
+// Las 5 preguntas del bot (telmoney-bot/src/telmoney_bot/handlers/onboarding.py).
+const onboarding = ['Tu nombre', 'Cuánto recibes y qué días te pagan', 'Cuánto tienes hoy', 'Tu meta de ahorro', 'Qué % quieres ahorrar'];
 
 const steps = [
   {
     title: 'Escríbele "hola"',
-    body: 'Nada que descargar. Cuatro preguntas rápidas que puedes saltar.',
+    body: 'Nada que descargar. Cinco preguntas rápidas y listo.',
     chat: hola,
   },
   {
