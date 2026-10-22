@@ -2,10 +2,9 @@
 import Logo from './Logo.astro';
 import ThemeToggle from './ThemeToggle.astro';
 import { ctaFor } from '../config';
-import { LANG_LABEL, homeOf, langOf } from '../i18n';
+import { LANGS, LANG_LABEL, homeOf, langOf } from '../i18n';
 
 const lang = langOf(Astro.currentLocale);
-const other = lang === 'es' ? 'en' : 'es';
 const CTA = ctaFor(lang);
 const t = {
   es: {
@@ -16,7 +15,7 @@ const t = {
     loginLong: 'Entrar a mi cuenta',
     open: 'Abrir menú',
     close: 'Cerrar menú',
-    switchTo: 'Ver en inglés',
+    language: 'Idioma',
   },
   en: {
     links: ['Before & after', 'How it works', 'Features', 'Pricing', 'FAQ'],
@@ -26,7 +25,7 @@ const t = {
     loginLong: 'Sign in to my account',
     open: 'Open menu',
     close: 'Close menu',
-    switchTo: 'Ver en español',
+    language: 'Language',
   },
 }[lang];
 const links = ['#antes-y-despues', '#como-funciona', '#funciones', '#planes', '#preguntas'].map((href, i) => ({
@@ -43,9 +42,23 @@ const links = ['#antes-y-despues', '#como-funciona', '#funciones', '#planes', '#
     <nav class="nav__links" aria-label={t.main}>
       {links.map((l) => <a href={l.href}>{l.label}</a>)}
     </nav>
-    <a class="nav__lang" href={homeOf(other)} hreflang={other} lang={other} data-lang-switch={other} title={t.switchTo}
-      >{LANG_LABEL[other].short}</a
-    >
+    <label class="nav__lang" title={t.language}>
+      <span class="sr-only">{t.language}</span>
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"></circle>
+        <path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3Z" fill="none" stroke="currentColor" stroke-width="1.8"></path>
+      </svg>
+      <select data-lang-select>
+        {LANGS.map((l) => (
+          <option value={l} data-href={homeOf(l)} selected={l === lang} lang={l}>
+            {LANG_LABEL[l].short}
+          </option>
+        ))}
+      </select>
+      <svg class="nav__lang-caret" viewBox="0 0 12 12" width="10" height="10" aria-hidden="true">
+        <path d="m2.5 4.5 3.5 3.5 3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+    </label>
     <ThemeToggle />
     <a class="nav__login" href="/entrar" rel="nofollow">{t.login}</a>
     <a
@@ -62,7 +75,6 @@ const links = ['#antes-y-despues', '#como-funciona', '#funciones', '#planes', '#
   <div class="nav__menu" id="nav-menu" hidden data-nav-menu>
     {links.map((l) => <a href={l.href}>{l.label}</a>)}
     <a href="/entrar" rel="nofollow">{t.loginLong}</a>
-    <a href={homeOf(other)} hreflang={other} lang={other} data-lang-switch={other}>{LANG_LABEL[other].name}</a>
     <a class="btn btn--block" href={CTA.href}>{CTA.label}</a>
   </div>
 </header>
@@ -88,11 +100,13 @@ const links = ['#antes-y-despues', '#como-funciona', '#funciones', '#planes', '#
     if ((e.target as HTMLElement).closest('a')) setOpen(false);
   });
   // Elegir idioma lo recuerda: "/" ya no redirige según el navegador (Base.astro).
-  document.querySelectorAll<HTMLAnchorElement>('[data-lang-switch]').forEach((a) =>
-    a.addEventListener('click', () => {
+  document.querySelectorAll<HTMLSelectElement>('[data-lang-select]').forEach((sel) =>
+    sel.addEventListener('change', () => {
       try {
-        localStorage.setItem('tm-lang', a.dataset.langSwitch!);
+        localStorage.setItem('tm-lang', sel.value);
       } catch {}
+      const href = sel.selectedOptions[0]?.dataset.href;
+      if (href) location.href = href + location.hash;
     }),
   );
   document.addEventListener('keydown', (e) => {
@@ -181,25 +195,46 @@ const links = ['#antes-y-despues', '#como-funciona', '#funciones', '#planes', '#
     padding: 8px 4px;
     white-space: nowrap;
   }
+  /* Selector de idioma: un <select> nativo (accesible y con la lista del sistema en el celular)
+     vestido de píldora, con el globo a la izquierda y la flecha a la derecha. */
   .nav__lang {
+    position: relative;
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    min-width: 40px;
-    height: 34px;
+    gap: 6px;
+    height: 36px;
     padding: 0 10px;
     border-radius: var(--r-full);
+    background: var(--fill);
     box-shadow: inset 0 0 0 1px var(--hairline-strong);
-    font-size: 0.78rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
     color: var(--text-muted);
-    text-decoration: none;
+    cursor: pointer;
     transition: color 0.2s, box-shadow 0.2s;
   }
-  .nav__lang:hover {
+  .nav__lang:hover,
+  .nav__lang:focus-within {
     color: var(--text);
     box-shadow: inset 0 0 0 1px var(--text-muted);
+  }
+  .nav__lang select {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 0 14px 0 0;
+    margin-right: -14px;
+    cursor: pointer;
+    outline: none;
+  }
+  .nav__lang select option {
+    color: #111;
+  }
+  .nav__lang-caret {
+    pointer-events: none;
   }
   .nav__login:hover {
     color: var(--text);
