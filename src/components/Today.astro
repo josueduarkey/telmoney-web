@@ -8,10 +8,49 @@ const goals = 1.3;
 const days = 11;
 const free = balance - fixed - goals; // 238.70
 const perDay = free / days; // 21.70
+import { langOf } from "../i18n";
+
+const lang = langOf(Astro.currentLocale);
+const t = {
+  es: {
+    presets: ["Almuerzo", "Tenis", "Celular"],
+    title: ["Un número", "Todos los días"],
+    lead: "TelMoney no solo anota lo que ya gastaste. Te dice cuánto puedes gastar hoy, con tus pagos fijos y tu ahorro ya descontados, hasta que te vuelvan a pagar.",
+    formula: "Cómo se calcula tu disponible",
+    rows: ["Tienes en tus cuentas", "Gastos fijos por pagar", "Apartado para tus metas", "Días hasta tu próximo pago (15/10)"],
+    total: "Hoy puedes gastar",
+    perDay: "por día",
+    ask: ["¿Puedo comprar algo de", "?"],
+    yourDay: "Tu disponible por día",
+    today: "hoy",
+    head: "🟡 Puedes, pero se sale de lo de hoy",
+    body: ["Si lo compras, tu disponible baja de $21.70 a", "$14.43 por día", "hasta el 15/10."],
+    pickPrice: "Elige un precio",
+    examples: "Ejemplos",
+    price: "Precio de lo que quieres comprar",
+  },
+  en: {
+    presets: ["Lunch", "Sneakers", "Phone"],
+    title: ["One number", "Every day"],
+    lead: "TelMoney doesn't just log what you already spent. It tells you how much you can spend today, with your bills and savings already taken out, until your next payday.",
+    formula: "How your daily budget is calculated",
+    rows: ["In your accounts", "Bills still to pay", "Set aside for your goals", "Days until your next payday (10/15)"],
+    total: "Today you can spend",
+    perDay: "a day",
+    ask: ["Can I buy something for", "?"],
+    yourDay: "Your budget per day",
+    today: "today",
+    head: "🟡 You can, but it goes over today",
+    body: ["If you buy it, your daily budget drops from $21.70 to", "$14.43 a day", "until 10/15."],
+    pickPrice: "Pick a price",
+    examples: "Examples",
+    price: "Price of what you want to buy",
+  },
+}[lang];
 const presets = [
-  { label: "Almuerzo", value: 6 },
-  { label: "Tenis", value: 80 },
-  { label: "Celular", value: 230 },
+  { label: t.presets[0], value: 6 },
+  { label: t.presets[1], value: 80 },
+  { label: t.presets[2], value: 230 },
 ];
 // Los 11 días hasta el 15/10: hoy (4/10) al 14/10
 const dayLabels = Array.from({ length: days }, (_, i) => `${4 + i}`);
@@ -21,39 +60,33 @@ const dayLabels = Array.from({ length: days }, (_, i) => `${4 + i}`);
   <div class="container today__grid">
     <div>
       <h2 class="display">
-        Un número<span class="pd">.</span> Todos los días<span class="pd"
-          >.</span
-        >
+        {t.title[0]}<span class="pd">.</span> {t.title[1]}<span class="pd">.</span>
       </h2>
       <p class="lead today__lead">
-        TelMoney no solo anota lo que ya gastaste. Te dice cuánto puedes gastar
-        hoy, con tus pagos fijos y tu ahorro ya descontados, hasta que te
-        vuelvan a pagar.
+        {t.lead}
       </p>
 
-      <dl class="formula num" aria-label="Cómo se calcula tu disponible">
+      <dl class="formula num" aria-label={t.formula}>
         <div class="formula__row">
-          <dt>Tienes en tus cuentas</dt>
+          <dt>{t.rows[0]}</dt>
           <dd><span data-count={balance}>${balance.toFixed(2)}</span></dd>
         </div>
         <div class="formula__row">
-          <dt>Gastos fijos por pagar</dt>
+          <dt>{t.rows[1]}</dt>
           <dd>− <span data-count={fixed}>${fixed.toFixed(2)}</span></dd>
         </div>
         <div class="formula__row">
-          <dt>Apartado para tus metas</dt>
+          <dt>{t.rows[2]}</dt>
           <dd>− <span data-count={goals}>${goals.toFixed(2)}</span></dd>
         </div>
         <div class="formula__row">
-          <dt>Días hasta tu próximo pago (15/10)</dt>
+          <dt>{t.rows[3]}</dt>
           <dd>÷ <span data-count={days} data-int>{days}</span></dd>
         </div>
         <div class="formula__total">
-          <dt>Hoy puedes gastar</dt>
+          <dt>{t.total}</dt>
           <dd>
-            <span data-count={perDay}>${perDay.toFixed(2)}</span><small>
-              por día</small
-            >
+            <span data-count={perDay}>${perDay.toFixed(2)}</span><small> {t.perDay}</small>
           </dd>
         </div>
       </dl>
@@ -70,11 +103,11 @@ const dayLabels = Array.from({ length: days }, (_, i) => `${4 + i}`);
       <!-- Tu pregunta -->
       <div class="sim__ask">
         <p class="sim__bubble sim__bubble--me">
-          ¿Puedo comprar algo de <output
+          {t.ask[0]} <output
             class="num"
             for="sim-range"
             data-sim-amount>$80</output
-          >?
+          >{t.ask[1]}
         </p>
       </div>
 
@@ -82,7 +115,7 @@ const dayLabels = Array.from({ length: days }, (_, i) => `${4 + i}`);
       <div class="sim__bubble sim__bubble--bot" aria-live="polite">
         <figure class="days" aria-hidden="true">
           <figcaption>
-            <span>Tu disponible por día</span>
+            <span>{t.yourDay}</span>
             <b class="num" data-sim-after>$14.43</b>
           </figcaption>
           <ol class="days__bars" role="list">
@@ -91,25 +124,23 @@ const dayLabels = Array.from({ length: days }, (_, i) => `${4 + i}`);
                 <li style={`--i:${i}`}>
                   <span class="days__ghost" />
                   <span class="days__fill" />
-                  <small class="num">{i === 0 ? "hoy" : d}</small>
+                  <small class="num">{i === 0 ? t.today : d}</small>
                 </li>
               ))
             }
           </ol>
         </figure>
         <p data-sim-head>
-          <strong>🟡 Puedes, pero se sale de lo de hoy</strong> ($21.70).
+          <strong>{t.head}</strong> ($21.70).
         </p>
         <p data-sim-body>
-          Si lo compras, tu disponible baja de $21.70 a <strong
-            >$14.43 por día</strong
-          > hasta el 15/10.
+          {t.body[0]} <strong>{t.body[1]}</strong> {t.body[2]}
         </p>
       </div>
 
       <!-- El "teclado": elige un ejemplo o desliza el precio -->
-      <div class="sim__compose" data-cursor="Elige un precio">
-        <div class="sim__presets" role="group" aria-label="Ejemplos">
+      <div class="sim__compose" data-cursor={t.pickPrice}>
+        <div class="sim__presets" role="group" aria-label={t.examples}>
           {
             presets.map((p) => (
               <button
@@ -123,7 +154,7 @@ const dayLabels = Array.from({ length: days }, (_, i) => `${4 + i}`);
           }
         </div>
         <label class="sim__slider">
-          <span class="sr-only">Precio de lo que quieres comprar</span>
+          <span class="sr-only">{t.price}</span>
           <span class="sim__cur" aria-hidden="true">$1</span>
           <input
             id="sim-range"
@@ -155,6 +186,25 @@ const dayLabels = Array.from({ length: days }, (_, i) => `${4 + i}`);
     const presets =
       sim.querySelectorAll<HTMLButtonElement>("[data-sim-preset]");
     const usd = (n: number) => `$${n.toFixed(2)}`;
+    const en = document.documentElement.lang === "en";
+    const PAY = en ? "10/15" : "15/10";
+    const T = en
+      ? {
+          ok: `<strong>🟢 Yes, it fits in today.</strong>`,
+          okBody: (l: string, d: string) => `You'd have <strong>${l}</strong> of ${d} left for the rest of the day.`,
+          warn: (d: string) => `<strong>🟡 You can, but it goes over today</strong> (${d}).`,
+          warnBody: (d: string, a: string) => `If you buy it, your daily budget drops from ${d} to <strong>${a} a day</strong> until ${PAY}.`,
+          no: `<strong>🔴 You can't afford it today.</strong>`,
+          noBody: (s: string) => `You'd be <strong>${s}</strong> short of reaching ${PAY} with your bills covered.`,
+        }
+      : {
+          ok: `<strong>🟢 Sí, entra en lo de hoy.</strong>`,
+          okBody: (l: string, d: string) => `Te quedarían <strong>${l}</strong> de ${d} para el resto del día.`,
+          warn: (d: string) => `<strong>🟡 Puedes, pero se sale de lo de hoy</strong> (${d}).`,
+          warnBody: (d: string, a: string) => `Si lo compras, tu disponible baja de ${d} a <strong>${a} por día</strong> hasta el ${PAY}.`,
+          no: `<strong>🔴 Hoy no te alcanza.</strong>`,
+          noBody: (s: string) => `Te faltarían <strong>${s}</strong> para llegar al ${PAY} con tus pagos fijos cubiertos.`,
+        };
 
     const render = () => {
       const price = Number(range.value);
@@ -180,20 +230,20 @@ const dayLabels = Array.from({ length: days }, (_, i) => `${4 + i}`);
         sim.style.setProperty("--level", "1");
         sim.style.setProperty("--today", String((perDay - price) / perDay));
         after.textContent = usd(perDay);
-        head.innerHTML = `<strong>🟢 Sí, entra en lo de hoy.</strong>`;
-        body.innerHTML = `Te quedarían <strong>${usd(perDay - price)}</strong> de ${usd(perDay)} para el resto del día.`;
+        head.innerHTML = T.ok;
+        body.innerHTML = T.okBody(usd(perDay - price), usd(perDay));
       } else if (free - price >= 0) {
         state = "warn";
         sim.style.setProperty("--today", "var(--level)");
         after.textContent = usd(perDayAfter);
-        head.innerHTML = `<strong>🟡 Puedes, pero se sale de lo de hoy</strong> (${usd(perDay)}).`;
-        body.innerHTML = `Si lo compras, tu disponible baja de ${usd(perDay)} a <strong>${usd(perDayAfter)} por día</strong> hasta el 15/10.`;
+        head.innerHTML = T.warn(usd(perDay));
+        body.innerHTML = T.warnBody(usd(perDay), usd(perDayAfter));
       } else {
         state = "no";
         sim.style.setProperty("--today", "0");
         after.textContent = usd(0);
-        head.innerHTML = `<strong>🔴 Hoy no te alcanza.</strong>`;
-        body.innerHTML = `Te faltarían <strong>${usd(price - free)}</strong> para llegar al 15/10 con tus pagos fijos cubiertos.`;
+        head.innerHTML = T.no;
+        body.innerHTML = T.noBody(usd(price - free));
       }
       sim.dataset.state = state;
     };

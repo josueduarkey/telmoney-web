@@ -4,7 +4,8 @@
 //
 // Fuentes: textos en seo/meta.ts, datos estructurados en seo/schema.ts.
 import { SITE } from '../../config';
-import { SEO, absolute } from '../../seo/meta';
+import { absolute, seoFor } from '../../seo/meta';
+import { langOf } from '../../i18n';
 import { pageSchema } from '../../seo/schema';
 import jakartaLatin from '@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-wght-normal.woff2?url';
 
@@ -14,10 +15,13 @@ interface Props {
   /** Páginas que todavía no deben aparecer en Google (por ejemplo, textos legales provisionales) */
   noindex?: boolean;
 }
+const lang = langOf(Astro.currentLocale);
+const SEO = seoFor(lang);
 const { title = SEO.title, description = SEO.description, noindex = false } = Astro.props;
 const path = Astro.url.pathname;
 const canonical = absolute(path);
-const isHome = path === '/';
+// Las dos páginas de inicio (español e inglés) se anuncian una a la otra (hreflang).
+const isHome = path === '/' || path === '/en/' || path === '/en';
 const ogTitle = isHome ? SEO.ogTitle : title;
 const ogDescription = isHome ? SEO.ogDescription : description;
 const image = absolute(SEO.image.path);
@@ -26,6 +30,15 @@ const image = absolute(SEO.image.path);
 <title>{title}</title>
 <meta name="description" content={description} />
 <link rel="canonical" href={canonical} />
+{
+  isHome && (
+    <>
+      <link rel="alternate" hreflang="es" href={absolute('/')} />
+      <link rel="alternate" hreflang="en" href={absolute('/en/')} />
+      <link rel="alternate" hreflang="x-default" href={absolute('/')} />
+    </>
+  )
+}
 {noindex && <meta name="robots" content="noindex, follow" />}
 
 <!-- Íconos y manifiesto (logo oficial; tamaños generados con "npm run icons") -->
@@ -45,6 +58,7 @@ const image = absolute(SEO.image.path);
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content={SITE.name} />
 <meta property="og:locale" content={SEO.ogLocale} />
+{isHome && <meta property="og:locale:alternate" content={lang === 'en' ? 'es_LA' : 'en_US'} />}
 <meta property="og:url" content={canonical} />
 <meta property="og:title" content={ogTitle} />
 <meta property="og:description" content={ogDescription} />
@@ -64,4 +78,4 @@ const image = absolute(SEO.image.path);
 {SITE.x && <meta name="twitter:site" content={`@${SITE.x}`} />}
 
 <!-- Datos estructurados: empresa, sitio, página, app con precios y preguntas frecuentes -->
-<script type="application/ld+json" set:html={JSON.stringify(pageSchema(path, { title, description }))} />
+<script type="application/ld+json" set:html={JSON.stringify(pageSchema(path, { title, description, lang }))} />

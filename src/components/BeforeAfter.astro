@@ -2,14 +2,11 @@
 // Antes y después: la misma situación sin TelMoney (notificaciones sueltas, dudas)
 // y con TelMoney (la respuesta del bot). Ejemplos en lugar de explicaciones.
 import Chat from "./Chat.astro";
-import {
-  salario,
-  tenis,
-  alquiler,
-  juan,
-  reporte,
-  type Msg,
-} from "../data/chats";
+import { chatsFor, type Msg } from "../data/chats";
+import { langOf } from "../i18n";
+
+const lang = langOf(Astro.currentLocale);
+const { salario, tenis, alquiler, juan, reporte } = chatsFor(lang);
 
 type Note = {
   app: string;
@@ -25,7 +22,7 @@ type Scene = {
   after: { say: string; chat: Msg[] };
 };
 
-const scenes: Scene[] = [
+const scenesEs: Scene[] = [
   {
     id: "pago",
     tab: "Día de pago",
@@ -156,22 +153,111 @@ const scenes: Scene[] = [
     },
   },
 ];
+
+const scenesEn: Scene[] = [
+  {
+    id: "pago",
+    tab: "Payday",
+    before: {
+      say: "You get paid and don't know how much you can spend.",
+      notes: [
+        { app: "Bank", title: "Deposit received", body: "Salary: $650.00", time: "7:48" },
+        { app: "Notes", title: "October budget", body: "To do…", time: "yesterday" },
+      ],
+    },
+    after: { say: "You know how much you have per day.", chat: salario },
+  },
+  {
+    id: "compra",
+    tab: "Should I buy it?",
+    before: {
+      say: "You buy on impulse and it doesn't last.",
+      notes: [
+        { app: "Bank", title: "Purchase approved", body: "Sports store: $80.00", time: "18:20" },
+        { app: "Bank", title: "Available balance", body: "$9.40 (day 12)", time: "Thu", alert: true },
+      ],
+    },
+    after: { say: "Before buying, you know if it fits.", chat: tenis },
+  },
+  {
+    id: "fijos",
+    tab: "Bills",
+    before: {
+      say: "You miss a due date and pay late fees.",
+      notes: [
+        { app: "Card", title: "Late payment fee", body: "$15.00", time: "9:00", alert: true },
+        { app: "Card", title: "Interest charged", body: "$8.30", time: "9:00", alert: true },
+      ],
+    },
+    after: { say: "It reminds you 2 days before.", chat: alquiler },
+  },
+  {
+    id: "deudas",
+    tab: "They owe you",
+    before: {
+      say: "Someone owes you and it's awkward to ask.",
+      notes: [
+        { app: "Messages", title: "Draft to Juan", body: "Hey, about the pizza… never mind.", time: "19:28" },
+        { app: "Notes", title: "Owed to me", body: "Juan $12.50, Ana $20, anyone else?", time: "Mon" },
+      ],
+    },
+    after: { say: "It writes the reminder and you send it.", chat: juan },
+  },
+  {
+    id: "mes",
+    tab: "End of month",
+    before: {
+      say: "You don't know where your money went.",
+      notes: [
+        { app: "Bank", title: "Available balance", body: "$23.10", time: "20:30", alert: true },
+        { app: "Notes", title: "Expenses", body: "groceries, gas, ?, ?…", time: "Sun" },
+      ],
+    },
+    after: { say: "Every night you know how you did.", chat: reporte },
+  },
+];
+
+const scenes = lang === "en" ? scenesEn : scenesEs;
+const t = {
+  es: {
+    title: ["El mismo sueldo.", "Otro fin de mes"],
+    lead: "Elige una situación.",
+    tabs: "Situaciones",
+    pick: "Elige una",
+    without: "Sin TelMoney",
+    with: "Con TelMoney",
+    compare: "Comparar",
+    compareCursor: "Compara",
+    before: "Antes",
+  },
+  en: {
+    title: ["Same paycheck.", "A different month-end"],
+    lead: "Pick a situation.",
+    tabs: "Situations",
+    pick: "Pick one",
+    without: "Without TelMoney",
+    with: "With TelMoney",
+    compare: "Compare",
+    compareCursor: "Compare",
+    before: "Before",
+  },
+}[lang];
 ---
 
 <section class="ba band" id="antes-y-despues" data-ba>
   <div class="container">
     <header class="ba__head">
       <h2 class="display">
-        El mismo sueldo. <br />Otro fin de mes<span class="pd">.</span>
+        {t.title[0]} <br />{t.title[1]}<span class="pd">.</span>
       </h2>
-      <p class="lead">Elige una situación.</p>
+      <p class="lead">{t.lead}</p>
     </header>
 
     <div
       class="ba__tabs"
       role="tablist"
-      aria-label="Situaciones"
-      data-cursor="Elige una"
+      aria-label={t.tabs}
+      data-cursor={t.pick}
     >
       {
         scenes.map((s, i) => (
@@ -202,7 +288,7 @@ const scenes: Scene[] = [
             data-ba-panel={i}
           >
             <div class="ba__side ba__side--before">
-              <p class="ba__tag">Sin TelMoney</p>
+              <p class="ba__tag">{t.without}</p>
               <p class="ba__say">{s.before.say}</p>
               <div class="ba__screen ba__screen--lock">
                 <p class="lock__time num">10:24</p>
@@ -220,7 +306,7 @@ const scenes: Scene[] = [
             </div>
 
             <div class="ba__side ba__side--after">
-              <p class="ba__tag">Con TelMoney</p>
+              <p class="ba__tag">{t.with}</p>
               <p class="ba__say">{s.after.say}</p>
               <div class="ba__screen ba__screen--chat">
                 <Chat messages={s.after.chat} compact />
@@ -234,14 +320,14 @@ const scenes: Scene[] = [
     <div
       class="ba__switch"
       role="group"
-      aria-label="Comparar"
-      data-cursor="Compara"
+      aria-label={t.compare}
+      data-cursor={t.compareCursor}
     >
       <button type="button" aria-pressed="true" data-ba-mode="before"
-        >Antes</button
+        >{t.before}</button
       >
       <button type="button" aria-pressed="false" data-ba-mode="after"
-        >Con TelMoney</button
+        >{t.with}</button
       >
       <span class="ba__knob" aria-hidden="true"></span>
     </div>

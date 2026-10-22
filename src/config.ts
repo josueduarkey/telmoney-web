@@ -10,11 +10,9 @@ export const LAUNCHED = WHATSAPP_NUMBER.length > 0;
 
 export const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=Hola%20TelMoney`;
 
-/** App de TelMoney (opcional: todo funciona por WhatsApp).
- *  Google Play: la ficha de la app en PUBLIC_PLAY_STORE_URL; mientras no exista, lleva a la búsqueda de "TelMoney".
- *  App Store: todavía no está; se muestra "Muy pronto" hasta que haya PUBLIC_APP_STORE_URL. */
-export const PLAY_STORE_URL: string =
-  env.PUBLIC_PLAY_STORE_URL || 'https://play.google.com/store/search?q=TelMoney&c=apps';
+/** App de TelMoney (opcional: todo funciona por WhatsApp). Todavía no está en ninguna tienda:
+ *  cada una muestra "Muy pronto" hasta que exista su ficha (PUBLIC_PLAY_STORE_URL, PUBLIC_APP_STORE_URL). */
+export const PLAY_STORE_URL: string = env.PUBLIC_PLAY_STORE_URL ?? '';
 export const APP_STORE_URL: string = env.PUBLIC_APP_STORE_URL ?? '';
 
 /** Endpoint que recibe el formulario de la beta (POST JSON). Por defecto, el de esta misma página
@@ -24,6 +22,14 @@ export const WAITLIST_URL: string = env.PUBLIC_WAITLIST_URL || '/api/waitlist';
 export const CTA = LAUNCHED
   ? { label: 'Pruébalo gratis', href: WHATSAPP_URL, external: true, cursor: 'Pruébalo' }
   : { label: 'Únete a la beta', href: '#beta', external: false, cursor: 'Únete' };
+
+/** El llamado principal en cada idioma (el de la página en inglés abre el mismo WhatsApp). */
+export const ctaFor = (lang: 'es' | 'en') =>
+  lang === 'es'
+    ? CTA
+    : LAUNCHED
+      ? { label: 'Try it free', href: WHATSAPP_URL, external: true, cursor: 'Try it' }
+      : { label: 'Join the beta', href: '#beta', external: false, cursor: 'Join' };
 
 /** Apertura de la beta: 2 de noviembre de 2026, medianoche en El Salvador (UTC−6). */
 export const RELEASE_AT = '2026-11-02T00:00:00-06:00';

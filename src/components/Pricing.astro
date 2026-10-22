@@ -1,47 +1,110 @@
 ---
-import { PLANS, FREE_LIMITS, CTA } from '../config';
+import { PLANS, FREE_LIMITS, ctaFor } from '../config';
+import { langOf } from '../i18n';
 
-const cora = [
-  `Anota por texto, foto y audio: hasta ${FREE_LIMITS.perDay} al día`,
-  'Cuánto puedes gastar hoy',
-  'Cuentas, metas y deudas',
-  'Tu resumen cada semana',
-  `${FREE_LIMITS.questions} preguntas libres al día`,
-];
-const pisto = [
-  `Todo lo de ${PLANS.gratis.name}, hasta 30 al día`,
-  'Reporte de cada noche',
-  'Límites de gasto que te avisan',
-  '5 preguntas libres al día',
-];
-const billete = [
-  `Todo lo de ${PLANS.starter.name}, sin tope diario`,
-  'Avisos antes de cada pago fijo y de tu tarjeta',
-  'Tu puntaje de salud financiera',
-  'Cobros a quien te debe',
-  'Preguntas sin límite',
-  'Excel, PDF y gráficas',
-];
+const lang = langOf(Astro.currentLocale);
+const CTA = ctaFor(lang);
+const t = {
+  es: {
+    cora: [
+      `Anota por texto, foto y audio: hasta ${FREE_LIMITS.perDay} al día`,
+      'Cuánto puedes gastar hoy',
+      'Cuentas, metas y deudas',
+      'Tu resumen cada semana',
+      `${FREE_LIMITS.questions} preguntas libres al día`,
+    ],
+    pisto: [
+      `Todo lo de ${PLANS.gratis.name}, hasta 30 al día`,
+      'Reporte de cada noche',
+      'Límites de gasto que te avisan',
+      '5 preguntas libres al día',
+    ],
+    billete: [
+      `Todo lo de ${PLANS.starter.name}, sin tope diario`,
+      'Avisos antes de cada pago fijo y de tu tarjeta',
+      'Tu puntaje de salud financiera',
+      'Cobros a quien te debe',
+      'Preguntas sin límite',
+      'Excel, PDF y gráficas',
+    ],
+    title: 'Se paga solo',
+    lead: `7 días de todo, gratis y sin tarjeta. Después sigues en ${PLANS.gratis.name} o pasas a más.`,
+    period: 'Forma de pago',
+    monthly: 'Mensual',
+    annual: 'Anual',
+    save: '2 meses gratis',
+    forFree: 'Para empezar a ordenarte, sin pagar nada.',
+    free: 'gratis',
+    noCard: 'Sin tarjeta',
+    forPlus: 'Para anotar todo y saber cuánto puedes gastar.',
+    perMonth: 'al mes',
+    perYear: 'al año',
+    perDay: 'al día',
+    badge: 'El más completo',
+    forPro: 'Para que no se te pase un pago ni un cobro.',
+    fine: 'Pagas con tarjeta de crédito o débito, por Wompi. Sin contratos: si no renuevas, tus datos quedan guardados para cuando vuelvas.',
+  },
+  en: {
+    cora: [
+      `Log by text, photo and voice: up to ${FREE_LIMITS.perDay} a day`,
+      'How much you can spend today',
+      'Accounts, goals and debts',
+      'Your weekly summary',
+      `${FREE_LIMITS.questions} free questions a day`,
+    ],
+    pisto: [
+      `Everything in ${PLANS.gratis.name}, up to 30 a day`,
+      'Nightly report',
+      'Spending limits that alert you',
+      '5 free questions a day',
+    ],
+    billete: [
+      `Everything in ${PLANS.starter.name}, no daily cap`,
+      'Reminders before every bill and card payment',
+      'Your financial health score',
+      'Collect what people owe you',
+      'Unlimited questions',
+      'Excel, PDF and charts',
+    ],
+    title: 'It pays for itself',
+    lead: `7 days of everything, free and no card. Then stay on ${PLANS.gratis.name} or upgrade.`,
+    period: 'Billing',
+    monthly: 'Monthly',
+    annual: 'Yearly',
+    save: '2 months free',
+    forFree: 'To start getting organized, without paying.',
+    free: 'free',
+    noCard: 'No card',
+    forPlus: 'To log everything and know how much you can spend.',
+    perMonth: 'a month',
+    perYear: 'a year',
+    perDay: 'a day',
+    badge: 'Most complete',
+    forPro: "So you never miss a bill or a payment you're owed.",
+    fine: "Pay by credit or debit card, through Wompi. No contracts: if you don't renew, your data stays saved for when you come back.",
+  },
+}[lang];
+const cora = t.cora;
+const pisto = t.pisto;
+const billete = t.billete;
 const usd = (n: number) => n.toFixed(2);
 const linkAttrs = CTA.external ? { target: '_blank', rel: 'noopener' } : {};
 // "$0.17 al día": lo que cuesta cada plan por día, al mes y al año.
-const daily = (n: number, days: number) => `$${(n / days).toFixed(2)} al día`;
+const daily = (n: number, days: number) => `$${(n / days).toFixed(2)} ${t.perDay}`;
 ---
 
 <!-- tone-invert: blanca en modo oscuro, negra en modo claro; el plan Pro se invierte otra vez -->
 <section class="pricing band band--invert tone-invert" id="planes" data-pricing>
   <div class="container">
     <header class="pricing__head">
-      <h2 class="display">Se paga solo<span class="pd">.</span></h2>
-      <p class="lead">
-        7 días de todo, gratis y sin tarjeta. Después sigues en {PLANS.gratis.name} o pasas a más.
-      </p>
+      <h2 class="display">{t.title}<span class="pd">.</span></h2>
+      <p class="lead">{t.lead}</p>
     </header>
 
-    <div class="period" role="radiogroup" aria-label="Forma de pago">
-      <button type="button" role="radio" aria-checked="true" data-period="monthly">Mensual</button>
+    <div class="period" role="radiogroup" aria-label={t.period} data-per-month={t.perMonth} data-per-year={t.perYear}>
+      <button type="button" role="radio" aria-checked="true" data-period="monthly">{t.monthly}</button>
       <button type="button" role="radio" aria-checked="false" data-period="annual">
-        Anual <span class="period__save">2 meses gratis</span>
+        {t.annual} <span class="period__save">{t.save}</span>
       </button>
       <span class="period__pill" aria-hidden="true"></span>
     </div>
@@ -49,12 +112,12 @@ const daily = (n: number, days: number) => `$${(n / days).toFixed(2)} al día`;
     <div class="plans" data-plans>
       <article class="plan">
         <h3 class="plan__name">{PLANS.gratis.name}</h3>
-        <p class="plan__for">Para empezar a ordenarte, sin pagar nada.</p>
+        <p class="plan__for">{t.forFree}</p>
         <p class="plan__price num">
           <span class="plan__cur">$</span><span>0</span>
-          <span class="plan__per">gratis</span>
+          <span class="plan__per">{t.free}</span>
         </p>
-        <p class="plan__daily">Sin tarjeta</p>
+        <p class="plan__daily">{t.noCard}</p>
         <a class="btn btn--ghost btn--block" href={CTA.href} data-cursor={CTA.cursor} {...linkAttrs}>{CTA.label}</a>
         <ul class="plan__list" role="list">
           {cora.map((f) => <li>{f}</li>)}
@@ -63,14 +126,14 @@ const daily = (n: number, days: number) => `$${(n / days).toFixed(2)} al día`;
 
       <article class="plan">
         <h3 class="plan__name">{PLANS.starter.name}</h3>
-        <p class="plan__for">Para anotar todo y saber cuánto puedes gastar.</p>
+        <p class="plan__for">{t.forPlus}</p>
         <p class="plan__price num">
           <span class="plan__cur">$</span><span
             data-price
             data-monthly={usd(PLANS.starter.monthly)}
             data-annual={usd(PLANS.starter.annual)}>{usd(PLANS.starter.monthly)}</span
           >
-          <span class="plan__per" data-per>al mes</span>
+          <span class="plan__per" data-per>{t.perMonth}</span>
         </p>
         <p
           class="plan__daily num"
@@ -87,16 +150,16 @@ const daily = (n: number, days: number) => `$${(n / days).toFixed(2)} al día`;
       </article>
 
       <article class="plan plan--pro tone-invert">
-        <span class="plan__badge">El más completo</span>
+        <span class="plan__badge">{t.badge}</span>
         <h3 class="plan__name">{PLANS.pro.name}</h3>
-        <p class="plan__for">Para que no se te pase un pago ni un cobro.</p>
+        <p class="plan__for">{t.forPro}</p>
         <p class="plan__price num">
           <span class="plan__cur">$</span><span
             data-price
             data-monthly={usd(PLANS.pro.monthly)}
             data-annual={usd(PLANS.pro.annual)}>{usd(PLANS.pro.monthly)}</span
           >
-          <span class="plan__per" data-per>al mes</span>
+          <span class="plan__per" data-per>{t.perMonth}</span>
         </p>
         <p
           class="plan__daily num"
@@ -118,8 +181,7 @@ const daily = (n: number, days: number) => `$${(n / days).toFixed(2)} al día`;
     </div>
 
     <p class="pricing__fine">
-      Pagas con tarjeta de crédito o débito, por Wompi. Sin contratos: si no
-      renuevas, tus datos quedan guardados para cuando vuelvas.
+      {t.fine}
     </p>
   </div>
 </section>
@@ -182,7 +244,7 @@ const daily = (n: number, days: number) => `$${(n / days).toFixed(2)} al día`;
           onUpdate: () => (el.textContent = obj.v.toFixed(2)),
         });
       });
-      pers.forEach((el) => (el.textContent = period === 'annual' ? 'al año' : 'al mes'));
+      pers.forEach((el) => (el.textContent = (period === 'annual' ? group.dataset.perYear : group.dataset.perMonth) ?? ''));
       dailies.forEach((el) => (el.textContent = el.dataset[period]!));
     };
 

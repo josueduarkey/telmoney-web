@@ -1,12 +1,16 @@
 ---
 // Las preguntas viven en data/faqs.ts (también alimentan los datos estructurados de seo/schema.ts).
-import { faqs } from '../data/faqs';
+import { faqsFor } from '../data/faqs';
+import { langOf } from '../i18n';
+
+const lang = langOf(Astro.currentLocale);
+const faqs = faqsFor(lang);
 ---
 
 <!-- tone-invert: blanca en modo oscuro, negra en modo claro -->
 <section class="faq band band--invert tone-invert" id="preguntas">
   <div class="container faq__grid">
-    <h2 class="display">Preguntas frecuentes</h2>
+    <h2 class="display">{lang === 'en' ? 'Questions' : 'Preguntas frecuentes'}</h2>
     <div class="faq__list">
       {
         faqs.map((f) => (

@@ -3,8 +3,8 @@
 // Todo sale de la misma fuente que la página (config.ts, data/faqs.ts): nada se inventa.
 // Importante: no se incluyen calificaciones ni reseñas (aggregateRating) porque todavía no existen.
 import { LAUNCHED, PLANS, SITE } from '../config';
-import { faqs } from '../data/faqs';
-import { SEO, absolute } from './meta';
+import { faqsFor } from '../data/faqs';
+import { absolute, seoFor } from './meta';
 
 const id = (fragment: string) => `${SITE.url}/#${fragment}`;
 
@@ -28,9 +28,17 @@ const plan = (name: string, price: number, description: string) => ({
 });
 
 /** En el inicio va todo; en las demás páginas (legales) solo la empresa, el sitio y la página. */
-export function pageSchema(path = '/', { title = SEO.title, description = SEO.description } = {}) {
+export function pageSchema(
+  path = '/',
+  { title, description, lang = 'es' }: { title?: string; description?: string; lang?: 'es' | 'en' } = {},
+) {
+  const SEO = seoFor(lang);
+  title ??= SEO.title;
+  description ??= SEO.description;
+  const en = lang === 'en';
+  const faqs = faqsFor(lang);
   const url = absolute(path);
-  const home = path === '/';
+  const home = path === '/' || path === '/en/' || path === '/en';
   const graph: Record<string, unknown>[] = [
       {
         '@type': 'Organization',
@@ -81,20 +89,36 @@ export function pageSchema(path = '/', { title = SEO.title, description = SEO.de
         operatingSystem: 'WhatsApp (Android, iOS, Web)',
         inLanguage: SEO.lang,
         publisher: { '@id': id('organization') },
-        featureList: [
-          'Anotar gastos por texto, audio o foto del recibo',
-          'Cuánto puedes gastar hoy hasta tu próximo pago',
-          'Avisos antes de cada pago fijo y de la tarjeta',
-          'Recordatorios amables para cobrar lo que te deben',
-          'Resumen diario con puntaje de salud financiera',
-          'Metas de ahorro y límites de gasto',
-          'Exportación a Excel, PDF y CSV',
-        ],
-        offers: [
-          plan(PLANS.gratis.name, PLANS.gratis.monthly, 'Anota lo básico y sabe cuánto puedes gastar hoy, gratis.'),
-          plan(PLANS.starter.name, PLANS.starter.monthly, 'Anota todo, con reporte de cada noche.'),
-          plan(PLANS.pro.name, PLANS.pro.monthly, 'Todo lo anterior más avisos de pagos, cobros y análisis con IA.'),
-        ],
+        featureList: en
+          ? [
+              'Log expenses by text, voice note or receipt photo',
+              'How much you can spend today until your next payday',
+              'Reminders before every bill and card payment',
+              'Friendly reminders to collect what you are owed',
+              'Daily summary with a financial health score',
+              'Savings goals and spending limits',
+              'Export to Excel, PDF and CSV',
+            ]
+          : [
+              'Anotar gastos por texto, audio o foto del recibo',
+              'Cuánto puedes gastar hoy hasta tu próximo pago',
+              'Avisos antes de cada pago fijo y de la tarjeta',
+              'Recordatorios amables para cobrar lo que te deben',
+              'Resumen diario con puntaje de salud financiera',
+              'Metas de ahorro y límites de gasto',
+              'Exportación a Excel, PDF y CSV',
+            ],
+        offers: en
+          ? [
+              plan(PLANS.gratis.name, PLANS.gratis.monthly, 'Log the basics and know how much you can spend today, free.'),
+              plan(PLANS.starter.name, PLANS.starter.monthly, 'Log everything, with a nightly report.'),
+              plan(PLANS.pro.name, PLANS.pro.monthly, 'Everything above plus bill reminders, collections and AI insights.'),
+            ]
+          : [
+              plan(PLANS.gratis.name, PLANS.gratis.monthly, 'Anota lo básico y sabe cuánto puedes gastar hoy, gratis.'),
+              plan(PLANS.starter.name, PLANS.starter.monthly, 'Anota todo, con reporte de cada noche.'),
+              plan(PLANS.pro.name, PLANS.pro.monthly, 'Todo lo anterior más avisos de pagos, cobros y análisis con IA.'),
+            ],
       },
       {
         '@type': 'FAQPage',

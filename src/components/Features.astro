@@ -1,57 +1,72 @@
 ---
 import Chat from "./Chat.astro";
-import { reporte } from "../data/chats";
+import { chatsFor } from "../data/chats";
+import { langOf } from "../i18n";
 
-const questions = [
-  "¿En qué se me fue el dinero?",
-  "¿Puedo comprar algo de 80?",
-  "Compara este mes con el anterior",
-  "¿Cuánto me falta para la moto?",
-];
+const lang = langOf(Astro.currentLocale);
+const { reporte } = chatsFor(lang);
 // Cada tarjeta dice lo que la persona gana, no la función. Solo lo que el bot ya hace hoy:
 // lo nuevo entra aquí cuando el bot lo tenga (docs/plan-funciones.md).
-const extras = [
-  {
-    t: "Adiós a la mora",
-    d: "Alquiler, luz, cuotas y tu tarjeta: te avisa 2 días antes de cada pago.",
-    pro: true,
+const t = {
+  es: {
+    title: "El amigo ordenado que te ayuda sin regañarte",
+    badge: "Puntaje en Pro",
+    night: "Tu noche financiera",
+    nightBody: "Cada noche, tu día en un mensaje. Cuando llevas unos días anotando, un puntaje de 0 a 100 que te dice qué mejorar.",
+    score: "Salud financiera: 78 de 100",
+    fine: "Las cifras las calcula TelMoney. La IA solo redacta el consejo y no puede cambiar un número.",
+    ask: "Pregúntale lo que quieras",
+    questions: ["¿En qué se me fue el dinero?", "¿Puedo comprar algo de 80?", "Compara este mes con el anterior", "¿Cuánto me falta para la moto?"],
+    extras: [
+      { t: "Adiós a la mora", d: "Alquiler, luz, cuotas y tu tarjeta: te avisa 2 días antes de cada pago.", pro: true },
+      { t: "Recupera lo que te deben", d: "Sabe quién te debe y cuánto, y te arma un recordatorio amable, listo para mandar.", pro: true },
+      { t: "Ahorra sin pensarlo", d: "Cada vez que te pagan, te ofrece apartar tu % antes de gastar." },
+      { t: "Sabes dónde está cada dólar", d: "Efectivo, bancos, billeteras y tarjetas, al centavo." },
+      { t: "Llega a lo que quieres", d: "La moto, el viaje o tu colchón: con fecha, y te avisa si te pasas del límite." },
+      { t: "Tus números a la mano", d: "Excel, PDF y gráficas para el banco, tu contador o tu pareja." },
+    ],
   },
-  {
-    t: "Recupera lo que te deben",
-    d: "Sabe quién te debe y cuánto, y te arma un recordatorio amable, listo para mandar.",
-    pro: true,
+  en: {
+    title: "The organized friend who helps without nagging",
+    badge: "Score in Pro",
+    night: "Your money night",
+    nightBody: "Every night, your day in one message. Once you have logged a few days, a 0 to 100 score that tells you what to improve.",
+    score: "Financial health: 78 out of 100",
+    fine: "TelMoney does the math. The AI only writes the tip and can't change a number.",
+    ask: "Ask it anything",
+    questions: ["Where did my money go?", "Can I buy something for 80?", "Compare this month with last month", "How much is left for the motorbike?"],
+    extras: [
+      { t: "No more late fees", d: "Rent, utilities, installments and your card: it reminds you 2 days before each payment.", pro: true },
+      { t: "Get back what you're owed", d: "It knows who owes you and how much, and writes a friendly reminder ready to send.", pro: true },
+      { t: "Save without thinking", d: "Every payday, it offers to set aside your % before you spend." },
+      { t: "Know where every dollar is", d: "Cash, banks, wallets and cards, down to the cent." },
+      { t: "Reach what you want", d: "The motorbike, the trip or your safety net: with a date, and alerts if you go over your limit." },
+      { t: "Your numbers at hand", d: "Excel, PDF and charts for the bank, your accountant or your partner." },
+    ],
   },
-  { t: "Ahorra sin pensarlo", d: "Cada vez que te pagan, te ofrece apartar tu % antes de gastar." },
-  {
-    t: "Sabes dónde está cada dólar",
-    d: "Efectivo, bancos, billeteras y tarjetas, al centavo.",
-  },
-  { t: "Llega a lo que quieres", d: "La moto, el viaje o tu colchón: con fecha, y te avisa si te pasas del límite." },
-  { t: "Tus números a la mano", d: "Excel, PDF y gráficas para el banco, tu contador o tu pareja." },
-];
+}[lang];
+const questions = t.questions;
+const extras = t.extras;
 ---
 
 <section class="features band" id="funciones">
   <div class="container">
     <header class="features__head">
       <h2 class="display">
-        El amigo ordenado que te ayuda sin regañarte<span class="pd">.</span>
+        {t.title}<span class="pd">.</span>
       </h2>
     </header>
 
     <div class="bento">
       <article class="card card--spot card--report" data-score>
-        <span class="pro">Puntaje en Pro</span>
+        <span class="pro">{t.badge}</span>
         <div class="card__text">
-          <h3 class="h3">Tu noche financiera</h3>
-          <p>
-            Cada noche, tu día en un mensaje. Cuando llevas unos días anotando, un
-            puntaje de 0 a 100 que te dice qué mejorar.
-          </p>
+          <h3 class="h3">{t.night}</h3>
+          <p>{t.nightBody}</p>
           <div
             class="score"
             role="img"
-            aria-label="Salud financiera: 78 de 100"
+            aria-label={t.score}
           >
             <svg viewBox="0 0 120 120" aria-hidden="true">
               <circle cx="60" cy="60" r="52" class="score__track"></circle>
@@ -68,8 +83,7 @@ const extras = [
             >
           </div>
           <p class="card__fine">
-            Las cifras las calcula TelMoney. La IA solo redacta el consejo y no
-            puede cambiar un número.
+            {t.fine}
           </p>
         </div>
         <div class="card__chat">
@@ -78,7 +92,7 @@ const extras = [
       </article>
 
       <article class="card card--ask tone-invert">
-        <h3 class="h3">Pregúntale lo que quieras</h3>
+        <h3 class="h3">{t.ask}</h3>
         <ul class="asks" role="list">
           {questions.map((q) => <li>{q}</li>)}
         </ul>

@@ -3,7 +3,57 @@ import Sticker from './Sticker.astro';
 import Countdown from './Countdown.astro';
 import ShareButtons from './ShareButtons.astro';
 import { LAUNCHED, WHATSAPP_URL, WAITLIST_URL } from '../config';
-import { PAINS as pains } from '../data/pains';
+import { PAINS as pains, PAINS_EN } from '../data/pains';
+import { langOf } from '../i18n';
+
+const lang = langOf(Astro.currentLocale);
+const en = lang === 'en';
+const t = {
+  es: {
+    countdown: 'La beta abre el 2 de noviembre. Faltan:',
+    title: 'Que tu dinero te alcance todo el mes',
+    leadOpen: 'Escríbele "hola" y en un minuto ya estás anotando. 7 días gratis con todo incluido.',
+    leadSoon: 'Abrimos la beta el 2 de noviembre. Déjanos tu WhatsApp y sé de los primeros en probarlo, con 7 días gratis de todo.',
+    try: 'Pruébalo gratis',
+    tryFine: 'Se abre WhatsApp con el mensaje "Hola TelMoney" listo para mandar.',
+    name: 'Tu nombre',
+    phone: 'Tu WhatsApp',
+    phoneHint: 'Por ahí te avisamos. ¿Número de otro país? Escríbelo con su código, ej. +1.',
+    email: 'Correo',
+    optional: '(opcional)',
+    pains: '¿Qué es lo que más te cuesta con tu dinero?',
+    painsHint: '(puedes elegir varias, opcional)',
+    submit: 'Unirme a la beta',
+    cursor: 'Únete',
+    fine: 'Solo te escribimos por WhatsApp para avisarte de la beta. Nada de spam.',
+    done: 'Registro completado',
+    doneText: 'Te escribimos por WhatsApp cuando abra la beta, el 2 de noviembre.',
+    share: 'Mientras tanto, pásaselo a quien siempre pregunta en qué se le fue el dinero:',
+    ok: 'Listo',
+  },
+  en: {
+    countdown: 'The beta opens on November 2. Time left:',
+    title: 'Make your money last all month',
+    leadOpen: 'Say "hola" and you are logging expenses in a minute. 7 days free with everything included. TelMoney chats in Spanish.',
+    leadSoon: 'The beta opens on November 2. Leave your WhatsApp and be among the first to try it, with 7 days of everything for free. TelMoney chats in Spanish.',
+    try: 'Try it free',
+    tryFine: 'WhatsApp opens with the message "Hola TelMoney" ready to send.',
+    name: 'Your name',
+    phone: 'Your WhatsApp',
+    phoneHint: "We'll let you know there. Number from another country? Include its code, e.g. +1.",
+    email: 'Email',
+    optional: '(optional)',
+    pains: "What's hardest for you about money?",
+    painsHint: '(pick any, optional)',
+    submit: 'Join the beta',
+    cursor: 'Join',
+    fine: 'We only message you on WhatsApp to let you know about the beta. No spam.',
+    done: "You're on the list",
+    doneText: "We'll message you on WhatsApp when the beta opens, on November 2.",
+    share: 'Meanwhile, share it with that friend who always wonders where their money went:',
+    ok: 'Done',
+  },
+}[lang];
 ---
 
 <section class="beta band grain" id="beta">
@@ -12,18 +62,16 @@ import { PAINS as pains } from '../data/pains';
   {
     !LAUNCHED && (
       <div class="container beta__countdown">
-        <Countdown size="xl" label="La beta abre el 2 de noviembre. Faltan:" />
+        <Countdown size="xl" label={t.countdown} />
       </div>
     )
   }
   <div class="container beta__grid">
     <div class="beta__copy">
-      <h2 class="display-hero beta__title">Que tu dinero te alcance todo el mes<span class="pd">.</span></h2>
+      <h2 class="display-hero beta__title">{t.title}<span class="pd">.</span></h2>
       <p class="lead">
         {
-          LAUNCHED
-            ? 'Escríbele "hola" y en un minuto ya estás anotando. 7 días gratis con todo incluido.'
-            : 'Abrimos la beta el 2 de noviembre. Déjanos tu WhatsApp y sé de los primeros en probarlo, con 7 días gratis de todo.'
+          LAUNCHED ? t.leadOpen : t.leadSoon
         }
       </p>
     </div>
@@ -32,19 +80,19 @@ import { PAINS as pains } from '../data/pains';
       LAUNCHED ? (
         <div class="beta__card beta__card--launch">
           <a class="btn btn--primary btn--block" href={WHATSAPP_URL} target="_blank" rel="noopener">
-            Pruébalo gratis
+            {t.try}
           </a>
-          <p class="beta__fine">Se abre WhatsApp con el mensaje "Hola TelMoney" listo para mandar.</p>
+          <p class="beta__fine">{t.tryFine}</p>
         </div>
       ) : (
         <form class="beta__card" data-waitlist data-endpoint={WAITLIST_URL} novalidate>
           <div class="field">
-            <label for="wl-name">Tu nombre</label>
+            <label for="wl-name">{t.name}</label>
             <input id="wl-name" name="name" autocomplete="given-name" required maxlength="80" />
             <span class="field__err" data-err-for="name" />
           </div>
           <div class="field">
-            <label for="wl-phone">Tu WhatsApp</label>
+            <label for="wl-phone">{t.phone}</label>
             <div class="field__phone">
               <span aria-hidden="true">+503</span>
               <input
@@ -59,37 +107,37 @@ import { PAINS as pains } from '../data/pains';
               />
             </div>
             <span class="field__hint" id="wl-phone-hint">
-              Por ahí te avisamos. ¿Número de otro país? Escríbelo con su código, ej. +1.
+              {t.phoneHint}
             </span>
             <span class="field__err" data-err-for="whatsapp" />
           </div>
           <div class="field">
             <label for="wl-email">
-              Correo <span class="opt">(opcional)</span>
+              {t.email} <span class="opt">{t.optional}</span>
             </label>
             <input id="wl-email" name="email" type="email" autocomplete="email" />
             <span class="field__err" data-err-for="email" />
           </div>
           <fieldset class="field">
             <legend>
-              ¿Qué es lo que más te cuesta con tu dinero?
-              <span class="opt">(puedes elegir varias, opcional)</span>
+              {t.pains}
+              <span class="opt">{t.painsHint}</span>
             </legend>
             <div class="pains">
               {pains.map((p) => (
                 <label class="pain">
                   <input type="checkbox" name="pains" value={p} />
-                  <span>{p}</span>
+                  <span>{en ? PAINS_EN[p] : p}</span>
                 </label>
               ))}
             </div>
           </fieldset>
           <input class="hp" name="company" tabindex="-1" autocomplete="off" aria-hidden="true" />
 
-          <button class="btn btn--primary btn--block" type="submit" data-submit data-cursor="Únete">
-            Unirme a la beta
+          <button class="btn btn--primary btn--block" type="submit" data-submit data-cursor={t.cursor}>
+            {t.submit}
           </button>
-          <p class="beta__fine">Solo te escribimos por WhatsApp para avisarte de la beta. Nada de spam.</p>
+          <p class="beta__fine">{t.fine}</p>
           <p class="beta__status" role="status" aria-live="polite" data-status />
         </form>
       )
@@ -105,13 +153,13 @@ import { PAINS as pains } from '../data/pains';
             <path d="m15 27 7 7 15-16" />
           </svg>
         </span>
-        <h3 class="beta-modal__title" id="beta-done-title">Registro completado</h3>
+        <h3 class="beta-modal__title" id="beta-done-title">{t.done}</h3>
         <p class="beta-modal__text" id="beta-done-text">
-          Te escribimos por WhatsApp cuando abra la beta, el 2 de noviembre.
+          {t.doneText}
         </p>
-        <ShareButtons class="beta__share" label="Mientras tanto, pásaselo a quien siempre pregunta en qué se le fue el dinero:" />
+        <ShareButtons class="beta__share" label={t.share} />
         <form method="dialog" class="beta-modal__actions">
-          <button class="btn btn--primary btn--block" autofocus>Listo</button>
+          <button class="btn btn--primary btn--block" autofocus>{t.ok}</button>
         </form>
       </dialog>
     )

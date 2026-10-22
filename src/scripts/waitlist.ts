@@ -11,6 +11,34 @@ type Payload = {
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/** Mensajes del formulario en el idioma de la página. */
+const EN = typeof document !== 'undefined' && document.documentElement.lang === 'en';
+const M = EN
+  ? {
+      sending: 'Sending…',
+      name: 'Write your name.',
+      nameBad: 'Check your name.',
+      phone: 'Check the number: 8 digits, or with its country code if it is from another country.',
+      email: "That email doesn't look complete. You can leave it empty.",
+      slow: 'One moment, saving your details…',
+      timeout: "It's taking longer than usual. Try again in a moment; if it went through, it won't be duplicated.",
+      options: "We couldn't save your details. Uncheck the options and try again.",
+      tooMany: 'We got several attempts from here. Wait a minute and try again.',
+      failed: "We couldn't save your details. Check your connection and try again.",
+    }
+  : {
+      sending: 'Enviando…',
+      name: 'Escribe tu nombre.',
+      nameBad: 'Revisa tu nombre.',
+      phone: 'Revisa el número: son 8 dígitos, o con su código si es de otro país.',
+      email: 'Ese correo no parece completo. Puedes dejarlo vacío.',
+      slow: 'Un momento, estamos guardando tus datos…',
+      timeout: 'Está tardando más de lo normal. Inténtalo otra vez en un momento; si ya quedó, no se duplica.',
+      options: 'No pudimos guardar tus datos. Desmarca las opciones e inténtalo otra vez.',
+      tooMany: 'Ya recibimos varios intentos desde aquí. Espera un minuto y vuelve a probar.',
+      failed: 'No pudimos guardar tus datos. Revisa tu conexión e inténtalo otra vez.',
+    };
+
 class SubmitError extends Error {
   constructor(
     readonly status: number,
@@ -56,7 +84,7 @@ export function initWaitlist(form: HTMLFormElement) {
   const setLoading = (on: boolean) => {
     submit.disabled = on;
     submit.toggleAttribute('data-loading', on);
-    submit.textContent = on ? 'Enviando…' : SUBMIT_LABEL;
+    submit.textContent = on ? M.sending : SUBMIT_LABEL;
   };
 
   const setError = (name: string, msg: string) => {
@@ -88,9 +116,9 @@ export function initWaitlist(form: HTMLFormElement) {
       setError(field, msg || '');
       if (msg && !firstInvalid) firstInvalid = field;
     };
-    check('name', !name && 'Escribe tu nombre.');
-    check('whatsapp', !phone && 'Revisa el número: son 8 dígitos, o con su código si es de otro país.');
-    check('email', !!email && !EMAIL.test(email) && 'Ese correo no parece completo. Puedes dejarlo vacío.');
+    check('name', !name && M.name);
+    check('whatsapp', !phone && M.phone);
+    check('email', !!email && !EMAIL.test(email) && M.email);
     if (firstInvalid) {
       (form.elements.namedItem(firstInvalid) as HTMLInputElement).focus();
       return;
@@ -111,7 +139,7 @@ export function initWaitlist(form: HTMLFormElement) {
 
     setLoading(true);
     // Si tarda, se dice; y nunca se queda esperando para siempre.
-    const slow = setTimeout(() => setStatus('Un momento, estamos guardando tus datos…', 'info'), 2500);
+    const slow = setTimeout(() => setStatus(M.slow, 'info'), 2500);
     const abort = new AbortController();
     const giveUp = setTimeout(() => abort.abort(), 20000);
     try {
@@ -138,15 +166,15 @@ export function initWaitlist(form: HTMLFormElement) {
       setStatus('');
       if (abort.signal.aborted) {
         // Registrarse dos veces no duplica (se guarda por número), así que reintentar es seguro.
-        setStatus('Está tardando más de lo normal. Inténtalo otra vez en un momento; si ya quedó, no se duplica.');
+        setStatus(M.timeout);
         return;
       }
       if (err instanceof SubmitError && err.status === 422 && err.fields.length) {
         // el servidor dice qué campos no le gustaron: los marcamos igual que la validación local
         const msgs: Record<string, string> = {
-          name: 'Revisa tu nombre.',
-          whatsapp: 'Revisa el número: son 8 dígitos, o con su código si es de otro país.',
-          email: 'Ese correo no parece completo. Puedes dejarlo vacío.',
+          name: M.nameBad,
+          whatsapp: M.phone,
+          email: M.email,
         };
         const known = err.fields.filter((f) => msgs[f]);
         known.forEach((f) => setError(f, msgs[f]));
@@ -155,13 +183,13 @@ export function initWaitlist(form: HTMLFormElement) {
           return;
         }
         // el problema está en algo que no es un campo visible (por ejemplo, las opciones marcadas)
-        setStatus('No pudimos guardar tus datos. Desmarca las opciones e inténtalo otra vez.');
+        setStatus(M.options);
         return;
       }
       setStatus(
         err instanceof SubmitError && err.status === 429
-          ? 'Ya recibimos varios intentos desde aquí. Espera un minuto y vuelve a probar.'
-          : 'No pudimos guardar tus datos. Revisa tu conexión e inténtalo otra vez.',
+          ? M.tooMany
+          : M.failed,
       );
     } finally {
       clearTimeout(slow);

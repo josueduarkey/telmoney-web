@@ -1,27 +1,53 @@
 ---
 import Logo from './Logo.astro';
 import ThemeToggle from './ThemeToggle.astro';
-import { CTA } from '../config';
+import { ctaFor } from '../config';
+import { LANG_LABEL, homeOf, langOf } from '../i18n';
 
-const links = [
-  { href: '#antes-y-despues', label: 'Antes y después' },
-  { href: '#como-funciona', label: 'Cómo funciona' },
-  { href: '#funciones', label: 'Qué hace' },
-  { href: '#planes', label: 'Planes' },
-  { href: '#preguntas', label: 'Preguntas' },
-];
+const lang = langOf(Astro.currentLocale);
+const other = lang === 'es' ? 'en' : 'es';
+const CTA = ctaFor(lang);
+const t = {
+  es: {
+    links: ['Antes y después', 'Cómo funciona', 'Qué hace', 'Planes', 'Preguntas'],
+    home: 'TelMoney, inicio',
+    main: 'Principal',
+    login: 'Entrar',
+    loginLong: 'Entrar a mi cuenta',
+    open: 'Abrir menú',
+    close: 'Cerrar menú',
+    switchTo: 'Ver en inglés',
+  },
+  en: {
+    links: ['Before & after', 'How it works', 'Features', 'Pricing', 'FAQ'],
+    home: 'TelMoney, home',
+    main: 'Main',
+    login: 'Sign in',
+    loginLong: 'Sign in to my account',
+    open: 'Open menu',
+    close: 'Close menu',
+    switchTo: 'Ver en español',
+  },
+}[lang];
+const links = ['#antes-y-despues', '#como-funciona', '#funciones', '#planes', '#preguntas'].map((href, i) => ({
+  href,
+  label: t.links[i],
+}));
 ---
 
 <header class="nav" data-nav>
   <div class="nav__inner container">
-    <a href="#top" class="nav__brand" aria-label="TelMoney, inicio">
+    <a href="#top" class="nav__brand" aria-label={t.home}>
       <Logo />
     </a>
-    <nav class="nav__links" aria-label="Principal">
+    <nav class="nav__links" aria-label={t.main}>
       {links.map((l) => <a href={l.href}>{l.label}</a>)}
     </nav>
+    <a class="nav__lang" href={homeOf(other)} hreflang={other} lang={other} data-lang-switch={other} title={t.switchTo}
+      >{LANG_LABEL[other].short}</a
+    >
     <ThemeToggle />
-    <a class="nav__login" href="/entrar" rel="nofollow">Entrar</a>
+    <a class="nav__login" href="/entrar" rel="nofollow">{t.login}</a>
     <a
       class="btn nav__cta"
       href={CTA.href}
@@ -29,13 +55,14 @@ const links = [
       {...CTA.external ? { target: '_blank', rel: 'noopener' } : {}}>{CTA.label}</a
     >
     <button class="nav__toggle" aria-expanded="false" aria-controls="nav-menu" data-nav-toggle>
-      <span class="sr-only">Abrir menú</span>
+      <span class="sr-only" data-open={t.open} data-close={t.close}>{t.open}</span>
       <i></i><i></i>
     </button>
   </div>
   <div class="nav__menu" id="nav-menu" hidden data-nav-menu>
     {links.map((l) => <a href={l.href}>{l.label}</a>)}
-    <a href="/entrar" rel="nofollow">Entrar a mi cuenta</a>
+    <a href="/entrar" rel="nofollow">{t.loginLong}</a>
+    <a href={homeOf(other)} hreflang={other} lang={other} data-lang-switch={other}>{LANG_LABEL[other].name}</a>
     <a class="btn btn--block" href={CTA.href}>{CTA.label}</a>
   </div>
 </header>
@@ -51,7 +78,8 @@ const links = [
 
   const setOpen = (open: boolean) => {
     toggle.setAttribute('aria-expanded', String(open));
-    toggle.querySelector('.sr-only')!.textContent = open ? 'Cerrar menú' : 'Abrir menú';
+    const sr = toggle.querySelector<HTMLElement>('.sr-only')!;
+    sr.textContent = (open ? sr.dataset.close : sr.dataset.open) ?? '';
     menu.hidden = !open;
     nav.classList.toggle('is-open', open);
   };
@@ -59,6 +87,14 @@ const links = [
   menu.addEventListener('click', (e) => {
     if ((e.target as HTMLElement).closest('a')) setOpen(false);
   });
+  // Elegir idioma lo recuerda: "/" ya no redirige según el navegador (Base.astro).
+  document.querySelectorAll<HTMLAnchorElement>('[data-lang-switch]').forEach((a) =>
+    a.addEventListener('click', () => {
+      try {
+        localStorage.setItem('tm-lang', a.dataset.langSwitch!);
+      } catch {}
+    }),
+  );
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !menu.hidden) {
       setOpen(false);
@@ -144,6 +180,26 @@ const links = [
     text-decoration: none;
     padding: 8px 4px;
     white-space: nowrap;
+  }
+  .nav__lang {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 34px;
+    padding: 0 10px;
+    border-radius: var(--r-full);
+    box-shadow: inset 0 0 0 1px var(--hairline-strong);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.2s, box-shadow 0.2s;
+  }
+  .nav__lang:hover {
+    color: var(--text);
+    box-shadow: inset 0 0 0 1px var(--text-muted);
   }
   .nav__login:hover {
     color: var(--text);

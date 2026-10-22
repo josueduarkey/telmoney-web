@@ -40,5 +40,21 @@ export const SEO = {
   },
 };
 
+/** Lo mismo para la página en inglés (/en/). El bot habla español: la descripción no promete otra cosa. */
+const CTA_SOCIAL_EN = LAUNCHED ? 'Try it free.' : 'Free beta on November 2.';
+export const SEO_EN: typeof SEO = {
+  lang: 'en',
+  ogLocale: 'en_US',
+  title: 'TelMoney: expense tracker on WhatsApp | Your money in order',
+  description: LAUNCHED
+    ? 'Log expenses with a message, a voice note or a receipt photo. TelMoney tells you how much you can spend today and reminds you before every bill. Try it free.'
+    : 'Log expenses with a message, a voice note or a receipt photo. TelMoney tells you how much you can spend today and reminds you before every bill. Join the beta.',
+  ogTitle: 'Your money in order, on WhatsApp',
+  ogDescription: `Know how much you can spend today with a WhatsApp message. ${CTA_SOCIAL_EN}`,
+  image: { ...SEO.image, alt: 'TelMoney: your money in order, on WhatsApp. A chat answers "Today you can spend $21.70".' },
+};
+
+export const seoFor = (lang: 'es' | 'en') => (lang === 'en' ? SEO_EN : SEO);
+
 /** Convierte una ruta del sitio en URL absoluta (las redes no aceptan rutas relativas). */
 export const absolute = (path: string) => new URL(path, SITE.url + '/').toString();

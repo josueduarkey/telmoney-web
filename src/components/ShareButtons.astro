@@ -2,22 +2,30 @@
 // Botones para compartir TelMoney. Mensajes y links (con utm_*) en seo/share.ts.
 // En celular, si el navegador tiene el menú nativo de compartir, el primer botón lo abre
 // (WhatsApp, Instagram, lo que la persona use); los demás quedan como atajos directos.
-import { shareHref, shareText, shareUrl } from '../seo/share';
+import { shareHref, shareTextFor, shareUrl } from '../seo/share';
+import { langOf } from '../i18n';
+
+const lang = langOf(Astro.currentLocale);
+const en = lang === 'en';
+const shareText = shareTextFor(lang);
+const t = en
+  ? { label: 'Share it', native: 'Share TelMoney', on: 'Share on', copy: 'Copy the link', copyCursor: 'Copy', email: 'Email', copied: 'Link copied. Paste it anywhere.', copyFail: "Couldn't copy. Long-press the link in the address bar to copy it." }
+  : { label: 'Compártelo', native: 'Compartir TelMoney', on: 'Compartir en', copy: 'Copiar el link', copyCursor: 'Copiar', email: 'Correo', copied: 'Link copiado. Pégalo donde quieras.', copyFail: 'No se pudo copiar. Mantén presionado el link de la barra de direcciones para copiarlo.' };
 
 interface Props {
   /** Texto corto encima de los botones */
   label?: string;
   class?: string;
 }
-const { label = 'Compártelo', class: cls = '' } = Astro.props;
+const { label = t.label, class: cls = '' } = Astro.props;
 
 const networks = [
-  { id: 'whatsapp', name: 'WhatsApp', href: shareHref('whatsapp') },
-  { id: 'telegram', name: 'Telegram', href: shareHref('telegram') },
-  { id: 'facebook', name: 'Facebook', href: shareHref('facebook') },
-  { id: 'x', name: 'X', href: shareHref('x') },
-  { id: 'linkedin', name: 'LinkedIn', href: shareHref('linkedin') },
-  { id: 'email', name: 'Correo', href: shareHref('email') },
+  { id: 'whatsapp', name: 'WhatsApp', href: shareHref('whatsapp', lang) },
+  { id: 'telegram', name: 'Telegram', href: shareHref('telegram', lang) },
+  { id: 'facebook', name: 'Facebook', href: shareHref('facebook', lang) },
+  { id: 'x', name: 'X', href: shareHref('x', lang) },
+  { id: 'linkedin', name: 'LinkedIn', href: shareHref('linkedin', lang) },
+  { id: 'email', name: t.email, href: shareHref('email', lang) },
 ] as const;
 
 // Íconos simples de una tinta (no son los logos oficiales a color)
@@ -33,11 +41,11 @@ const icons: Record<string, string> = {
 };
 ---
 
-<div class:list={['share', cls]} data-share data-text={shareText.chat} data-url={shareUrl('copy')} data-native-url={shareUrl('nativo')}>
+<div class:list={['share', cls]} data-share data-text={shareText.chat} data-url={shareUrl('copy', lang)} data-native-url={shareUrl('nativo', lang)} data-copied={t.copied} data-copy-fail={t.copyFail}>
   <p class="share__label">{label}</p>
   <ul class="share__list" role="list">
     <li class="share__native" hidden data-share-native-item>
-      <button type="button" class="share__btn" data-share-native aria-label="Compartir TelMoney">
+      <button type="button" class="share__btn" data-share-native aria-label={t.native}>
         <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d={icons.share} fill="currentColor"></path></svg>
       </button>
     </li>
@@ -49,7 +57,7 @@ const icons: Record<string, string> = {
             href={n.href}
             target={n.id === 'email' ? undefined : '_blank'}
             rel="noopener"
-            aria-label={`Compartir en ${n.name}`}
+            aria-label={`${t.on} ${n.name}`}
             data-cursor={n.name}>
             <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
               <path d={icons[n.id]} fill="currentColor" />
@@ -59,7 +67,7 @@ const icons: Record<string, string> = {
       ))
     }
     <li>
-      <button type="button" class="share__btn" data-share-copy aria-label="Copiar el link" data-cursor="Copiar">
+      <button type="button" class="share__btn" data-share-copy aria-label={t.copy} data-cursor={t.copyCursor}>
         <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d={icons.link} fill="currentColor"></path></svg>
       </button>
     </li>
@@ -92,9 +100,9 @@ const icons: Record<string, string> = {
     root.querySelector('[data-share-copy]')?.addEventListener('click', async () => {
       try {
         await navigator.clipboard.writeText(root.dataset.url ?? location.href);
-        say('Link copiado. Pégalo donde quieras.');
+        say(root.dataset.copied ?? '');
       } catch {
-        say('No se pudo copiar. Mantén presionado el link de la barra de direcciones para copiarlo.');
+        say(root.dataset.copyFail ?? '');
       }
     });
   });

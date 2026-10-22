@@ -1,5 +1,8 @@
 ---
-const items = [
+import { langOf } from '../i18n';
+
+const lang = langOf(Astro.currentLocale);
+const itemsEs = [
   {
     cmd: 'Sin claves del banco',
     d: 'TelMoney no se conecta a tu banco ni te pide contraseñas. Tú le cuentas tus movimientos o le mandas la foto del recibo.',
@@ -7,13 +10,27 @@ const items = [
   { cmd: '"borrar mis datos"', d: 'Escribes eso y se eliminan todos. Sin formularios ni correos de por medio.' },
   { cmd: '"exportar"', d: 'Te llegan todos tus movimientos en un CSV que abres en Excel.' },
 ];
+// Los comandos se le escriben al bot en español: se dejan así y se explica qué hacen.
+const itemsEn = [
+  {
+    cmd: 'No bank passwords',
+    d: "TelMoney doesn't connect to your bank or ask for passwords. You tell it your transactions or send a photo of the receipt.",
+  },
+  { cmd: '"borrar mis datos"', d: 'Write that ("delete my data") and everything is deleted. No forms, no emails.' },
+  { cmd: '"exportar"', d: 'Write that ("export") and you get all your transactions in a CSV you can open in Excel.' },
+];
+const items = lang === 'en' ? itemsEn : itemsEs;
+const t = {
+  es: { title: 'Tus datos son tuyos', lead: 'Los descargas o los borras cuando quieras, con un mensaje.' },
+  en: { title: 'Your data is yours', lead: 'Download it or delete it whenever you want, with one message.' },
+}[lang];
 ---
 
 <section class="privacy band" id="privacidad">
   <div class="container privacy__grid">
     <div>
-      <h2 class="display">Tus datos son tuyos<span class="pd">.</span></h2>
-      <p class="lead privacy__lead">Los descargas o los borras cuando quieras, con un mensaje.</p>
+      <h2 class="display">{t.title}<span class="pd">.</span></h2>
+      <p class="lead privacy__lead">{t.lead}</p>
     </div>
     <ul class="privacy__list" role="list">
       {

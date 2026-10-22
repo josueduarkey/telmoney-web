@@ -18,8 +18,15 @@ const DRAFTS = [];
 export default defineConfig({
   site,
   adapter: vercel(),
+  // Español en "/" (sin prefijo) e inglés en "/en/". Solo la página de inicio tiene versión en inglés.
+  i18n: {
+    locales: ['es', 'en'],
+    defaultLocale: 'es',
+    routing: { prefixDefaultLocale: false },
+  },
   integrations: [
     sitemap({
+      i18n: { defaultLocale: 'es', locales: { es: 'es', en: 'en' } },
       filter: (page) =>
         !DRAFTS.some((p) => page.endsWith(p)) && !['/admin', '/cuenta', '/chat', '/pago', '/entrar'].some((p) => page.includes(p)),
     }),

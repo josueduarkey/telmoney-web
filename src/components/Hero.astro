@@ -2,11 +2,41 @@
 import Phone from './Phone.astro';
 import Chat from './Chat.astro';
 import Sticker from './Sticker.astro';
-import { heroScript } from '../data/chats';
-import { CTA, LAUNCHED, WHATSAPP_NUMBER } from '../config';
+import { chatsFor } from '../data/chats';
+import { LAUNCHED, WHATSAPP_NUMBER, ctaFor } from '../config';
+import { langOf } from '../i18n';
 
-// Máximo 3 frases. La primera es el tagline y es la que queda si no hay movimiento.
-const phrases = ['en orden,', 'sin sorpresas,', 'bajo control,'];
+const lang = langOf(Astro.currentLocale);
+const CTA = ctaFor(lang);
+const { heroScript } = chatsFor(lang);
+const t = {
+  es: {
+    // Máximo 3 frases. La primera es el tagline y es la que queda si no hay movimiento.
+    phrases: ['en orden,', 'sin sorpresas,', 'bajo control,'],
+    money: 'Tu dinero',
+    on: 'por',
+    open: 'Ya está abierto en El Salvador',
+    sub: 'Mándale un mensaje, un audio o la foto del recibo. Te dice cuánto puedes gastar hoy.',
+    ghost: 'Ver el antes y después',
+    fine: '7 días gratis. Sin tarjeta ni claves del banco.',
+    phone: 'Demo de TelMoney: anota un almuerzo y una nota de voz; después puedes escribirle tú',
+    try: 'Pruébalo, escríbele',
+    scroll: 'Seguir bajando',
+  },
+  en: {
+    phrases: ['in order,', 'no surprises,', 'under control,'],
+    money: 'Your money',
+    on: 'on',
+    open: 'Now open in El Salvador',
+    sub: 'Send it a message, a voice note or a receipt photo. It tells you how much you can spend today.',
+    ghost: 'See the before & after',
+    fine: '7 days free. No card, no bank passwords. TelMoney chats in Spanish for now.',
+    phone: 'TelMoney demo: it logs a lunch and a voice note; then you can type to it',
+    try: 'Try it, type here',
+    scroll: 'Keep scrolling',
+  },
+}[lang];
+const phrases = t.phrases;
 ---
 
 <section class="hero" id="top" data-hero>
@@ -24,7 +54,7 @@ const phrases = ['en orden,', 'sin sorpresas,', 'bajo control,'];
   {
     LAUNCHED && (
       <p class="hero__open container" data-hero-in>
-        Ya está abierto en El Salvador
+        {t.open}
       </p>
     )
   }
@@ -32,8 +62,8 @@ const phrases = ['en orden,', 'sin sorpresas,', 'bajo control,'];
   <div class="hero__grid container">
     <div class="hero__copy">
 
-      <h1 class="display-hero" data-hero-title aria-label={`Tu dinero ${phrases[0]} por WhatsApp.`}>
-        <span class="hl" aria-hidden="true"><span class="hl__in">Tu dinero</span></span>
+      <h1 class="display-hero" data-hero-title aria-label={`${t.money} ${phrases[0]} ${t.on} WhatsApp.`}>
+        <span class="hl" aria-hidden="true"><span class="hl__in">{t.money}</span></span>
         <span class="hl" aria-hidden="true"
           ><span class="hl__in"
             ><span class="chip type" data-type={JSON.stringify(phrases)}
@@ -42,12 +72,12 @@ const phrases = ['en orden,', 'sin sorpresas,', 'bajo control,'];
           ></span
         >
         <span class="hl" aria-hidden="true"
-          ><span class="hl__in">por&nbsp;WhatsApp<span class="pd">.</span></span></span
+          ><span class="hl__in">{t.on}&nbsp;WhatsApp<span class="pd">.</span></span></span
         >
       </h1>
 
       <p class="lead hero__sub" data-hero-in>
-        Mándale un mensaje, un audio o la foto del recibo. Te dice cuánto puedes gastar hoy.
+        {t.sub}
       </p>
       <div class="hero__ctas" data-hero-in>
         <a
@@ -57,10 +87,10 @@ const phrases = ['en orden,', 'sin sorpresas,', 'bajo control,'];
           data-magnetic
           {...CTA.external ? { target: '_blank', rel: 'noopener' } : {}}>{CTA.label}</a
         >
-        <a class="btn btn--ghost" href="#antes-y-despues">Ver el antes y después</a>
+        <a class="btn btn--ghost" href="#antes-y-despues">{t.ghost}</a>
       </div>
       <p class="hero__fine" data-hero-in>
-        7 días gratis. Sin tarjeta ni claves del banco.
+        {t.fine}
       </p>
     </div>
 
@@ -72,11 +102,11 @@ const phrases = ['en orden,', 'sin sorpresas,', 'bajo control,'];
       <Phone
         typing
         interactive
-        label="Demo de TelMoney: anota un almuerzo y una nota de voz; después puedes escribirle tú">
+        label={t.phone}>
         <Chat messages={heroScript} scripted />
       </Phone>
       <p class="hero__try" aria-hidden="true">
-        <span>Pruébalo, escríbele</span>
+        <span>{t.try}</span>
         <svg viewBox="0 0 60 40" width="60" height="40"
           ><path d="M4 6c18 0 34 6 46 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
           ></path><path d="M41 28l9 3 1-10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -87,7 +117,7 @@ const phrases = ['en orden,', 'sin sorpresas,', 'bajo control,'];
     </div>
   </div>
 
-  <a href="#antes-y-despues" class="hero__scroll" aria-label="Seguir bajando">
+  <a href="#antes-y-despues" class="hero__scroll" aria-label={t.scroll}>
     <span></span>
   </a>
 </section>

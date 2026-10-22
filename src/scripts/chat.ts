@@ -37,7 +37,7 @@ export async function playChat(
   const hideAll = () => steps.forEach((s) => (s.style.display = 'none'));
   const setTyping = (on: boolean) => {
     typing?.classList.toggle('is-on', on);
-    if (presence) presence.textContent = on ? 'escribiendo…' : 'en línea';
+    if (presence) presence.textContent = on ? (document.documentElement.lang === 'en' ? 'typing…' : 'escribiendo…') : (presence.dataset.online ?? 'en línea');
   };
 
   hideAll();

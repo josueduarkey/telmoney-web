@@ -33,11 +33,12 @@
 
   const sync = () => {
     const t = current();
-    const next = t === 'dark' ? 'claro' : 'oscuro';
+    const en = root.lang === 'en';
+    const next = en ? (t === 'dark' ? 'light' : 'dark') : t === 'dark' ? 'claro' : 'oscuro';
     buttons.forEach((b) => {
-      b.setAttribute('aria-label', `Cambiar a modo ${next}`);
-      b.title = `Modo ${next}`;
-      b.dataset.cursor = `Modo ${next}`;
+      b.setAttribute('aria-label', en ? `Switch to ${next} mode` : `Cambiar a modo ${next}`);
+      b.title = en ? `${next[0].toUpperCase()}${next.slice(1)} mode` : `Modo ${next}`;
+      b.dataset.cursor = b.title;
     });
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', t === 'light' ? '#ffffff' : '#000000');
   };

@@ -1,9 +1,14 @@
 ---
 import Phone from './Phone.astro';
 import Chat from './Chat.astro';
-import { almuerzo, reporte, type Msg } from '../data/chats';
+import { chatsFor, type Msg } from '../data/chats';
+import { langOf } from '../i18n';
 
-const hola: Msg[] = [{ from: 'me', text: 'hola', time: '07:30' }];
+const lang = langOf(Astro.currentLocale);
+const { almuerzo, reporte } = chatsFor(lang);
+const en = lang === 'en';
+
+const hola: Msg[] = [{ from: 'me', text: en ? 'hi' : 'hola', time: '07:30' }];
 const cuentale: Msg[] = [
   almuerzo[0],
   { from: 'me', voice: '0:06', time: '12:44' },
@@ -11,31 +16,28 @@ const cuentale: Msg[] = [
   almuerzo[1],
 ];
 // Las 5 preguntas del bot (telmoney-bot/src/telmoney_bot/handlers/onboarding.py).
-const onboarding = ['Tu nombre', 'Cuánto recibes y qué días te pagan', 'Cuánto tienes hoy', 'Tu meta de ahorro', 'Qué % quieres ahorrar'];
+const onboarding = en
+  ? ['Your name', 'What you earn and your paydays', 'How much you have today', 'Your savings goal', 'What % you want to save']
+  : ['Tu nombre', 'Cuánto recibes y qué días te pagan', 'Cuánto tienes hoy', 'Tu meta de ahorro', 'Qué % quieres ahorrar'];
 
-const steps = [
-  {
-    title: 'Escríbele "hola"',
-    body: 'Nada que descargar. Cinco preguntas rápidas y listo.',
-    chat: hola,
-  },
-  {
-    title: 'Cuéntale como hablas',
-    body: 'Texto, audio o foto del recibo. Como le hablas a un amigo.',
-    chat: cuentale,
-  },
-  {
-    title: 'Recibe tu noche financiera',
-    body: 'Cada noche: en qué gastaste y cuánto tienes para mañana.',
-    chat: reporte,
-  },
-];
+const steps = en
+  ? [
+      { title: 'Say "hi"', body: 'Nothing to download. Five quick questions and you are set.', chat: hola },
+      { title: 'Talk to it like you talk', body: 'Text, voice note or receipt photo. Like texting a friend.', chat: cuentale },
+      { title: 'Get your money night', body: 'Every night: what you spent and how much you have for tomorrow.', chat: reporte },
+    ]
+  : [
+      { title: 'Escríbele "hola"', body: 'Nada que descargar. Cinco preguntas rápidas y listo.', chat: hola },
+      { title: 'Cuéntale como hablas', body: 'Texto, audio o foto del recibo. Como le hablas a un amigo.', chat: cuentale },
+      { title: 'Recibe tu noche financiera', body: 'Cada noche: en qué gastaste y cuánto tienes para mañana.', chat: reporte },
+    ];
+const title = en ? ['As simple as that.', 'Three steps'] : ['Así de simple.', 'Tres pasos y ya'];
 ---
 
 <section class="how band" id="como-funciona" data-how>
   <div class="container">
     <header class="how__head">
-      <h2 class="display">Así de simple<span class="pd">.</span> <br />Tres pasos y ya<span class="pd">.</span></h2>
+      <h2 class="display">{title[0].slice(0, -1)}<span class="pd">.</span> <br />{title[1]}<span class="pd">.</span></h2>
     </header>
 
     <div class="how__grid">

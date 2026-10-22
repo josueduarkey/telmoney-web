@@ -2,7 +2,7 @@
 import "../styles/global.css";
 import Cursor from "../components/Cursor.astro";
 import SeoHead from "../components/seo/SeoHead.astro";
-import { SEO } from "../seo/meta";
+import { langOf } from "../i18n";
 
 interface Props {
   title?: string;
@@ -10,10 +10,11 @@ interface Props {
   noindex?: boolean;
 }
 const { title, description, noindex } = Astro.props;
+const lang = langOf(Astro.currentLocale);
 ---
 
 <!doctype html>
-<html lang={SEO.lang}>
+<html lang={lang}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -43,11 +44,37 @@ const { title, description, noindex } = Astro.props;
           );
         if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches)
           root.classList.add("motion");
+
+        // Idioma: quien entra a "/" con el navegador en inglés (y no eligió antes) va a "/en/".
+        // Solo personas: los buscadores ven cada página en su idioma (hreflang). Elegir en el
+        // selector ES/EN lo guarda y ya no se redirige.
+        if (location.pathname === "/") {
+          var pref = null;
+          try {
+            pref = localStorage.getItem("tm-lang");
+          } catch (e) {}
+          // Si el español aparece en cualquiera de sus idiomas, se queda en español (el bot habla español).
+          var langs = (navigator.languages && navigator.languages.length
+            ? navigator.languages
+            : [navigator.language || ""]
+          ).map(function (l) {
+            return String(l).toLowerCase();
+          });
+          var nav = langs[0] || "";
+          var speaksEs = langs.some(function (l) {
+            return l.indexOf("es") === 0;
+          });
+          var bot = /bot|crawl|spider|slurp|lighthouse|headless|preview|facebookexternalhit|whatsapp/i.test(
+            navigator.userAgent,
+          );
+          if (!pref && !bot && !speaksEs && nav.indexOf("en") === 0)
+            location.replace("/en/" + location.search + location.hash);
+        }
       })();
     </script>
   </head>
   <body>
-    <a class="skip-link" href="#main">Saltar al contenido</a>
+    <a class="skip-link" href="#main">{lang === "en" ? "Skip to content" : "Saltar al contenido"}</a>
     <slot />
     <Cursor />
     <script>

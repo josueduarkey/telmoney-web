@@ -1,32 +1,88 @@
 // Demo en vivo del inicio: un TelMoney de bolsillo que corre en el navegador.
 // Imita el formato de las respuestas del bot real con los montos de ejemplo de la página
 // (marca.md §2). No guarda ni envía nada: todo vive en esta pestaña.
+// Habla el idioma de la página (<html lang>): en /en/ entiende y contesta en inglés.
 import { gsap } from 'gsap';
 import { TICKS_SVG } from '../lib/ticks';
 
 const FIXED = 300; // gastos fijos por pagar
 const GOALS = 1.3; // apartado para metas
 const DAYS = 11; // días hasta el próximo ingreso (15/10)
-const PAYDAY = '15/10';
+const EN = typeof document !== 'undefined' && document.documentElement.lang === 'en';
+const PAYDAY = EN ? '10/15' : '15/10';
 
 type Link = { label: string; href: string; external?: boolean };
 type Move = { amount: number; kind: 'expense' | 'income'; category: string; account: string };
 
-const CATEGORIES: [RegExp, string, string][] = [
-  [/caf[eé]|almuerzo|comida|cena|desayuno|pizza|pupusa|hamburguesa|restaurante|pollo|tacos?/i, 'comida fuera', '🍽️'],
-  [/s[uú]per|mercado|despensa|tienda/i, 'mercado', '🛒'],
-  [/bus|uber|taxi|gasolina|pasaje|metro|parqueo/i, 'transporte', '🚌'],
-  [/luz|agua|internet|tel[eé]fono|cable|recibo/i, 'servicios', '💡'],
-  [/cine|netflix|spotify|juego|salida|fiesta|concierto/i, 'entretenimiento', '🎬'],
-  [/farmacia|doctor|medicina|consulta|dentista/i, 'salud', '💊'],
-  [/ropa|tenis|zapatos|camisa|pantal[oó]n/i, 'ropa', '👕'],
-  [/alquiler|renta/i, 'vivienda', '🏠'],
+// [patrón (español e inglés), categoría en español, en inglés, ícono]
+const CATEGORIES: [RegExp, string, string, string][] = [
+  [/caf[eé]|almuerzo|comida|cena|desayuno|pizza|pupusa|hamburguesa|restaurante|pollo|tacos?|coffee|lunch|dinner|breakfast|food|burger|restaurant/i, 'comida fuera', 'eating out', '🍽️'],
+  [/s[uú]per|mercado|despensa|tienda|grocer|market|store/i, 'mercado', 'groceries', '🛒'],
+  [/bus|uber|taxi|gasolina|pasaje|metro|parqueo|gas\b|fuel|parking/i, 'transporte', 'transport', '🚌'],
+  [/luz|agua|internet|tel[eé]fono|cable|recibo|electric|water|phone|bill/i, 'servicios', 'utilities', '💡'],
+  [/cine|netflix|spotify|juego|salida|fiesta|concierto|movie|game|party|concert/i, 'entretenimiento', 'entertainment', '🎬'],
+  [/farmacia|doctor|medicina|consulta|dentista|pharmacy|medicine|dentist/i, 'salud', 'health', '💊'],
+  [/ropa|tenis|zapatos|camisa|pantal[oó]n|clothes|sneakers|shoes|shirt|pants/i, 'ropa', 'clothes', '👕'],
+  [/alquiler|renta|rent/i, 'vivienda', 'housing', '🏠'],
 ];
-const ACCOUNTS: [RegExp, string][] = [
-  [/billetera/i, 'billetera'],
-  [/tarjeta/i, 'tarjeta'],
-  [/banco|cuenta/i, 'banco'],
+const ACCOUNTS: [RegExp, string, string][] = [
+  [/billetera|wallet/i, 'billetera', 'wallet'],
+  [/tarjeta|card/i, 'tarjeta', 'card'],
+  [/banco|cuenta|bank|account/i, 'banco', 'bank'],
 ];
+
+/** Los textos de la demo en los dos idiomas. */
+const L = EN
+  ? {
+      online: 'online',
+      typing: 'typing…',
+      ask: 'Ask on WhatsApp',
+      join: 'Join the beta',
+      hello: 'Hi! 👋 I\'m TelMoney.\nTell me an expense, like "spent 5 on coffee", or ask me "how much can I spend today?".',
+      helloBtns: ['spent 5 on coffee', 'how much can I spend today?'],
+      thanks: 'That\'s what I\'m here for! 💚',
+      nothingUndo: 'There\'s nothing to undo yet.',
+      undone: (a: string, c: string, left: string, d: string) => `↩️ Done, I removed ${a} · ${c}.\n🟢 You have *${left}* left of ${d} today.`,
+      buyOk: (left: string, d: string) => `🟢 *Yes, it fits in today.*\nYou'd have *${left}* left of ${d} for the rest of the day.`,
+      buyWarn: (d: string, after: string) => `🟡 *You can, but it goes over today* (${d}).\nIf you buy it, your daily budget drops from ${d} to *${after} a day* until ${PAYDAY}.`,
+      buyNo: (short: string) => `🔴 *You can't afford it today.*\nYou'd be *${short}* short of reaching ${PAYDAY} with your bills covered.`,
+      status: (left: string, d: string, bal: string) =>
+        `🟢 *Today you can spend ${left}*\nYour budget is *${d} a day* until your next income (${PAYDAY}, in ${DAYS} days):\n• You have ${bal} in your accounts\n• − ${usd(FIXED)} in bills to pay\n• − ${usd(GOALS)} set aside for your goals`,
+      income: (a: string, d: string) => `💵 You received *${a}*.\n🟢 Your budget goes up to *${d} a day* until ${PAYDAY}.`,
+      incomeCat: 'income',
+      cash: 'cash',
+      other: 'other',
+      left: (l: string, d: string) => `🟢 You have *${l}* left of ${d} today.`,
+      over: (l: string, d: string, tomorrow: string) => `🔴 You went *${l}* over your ${d} today.\nTomorrow your budget is *${tomorrow} a day*.`,
+      btns: ['↩️ Undo', '📊 How am I doing?'],
+      fallbackOpen: 'Ask me that on WhatsApp 👇\nThere I answer with your real numbers (in Spanish, for now).',
+      fallbackSoon: 'I\'ll answer that on WhatsApp when the beta opens 👇\nHere you can try an expense or "how much can I spend today?".',
+    }
+  : {
+      online: 'en línea',
+      typing: 'escribiendo…',
+      ask: 'Preguntar en WhatsApp',
+      join: 'Únete a la beta',
+      hello: '¡Hola! 👋 Soy TelMoney.\nCuéntame un gasto, por ejemplo "gasté 5 en café", o pregúntame "¿cuánto puedo gastar hoy?".',
+      helloBtns: ['gasté 5 en café', '¿cuánto puedo gastar hoy?'],
+      thanks: '¡Para eso estoy! 💚',
+      nothingUndo: 'No hay nada que deshacer todavía.',
+      undone: (a: string, c: string, left: string, d: string) => `↩️ Listo, borré ${a} · ${c}.\n🟢 Hoy te quedan *${left}* de ${d}.`,
+      buyOk: (left: string, d: string) => `🟢 *Sí, entra en lo de hoy.*\nTe quedarían *${left}* de ${d} para el resto del día.`,
+      buyWarn: (d: string, after: string) => `🟡 *Puedes, pero se sale de lo de hoy* (${d}).\nSi lo compras, tu disponible baja de ${d} a *${after} por día* hasta el ${PAYDAY}.`,
+      buyNo: (short: string) => `🔴 *Hoy no te alcanza.*\nTe faltarían *${short}* para llegar al ${PAYDAY} con tus pagos fijos cubiertos.`,
+      status: (left: string, d: string, bal: string) =>
+        `🟢 *Hoy puedes gastar ${left}*\nTu disponible es *${d} por día* hasta tu próximo ingreso (${PAYDAY}, en ${DAYS} día(s)):\n• Tienes ${bal} en tus cuentas\n• − ${usd(FIXED)} de gastos fijos por pagar\n• − ${usd(GOALS)} apartados en tus metas`,
+      income: (a: string, d: string) => `💵 Recibiste *${a}*.\n🟢 Tu disponible sube a *${d} por día* hasta el ${PAYDAY}.`,
+      incomeCat: 'ingreso',
+      cash: 'efectivo',
+      other: 'otros',
+      left: (l: string, d: string) => `🟢 Hoy te quedan *${l}* de ${d}.`,
+      over: (l: string, d: string, tomorrow: string) => `🔴 Hoy te pasaste *${l}* de ${d}.\nMañana tu disponible queda en *${tomorrow} por día*.`,
+      btns: ['↩️ Deshacer', '📊 ¿Cómo voy?'],
+      fallbackOpen: 'Eso pregúntamelo en WhatsApp 👇\nAhí te respondo con tus números de verdad.',
+      fallbackSoon: 'Eso te lo respondo en WhatsApp cuando abra la beta 👇\nAquí puedes probar con un gasto o "¿cuánto puedo gastar hoy?".',
+    };
 
 const usd = (n: number) =>
   `$${Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -79,8 +135,8 @@ export function demoBot(root: HTMLElement, { onFirstInteraction }: { onFirstInte
   const waNumber = root.dataset.wa;
   const askLink = (question: string): Link =>
     waNumber
-      ? { label: 'Preguntar en WhatsApp', href: `https://wa.me/${waNumber}?text=${encodeURIComponent(question)}`, external: true }
-      : { label: 'Únete a la beta', href: root.dataset.ctaHref || '#beta' };
+      ? { label: L.ask, href: `https://wa.me/${waNumber}?text=${encodeURIComponent(question)}`, external: true }
+      : { label: L.join, href: root.dataset.ctaHref || '#beta' };
 
   const bubble = (from: 'me' | 'bot', html: string, buttons: string[] = [], link?: Link) => {
     const li = document.createElement('li');
@@ -105,7 +161,7 @@ export function demoBot(root: HTMLElement, { onFirstInteraction }: { onFirstInte
 
   const setTyping = (on: boolean) => {
     typing?.classList.toggle('is-on', on);
-    if (presence) presence.textContent = on ? 'escribiendo…' : 'en línea';
+    if (presence) presence.textContent = on ? L.typing : L.online;
     if (on) {
       // el indicador va siempre al final de la conversación
       body.appendChild(typing!);
@@ -117,17 +173,14 @@ export function demoBot(root: HTMLElement, { onFirstInteraction }: { onFirstInte
     const t = text.toLowerCase().trim();
     const amount = amountIn(t);
 
-    if (/^(hola|buenas|hey|qu[eé] tal|buenos d[ií]as|buenas tardes)/.test(t)) {
-      return {
-        text: '¡Hola! 👋 Soy TelMoney.\nCuéntame un gasto, por ejemplo "gasté 5 en café", o pregúntame "¿cuánto puedo gastar hoy?".',
-        buttons: ['gasté 5 en café', '¿cuánto puedo gastar hoy?'],
-      };
+    if (/^(hola|buenas|hey|qu[eé] tal|buenos d[ií]as|buenas tardes|hi\b|hello|good (morning|afternoon|evening))/.test(t)) {
+      return { text: L.hello, buttons: L.helloBtns };
     }
-    if (/gracias|grax|genial|buen[ií]simo|chivo/.test(t)) return { text: '¡Para eso estoy! 💚' };
+    if (/gracias|grax|genial|buen[ií]simo|chivo|thanks|thank you|great|awesome/.test(t)) return { text: L.thanks };
 
-    if (/deshacer|borra(r)? (eso|el [uú]ltimo)|me equivoqu[eé]/.test(t)) {
+    if (/deshacer|borra(r)? (eso|el [uú]ltimo)|me equivoqu[eé]|undo|delete (that|the last)/.test(t)) {
       const last = moves.pop();
-      if (!last) return { text: 'No hay nada que deshacer todavía.' };
+      if (!last) return { text: L.nothingUndo };
       if (last.kind === 'expense') {
         balance += last.amount;
         spentToday -= last.amount;
@@ -135,65 +188,43 @@ export function demoBot(root: HTMLElement, { onFirstInteraction }: { onFirstInte
         balance -= last.amount;
         daily = free() / DAYS;
       }
-      return { text: `↩️ Listo, borré ${usd(last.amount)} · ${last.category}.\n🟢 Hoy te quedan *${usd(leftToday())}* de ${usd(daily)}.` };
+      return { text: L.undone(usd(last.amount), last.category, usd(leftToday()), usd(daily)) };
     }
 
-    if (/puedo comprar|me alcanza|lo compro|puedo gastar \d/.test(t) && amount) {
-      if (amount <= leftToday()) {
-        return {
-          text: `🟢 *Sí, entra en lo de hoy.*\nTe quedarían *${usd(leftToday() - amount)}* de ${usd(daily)} para el resto del día.`,
-        };
-      }
+    if (/puedo comprar|me alcanza|lo compro|puedo gastar \d|can i (buy|afford|spend \d)|should i buy/.test(t) && amount) {
+      if (amount <= leftToday()) return { text: L.buyOk(usd(leftToday() - amount), usd(daily)) };
       const after = (free() - amount) / DAYS;
-      if (after >= 0) {
-        return {
-          text: `🟡 *Puedes, pero se sale de lo de hoy* (${usd(daily)}).\nSi lo compras, tu disponible baja de ${usd(daily)} a *${usd(after)} por día* hasta el ${PAYDAY}.`,
-        };
-      }
-      return {
-        text: `🔴 *Hoy no te alcanza.*\nTe faltarían *${usd(amount - free())}* para llegar al ${PAYDAY} con tus pagos fijos cubiertos.`,
-      };
+      if (after >= 0) return { text: L.buyWarn(usd(daily), usd(after)) };
+      return { text: L.buyNo(usd(amount - free())) };
     }
 
-    if (/cu[aá]nto puedo gastar|disponible|c[oó]mo voy|cu[aá]nto tengo|resumen/.test(t)) {
-      return {
-        text:
-          `🟢 *Hoy puedes gastar ${usd(Math.max(leftToday(), 0))}*\n` +
-          `Tu disponible es *${usd(daily)} por día* hasta tu próximo ingreso (${PAYDAY}, en ${DAYS} día(s)):\n` +
-          `• Tienes ${usd(balance)} en tus cuentas\n• − ${usd(FIXED)} de gastos fijos por pagar\n• − ${usd(GOALS)} apartados en tus metas`,
-      };
+    if (/cu[aá]nto puedo gastar|disponible|c[oó]mo voy|cu[aá]nto tengo|resumen|how much can i spend|how am i doing|budget|summary|how much do i have/.test(t)) {
+      return { text: L.status(usd(Math.max(leftToday(), 0)), usd(daily), usd(balance)) };
     }
 
-    if (amount && /me pagaron|me pag[oó]|salario|sueldo|quincena|me dieron|me dio|recib[ií]|me depositaron|vend[ií]|cobr[eé]|me cay[oó]/.test(t)) {
+    if (amount && /me pagaron|me pag[oó]|salario|sueldo|quincena|me dieron|me dio|recib[ií]|me depositaron|vend[ií]|cobr[eé]|me cay[oó]|got paid|paid me|salary|received|earned|sold|payday/.test(t)) {
       balance += amount;
       daily = free() / DAYS;
-      moves.push({ amount, kind: 'income', category: 'ingreso', account: 'efectivo' });
-      return {
-        text: `💵 Entraron *${usd(amount)}*.\n🟢 Tu disponible sube a *${usd(daily)} por día* hasta el ${PAYDAY}.`,
-        buttons: ['↩️ Deshacer', '📊 ¿Cómo voy?'],
-      };
+      moves.push({ amount, kind: 'income', category: L.incomeCat, account: L.cash });
+      return { text: L.income(usd(amount), usd(daily)), buttons: L.btns };
     }
 
     if (amount) {
-      const [, category, icon] = CATEGORIES.find(([re]) => re.test(t)) ?? [null, 'otros', '🧾'];
-      const account = ACCOUNTS.find(([re]) => re.test(t))?.[1] ?? 'efectivo';
+      const cat = CATEGORIES.find(([re]) => re.test(t));
+      const category = cat ? (EN ? cat[2] : cat[1]) : L.other;
+      const icon = cat?.[3] ?? '🧾';
+      const acc = ACCOUNTS.find(([re]) => re.test(t));
+      const account = acc ? (EN ? acc[2] : acc[1]) : L.cash;
       balance -= amount;
       spentToday += amount;
       moves.push({ amount, kind: 'expense', category, account });
       const left = leftToday();
       const status =
-        left >= 0
-          ? `🟢 Hoy te quedan *${usd(left)}* de ${usd(daily)}.`
-          : `🔴 Hoy te pasaste *${usd(left)}* de ${usd(daily)}.\nMañana tu disponible queda en *${usd(Math.max(free(), 0) / (DAYS - 1))} por día*.`;
-      return { text: `✅ ${usd(amount)} · ${icon} ${category} · ${account}\n${status}`, buttons: ['↩️ Deshacer', '📊 ¿Cómo voy?'] };
+        left >= 0 ? L.left(usd(left), usd(daily)) : L.over(usd(left), usd(daily), usd(Math.max(free(), 0) / (DAYS - 1)));
+      return { text: `✅ ${usd(amount)} · ${icon} ${category} · ${account}\n${status}`, buttons: L.btns };
     }
 
-    return {
-      text: waNumber
-        ? 'Eso pregúntamelo en WhatsApp 👇\nAhí te respondo con tus números de verdad.'
-        : 'Eso te lo respondo en WhatsApp cuando abra la beta 👇\nAquí puedes probar con un gasto o "¿cuánto puedo gastar hoy?".',
-      link: askLink(text),
-    };
+    return { text: waNumber ? L.fallbackOpen : L.fallbackSoon, link: askLink(text) };
   };
 
   const send = async (raw: string) => {

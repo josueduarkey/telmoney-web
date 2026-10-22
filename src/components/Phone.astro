@@ -3,6 +3,29 @@
 // con la conversación de WhatsApp (modo oscuro o claro según el tema) y su fondo de garabatos (public/whatsapp-fondo.jpg).
 // El marco es igual en los dos temas: es el objeto físico.
 import Logo from "./Logo.astro";
+import { langOf } from "../i18n";
+
+const lang = langOf(Astro.currentLocale);
+const t = {
+  es: {
+    label: "Conversación de ejemplo con TelMoney",
+    suggestions: ["gasté 5 en café", "¿cuánto puedo gastar hoy?", "¿puedo comprar unos tenis de 80?", "me pagaron 650"],
+    cursor: "Escríbele",
+    online: "en línea",
+    chips: "Mensajes de ejemplo para probar",
+    placeholder: "Escribe un gasto…",
+    send: "Enviar",
+  },
+  en: {
+    label: "Sample chat with TelMoney",
+    suggestions: ["spent 5 on coffee", "how much can I spend today?", "can I buy sneakers for 80?", "got paid 650"],
+    cursor: "Type here",
+    online: "online",
+    chips: "Sample messages to try",
+    placeholder: "Type an expense…",
+    send: "Send",
+  },
+}[lang];
 
 interface Props {
   class?: string;
@@ -16,20 +39,15 @@ const {
   class: cls = "",
   typing = false,
   interactive = false,
-  label = "Conversación de ejemplo con TelMoney",
+  label = t.label,
 } = Astro.props;
-const suggestions = [
-  "gasté 5 en café",
-  "¿cuánto puedo gastar hoy?",
-  "¿puedo comprar unos tenis de 80?",
-  "me pagaron 650",
-];
+const suggestions = t.suggestions;
 ---
 
 <figure
   class:list={["phone", cls]}
   aria-label={label}
-  data-cursor={interactive ? "Escríbele" : undefined}
+  data-cursor={interactive ? t.cursor : undefined}
 >
   <span class="phone__btn phone__btn--action" aria-hidden="true"></span>
   <span class="phone__btn phone__btn--vol-up" aria-hidden="true"></span>
@@ -95,7 +113,7 @@ const suggestions = [
         <Logo size={34} wordmark={false} round />
         <span class="phone__who">
           <b>TelMoney</b>
-          <small data-presence>en línea</small>
+          <small data-presence data-online={t.online}>{t.online}</small>
         </span>
         <span class="phone__actions" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="21" height="21"
@@ -112,7 +130,7 @@ const suggestions = [
       </header>
 
       <div class="phone__body" data-chat-body data-lenis-prevent>
-        <span class="phone__day">Hoy</span>
+        <span class="phone__day">{lang === "en" ? "Today" : "Hoy"}</span>
         <slot />
         {
           typing && (
@@ -130,7 +148,7 @@ const suggestions = [
           <div
             class="phone__chips"
             role="group"
-            aria-label="Mensajes de ejemplo para probar"
+            aria-label={t.chips}
           >
             {suggestions.map((t) => (
               <button type="button" data-chat-chip={t}>
@@ -159,17 +177,17 @@ const suggestions = [
               />
             </svg>
             <label class="sr-only" for="demo-input">
-              Escríbele a TelMoney (demo)
+              {lang === "en" ? "Message TelMoney (demo)" : "Escríbele a TelMoney (demo)"}
             </label>
             <input
               id="demo-input"
               class="phone__input"
               data-chat-input
-              placeholder="Escribe un gasto…"
+              placeholder={t.placeholder}
               maxlength="140"
               enterkeyhint="send"
             />
-            <button class="phone__mic" type="submit" aria-label="Enviar">
+            <button class="phone__mic" type="submit" aria-label={t.send}>
               <svg
                 class="phone__ico-mic"
                 viewBox="0 0 24 24"

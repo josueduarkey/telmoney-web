@@ -1,8 +1,11 @@
 ---
 import Sticker from './Sticker.astro';
 
+import { langOf } from '../i18n';
+
+const lang = langOf(Astro.currentLocale);
 // Lo que se le puede escribir, de lo más común a lo más útil: un gasto, un ingreso, moverlo entre
-// cuentas y las preguntas. Mismo orden en que la gente empieza a usarlo.
+// cuentas y las preguntas. Van en español también en /en/: así se le escribe al bot de verdad.
 const phrases = [
   '💸 "gasté 3.50 en el almuerzo"',
   '💰 "recibí 650 de mi sueldo"',
@@ -13,23 +16,42 @@ const phrases = [
   '📊 "¿cómo voy este mes?"',
   '🎯 "quiero ahorrar 500 para diciembre"',
 ];
-const facts = [
-  { t: 'Al centavo', d: 'Cada saldo cuadra, cuenta por cuenta.' },
-  { t: 'Al ritmo de tu pago', d: 'Cuenta los días hasta tu próximo ingreso, sea quincena o fin de mes.' },
-  { t: 'Tus cuentas y billeteras', d: 'Sabe que "la tarjeta" y "la de crédito" son la misma cuenta.' },
-  { t: 'Sin aprender nada', d: 'Si sabes mandar un audio, ya sabes usar TelMoney.' },
-];
+const t = {
+  es: {
+    title: ['Entiende cómo hablas', 'Conoce tus cuentas'],
+    note: 'Empezamos en El Salvador.',
+    marquee: 'Frases que entiende',
+    facts: [
+      { t: 'Al centavo', d: 'Cada saldo cuadra, cuenta por cuenta.' },
+      { t: 'Al ritmo de tu pago', d: 'Cuenta los días hasta tu próximo ingreso, sea quincena o fin de mes.' },
+      { t: 'Tus cuentas y billeteras', d: 'Sabe que "la tarjeta" y "la de crédito" son la misma cuenta.' },
+      { t: 'Sin aprender nada', d: 'Si sabes mandar un audio, ya sabes usar TelMoney.' },
+    ],
+  },
+  en: {
+    title: ['Gets how you talk', 'Knows your accounts'],
+    note: 'Starting in El Salvador, in Spanish.',
+    marquee: 'Phrases it understands (in Spanish)',
+    facts: [
+      { t: 'To the cent', d: 'Every balance adds up, account by account.' },
+      { t: 'At your payday pace', d: 'It counts the days until your next income, every two weeks or monthly.' },
+      { t: 'Your accounts and wallets', d: 'It knows that "the card" and "the credit card" are the same account.' },
+      { t: 'Nothing to learn', d: 'If you can send a voice note, you can use TelMoney.' },
+    ],
+  },
+}[lang];
+const facts = t.facts;
 ---
 
 <section class="sv band" id="el-salvador" aria-labelledby="sv-title">
   <Sticker kind="piggy" size={140} class="sv__piggy" data-float="1" />
 
   <div class="container">
-    <h2 class="display sv__title" id="sv-title">Entiende cómo hablas<span class="pd">.</span> <br />Conoce tus cuentas<span class="pd">.</span></h2>
-    <p class="sv__note">Empezamos en El Salvador.</p>
+    <h2 class="display sv__title" id="sv-title">{t.title[0]}<span class="pd">.</span> <br />{t.title[1]}<span class="pd">.</span></h2>
+    <p class="sv__note">{t.note}</p>
   </div>
 
-  <div class="marquee marquee--reverse marquee--phrases" aria-label="Frases que entiende">
+  <div class="marquee marquee--reverse marquee--phrases" aria-label={t.marquee}>
     <ul class="marquee__track" role="list">
       {[...phrases, ...phrases].map((n, i) => <li aria-hidden={i >= phrases.length ? 'true' : undefined}>{n}</li>)}
     </ul>
