@@ -1,0 +1,41 @@
+---
+// Una parte de una página del panel que no se pudo leer: qué falta (la migración del bot o un permiso
+// del panel) o el error tal cual. Las demás partes de la página se ven igual.
+import type { Parte } from '../../lib/admin/queries';
+
+interface Props {
+  f: Extract<Parte<unknown>, { ok: false }>;
+  /** La migración del bot que trae esta parte, p. ej. "0020". */
+  migracion?: string;
+  /** El grant que necesita el usuario panel_admin. */
+  grant?: string;
+}
+const { f, migracion, grant } = Astro.props;
+---
+
+{
+  f.fase === 'sin_tablas' ? (
+    <p class="empty">
+      Todavía no está en la base{migracion && <> (migración <code>{migracion}</code> del bot)</>}. Aparece cuando el bot se
+      despliegue con ella.
+    </p>
+  ) : f.fase === 'sin_permiso' ? (
+    <div class="empty">
+      <p>Al panel le falta un permiso. Córrelo en Neon → SQL Editor, con el usuario dueño de la base:</p>
+      {grant && <pre class="grant">{grant}</pre>}
+    </div>
+  ) : (
+    <p class="empty">No se pudo leer: {f.error}</p>
+  )
+}
+
+<style>
+  .grant {
+    white-space: pre-wrap;
+    font-size: var(--fs-small);
+    background: var(--fill);
+    padding: var(--s-2) var(--s-3);
+    border-radius: 8px;
+    margin: var(--s-2) 0 0;
+  }
+</style>

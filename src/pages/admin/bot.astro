@@ -1,0 +1,437 @@
+---
+// Bot: cómo trabaja por dentro. Lo que Meta cobró de verdad, cuánto se anota sin IA, el correo del
+// banco, el onboarding, el puntaje de salud y los frenos. Cada tarjeta lee su parte por separado: si a
+// una le falta la migración o el permiso, lo dice ella sola (queries.ts → bot()).
+import Admin from '../../layouts/Admin.astro';
+import DbError from '../../components/admin/DbError.astro';
+import Aviso from '../../components/admin/Aviso.astro';
+import { RANGES, bot, type Range } from '../../lib/admin/queries';
+import { int, usd, usdCost } from '../../lib/admin/format';
+
+export const prerender = false;
+
+// Segunda llave (la primera es src/middleware.ts): sin sesión de admin no se consulta nada.
+if (!Astro.locals.admin) return new Response('No autorizado', { status: 401 });
+
+const asked = Number(Astro.url.searchParams.get('dias'));
+const days: Range = (RANGES as readonly number[]).includes(asked) ? (asked as Range) : 30;
+
+let data: Awaited<ReturnType<typeof bot>> | null = null;
+let error = '';
+try {
+  data = await bot(days);
+} catch (e) {
+  error = e instanceof Error ? e.message : String(e);
+}
+
+// El permiso que le falta al panel para cada parte, solo con las columnas que necesita (nunca textos).
+const GRANT = {
+  meta: 'grant select (user_id, kind, billable, pricing_category, created_at) on wa_outbound to panel_admin;',
+  correo:
+    'grant select (user_id, activa, codigo_llego) on correo_direcciones to panel_admin;\ngrant select (user_id, estado, recibido) on correo_recibidos to panel_admin;',
+  puntaje: 'grant select (user_id, day, score) on daily_snapshots to panel_admin;',
+  frenos: 'grant select (user_id, day, flagged, limit_notice, sin_gastos) on usage_daily to panel_admin;',
+} as const;
+const MIGRACION = { meta: '0015', correo: '0020', puntaje: '0021', frenos: '0021', reservadas: '0022' } as const;
+
+const CAPA: Record<string, string> = { cache: 'Memoria (ya lo había visto)', rules: 'Reglas', llm: 'Gemini', manual: 'A mano' };
+const ORIGEN: Record<string, string> = { text: 'Texto', audio: 'Audio', image: 'Foto', manual: 'A mano' };
+const ESTADO: Record<string, string> = {
+  pendiente: 'Sin responder',
+  anotado: 'Anotado',
+  descartado: 'Dijo que no',
+  ignorado: 'No era un movimiento',
+};
+const HORARIO: Record<string, string> = {
+  quincena: 'Quincena',
+  fin_de_mes: 'Fin de mes',
+  semanal: 'Cada semana',
+  otro: 'Otros días o sin fecha fija',
+  sin_dato: 'No lo dijo',
+};
+const KIND: Record<string, string> = {
+  texto: 'Texto',
+  botones: 'Botones',
+  lista: 'Lista',
+  imagen: 'Imagen',
+  documento: 'Documento',
+  plantilla: 'Plantilla',
+  reaccion: 'Reacción',
+};
+
+const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : '—');
+const sinIa = (m: Record<string, number>) => (m.cache ?? 0) + (m.rules ?? 0) + (m.manual ?? 0);
+---
+
+<Admin title="Bot" section="bot">
+  <div class="admin-head">
+    <div>
+      <h1>Bot</h1>
+      <p>Cómo trabaja por dentro. Últimos {days} días, en hora de El Salvador.</p>
+    </div>
+    <nav class="seg" aria-label="Periodo">
+      {RANGES.map((r) => <a href={`?dias=${r}`} aria-current={r === days ? 'true' : undefined}>{r} días</a>)}
+    </nav>
+  </div>
+
+  {error && <DbError error={error} />}
+
+  {
+    data && (
+      <>
+        <div class="cards">
+          <div class="card">
+            <p class="stat__label">Meta cobró</p>
+            {data.meta.ok ? (
+              <>
+                <p class="stat__value">{int(data.meta.data.cobrados)}</p>
+                <p class="stat__note">
+                  de <b>{int(data.meta.data.total)}</b> mensajes del bot · {usdCost(data.meta.data.usd)}
+                </p>
+              </>
+            ) : (
+              <p class="stat__note">sin datos (abajo)</p>
+            )}
+          </div>
+          <div class="card">
+            <p class="stat__label">Anotado sin IA</p>
+            {data.anotado.ok ? (
+              <>
+                <p class="stat__value">{pct(sinIa(data.anotado.data.capa), data.anotado.data.total)}</p>
+                <p class="stat__note">
+                  de <b>{int(data.anotado.data.total)}</b> movimientos · el resto pasó por Gemini
+                </p>
+              </>
+            ) : (
+              <p class="stat__note">sin datos</p>
+            )}
+          </div>
+          <div class="card">
+            <p class="stat__label">Correo del banco</p>
+            {data.correo.ok ? (
+              <>
+                <p class="stat__value">{int(data.correo.data.activas)}</p>
+                <p class="stat__note">
+                  direcciones activas · <b>{int(data.correo.data.confirmadas)}</b> con Gmail confirmado
+                </p>
+              </>
+            ) : (
+              <p class="stat__note">sin datos (abajo)</p>
+            )}
+          </div>
+          <div class="card">
+            <p class="stat__label">Terminaron el onboarding</p>
+            {data.perfil.ok ? (
+              <>
+                <p class="stat__value">{pct(data.perfil.data.terminaron, data.perfil.data.total)}</p>
+                <p class="stat__note">
+                  <b>{int(data.perfil.data.terminaron)}</b> de {int(data.perfil.data.total)} usuarios
+                </p>
+              </>
+            ) : (
+              <p class="stat__note">sin datos</p>
+            )}
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <section class="card" aria-labelledby="t-meta">
+            <div class="card__head">
+              <div>
+                <h2 id="t-meta">Lo que manda el bot</h2>
+                <p class="card__sub">Y lo que Meta dice que cobró, mensaje por mensaje.</p>
+              </div>
+            </div>
+            {data.meta.ok ? (
+              data.meta.data.rows.length ? (
+                <>
+                  <table class="table table--card">
+                    <thead>
+                      <tr>
+                        <th>Tipo</th>
+                        <th>Categoría de Meta</th>
+                        <th class="r">Mensajes</th>
+                        <th class="r">¿Cobrado?</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.meta.data.rows.map((r) => (
+                        <tr>
+                          <td>{KIND[r.kind] ?? r.kind}</td>
+                          <td class="muted">{r.categoria}</td>
+                          <td class="r">{int(r.n)}</td>
+                          <td class="r">{r.billable == null ? '—' : r.billable ? 'Sí' : 'No'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {data.meta.data.sinDato > 0 && (
+                    <p class="note">
+                      {int(data.meta.data.sinDato)} todavía sin respuesta de Meta (llega en el aviso de entregado).
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p class="empty">El bot no ha mandado nada en este periodo.</p>
+              )
+            ) : (
+              <Aviso f={data.meta} migracion={MIGRACION.meta} grant={GRANT.meta} />
+            )}
+          </section>
+
+          <section class="card" aria-labelledby="t-anot">
+            <div class="card__head">
+              <div>
+                <h2 id="t-anot">Cómo se anota</h2>
+                <p class="card__sub">Sin IA no cuesta nada y responde al instante.</p>
+              </div>
+            </div>
+            {data.anotado.ok ? (
+              data.anotado.data.total ? (
+                <div class="bars-2">
+                  {[
+                    { title: 'Quién lo entendió', m: data.anotado.data.capa, l: CAPA },
+                    { title: 'Cómo lo mandó', m: data.anotado.data.origen, l: ORIGEN },
+                  ].map((g) => (
+                    <div>
+                      <h3 class="mini">{g.title}</h3>
+                      <ul class="hbars" role="list">
+                        {Object.entries(g.m)
+                          .sort((a, b) => b[1] - a[1])
+                          .map(([k, n]) => (
+                            <li data-tip={`${int(n)} movimientos\n${g.l[k] ?? k}`}>
+                              <span class="hbars__name">{g.l[k] ?? k}</span>
+                              <span class="hbars__track" aria-hidden="true">
+                                <span
+                                  class="hbars__bar"
+                                  style={`width:${((n / data!.anotado.data.total) * 100).toFixed(1)}%`}
+                                />
+                              </span>
+                              <span class="hbars__value">{pct(n, data!.anotado.data.total)}</span>
+                            </li>
+                          ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p class="empty">Nadie anotó nada en este periodo.</p>
+              )
+            ) : (
+              <Aviso f={data.anotado} />
+            )}
+          </section>
+
+          <section class="card" aria-labelledby="t-correo">
+            <div class="card__head">
+              <div>
+                <h2 id="t-correo">Correos del banco</h2>
+                <p class="card__sub">Lo que llegó a las direcciones de gastos.telmoney.app. Solo conteos.</p>
+              </div>
+            </div>
+            {data.correo.ok ? (
+              <>
+                <p class="line">
+                  <b>{int(data.correo.data.personas)}</b>{' '}
+                  {data.correo.data.personas === 1 ? 'persona tiene' : 'personas tienen'} su dirección activa.
+                </p>
+                {data.correo.data.estados.length ? (
+                  <table class="table table--card">
+                    <thead>
+                      <tr>
+                        <th>Qué pasó</th>
+                        <th class="r">Correos</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.correo.data.estados.map((e) => (
+                        <tr>
+                          <td>{ESTADO[e.estado] ?? e.estado}</td>
+                          <td class="r">{int(e.n)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p class="empty">No llegó ningún correo en este periodo.</p>
+                )}
+                {data.correo.data.pendientesViejos > 0 && (
+                  <p class="note">
+                    {int(data.correo.data.pendientesViejos)} sin responder desde hace más de un día.
+                  </p>
+                )}
+              </>
+            ) : (
+              <Aviso f={data.correo} migracion={MIGRACION.correo} grant={GRANT.correo} />
+            )}
+          </section>
+
+          <section class="card" aria-labelledby="t-perfil">
+            <div class="card__head">
+              <div>
+                <h2 id="t-perfil">Cada cuánto les llega el dinero</h2>
+                <p class="card__sub">De quienes terminaron el onboarding. Con esto se calcula el disponible del día.</p>
+              </div>
+            </div>
+            {data.perfil.ok ? (
+              data.perfil.data.horarios.length ? (
+                <ul class="hbars hbars--wide" role="list">
+                  {data.perfil.data.horarios.map((h) => (
+                    <li data-tip={`${int(h.n)} personas\n${HORARIO[h.horario] ?? h.horario}`}>
+                      <span class="hbars__name">{HORARIO[h.horario] ?? h.horario}</span>
+                      <span class="hbars__track" aria-hidden="true">
+                        <span
+                          class="hbars__bar"
+                          style={`width:${((h.n / Math.max(1, data!.perfil.data.terminaron)) * 100).toFixed(1)}%`}
+                        />
+                      </span>
+                      <span class="hbars__value">{int(h.n)}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p class="empty">Nadie ha terminado el onboarding.</p>
+              )
+            ) : (
+              <Aviso f={data.perfil} />
+            )}
+          </section>
+
+          <section class="card" aria-labelledby="t-score">
+            <div class="card__head">
+              <div>
+                <h2 id="t-score">Puntaje de salud</h2>
+                <p class="card__sub">El último de cada persona, en los últimos 7 días.</p>
+              </div>
+            </div>
+            {data.puntaje.ok ? (
+              data.puntaje.data.personas ? (
+                <dl class="kv">
+                  <div>
+                    <dt>Promedio</dt>
+                    <dd>{data.puntaje.data.promedio ?? '—'}/100</dd>
+                  </div>
+                  <div>
+                    <dt>70 o más</dt>
+                    <dd>{int(data.puntaje.data.alto)}</dd>
+                  </div>
+                  <div>
+                    <dt>40 a 69</dt>
+                    <dd>{int(data.puntaje.data.medio)}</dd>
+                  </div>
+                  <div>
+                    <dt>Menos de 40</dt>
+                    <dd>{int(data.puntaje.data.bajo)}</dd>
+                  </div>
+                  <div>
+                    <dt>Sin datos suficientes</dt>
+                    <dd>{int(data.puntaje.data.sin_datos)}</dd>
+                  </div>
+                </dl>
+              ) : (
+                <p class="empty">Todavía no hay reportes de la noche en los últimos 7 días.</p>
+              )
+            ) : (
+              <Aviso f={data.puntaje} migracion={MIGRACION.puntaje} grant={GRANT.puntaje} />
+            )}
+          </section>
+
+          <section class="card" aria-labelledby="t-frenos">
+            <div class="card__head">
+              <div>
+                <h2 id="t-frenos">Frenos y cuentas reservadas</h2>
+                <p class="card__sub">Lo que el bot paró, y el dinero que la gente marcó como «no se toca».</p>
+              </div>
+            </div>
+            {data.frenos.ok ? (
+              <dl class="kv">
+                <div>
+                  <dt>Pedidos sensibles que paró</dt>
+                  <dd>
+                    {int(data.frenos.data.sensibles)}{' '}
+                    <small>
+                      de {int(data.frenos.data.quienes)} {data.frenos.data.quienes === 1 ? 'persona' : 'personas'}
+                    </small>
+                  </dd>
+                </div>
+                <div>
+                  <dt>Silenciados por insistir (3 en un día)</dt>
+                  <dd>{int(data.frenos.data.silenciados)}</dd>
+                </div>
+                <div>
+                  <dt>Llegaron al tope del día</dt>
+                  <dd>{int(data.frenos.data.topes)}</dd>
+                </div>
+                <div>
+                  <dt>Días que dijeron «hoy no gasté»</dt>
+                  <dd>{int(data.frenos.data.sin_gastos)}</dd>
+                </div>
+              </dl>
+            ) : (
+              <Aviso f={data.frenos} migracion={MIGRACION.frenos} grant={GRANT.frenos} />
+            )}
+            {data.reservadas.ok ? (
+              <p class="line">
+                🔒 <b>{int(data.reservadas.data.cuentas)}</b> cuentas reservadas de {int(data.reservadas.data.personas)}{' '}
+                {data.reservadas.data.personas === 1 ? 'persona' : 'personas'} · {usd(data.reservadas.data.saldo)} que no
+                cuentan para el disponible.
+              </p>
+            ) : (
+              <Aviso f={data.reservadas} migracion={MIGRACION.reservadas} />
+            )}
+          </section>
+        </div>
+
+        <p class="note">
+          «Meta cobró» es lo que Meta reporta en cada aviso de entrega (<code>billable</code>): responder dentro de las 24
+          horas no se cobra, solo las plantillas fuera de esa ventana. El costo del Resumen sigue siendo un estimado. Los
+          avisos de poco disponible y los frenos por ir muy rápido todavía no se guardan en la base: no aparecen aquí.
+        </p>
+      </>
+    )
+  }
+</Admin>
+
+<style>
+  .bars-2 {
+    display: grid;
+    gap: var(--s-4);
+  }
+  .mini {
+    font-size: var(--fs-small);
+    color: var(--text-muted);
+    font-weight: 600;
+    margin: 0 0 var(--s-2);
+  }
+  .line {
+    margin: 0 0 var(--s-3);
+  }
+  .line + .line,
+  .kv + .line {
+    margin-top: var(--s-4);
+  }
+  .kv {
+    display: grid;
+    gap: var(--s-2);
+    margin: 0;
+  }
+  .kv div {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--s-3);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: var(--s-2);
+  }
+  .kv dt {
+    color: var(--text-muted);
+  }
+  .kv dd {
+    margin: 0;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .kv small {
+    font-weight: 400;
+    color: var(--text-muted);
+  }
+</style>

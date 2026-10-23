@@ -398,3 +398,146 @@ export async function userSavings(id: number) {
     throw e;
   }
 }
+
+// ─────────────────────────────────────────────────────────── bot
+// Cómo trabaja el bot por dentro: lo que Meta cobró de verdad, cuánto se anota sin IA, el correo del
+// banco, el perfil del onboarding, el puntaje y los frenos. Cada parte va por separado: si a una le
+// falta la migración o el permiso, las demás se ven igual (la página lo dice por parte).
+
+export type Parte<T> = { ok: true; data: T } | { ok: false; fase: FaseError | null; error: string };
+
+async function parte<T>(fn: () => Promise<T>): Promise<Parte<T>> {
+  try {
+    return { ok: true, data: await fn() };
+  } catch (e) {
+    return { ok: false, fase: faseError(e), error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+/** Lo que manda el bot por WhatsApp y lo que Meta dice que cobró (migración 0015: wa_outbound). */
+async function metaReal(days: Range) {
+  const rows = await db().query(
+    `select kind, coalesce(pricing_category, 'sin dato') as categoria, billable, count(*)::int as n
+       from wa_outbound
+      where created_at >= now() - make_interval(days => $1::int)
+      group by 1, 2, 3 order by n desc`,
+    [days],
+  );
+  const total = rows.reduce((s, r) => s + r.n, 0);
+  const cobrados = rows.filter((r) => r.billable === true).reduce((s, r) => s + r.n, 0);
+  const sinDato = rows.filter((r) => r.billable == null).reduce((s, r) => s + r.n, 0);
+  return {
+    total,
+    cobrados,
+    sinDato,
+    usd: cobrados * COST_META_PER_REPLY,
+    rows: rows as { kind: string; categoria: string; billable: boolean | null; n: number }[],
+  };
+}
+
+/** Cómo se anotó cada movimiento: sin IA (cache, reglas) o con Gemini; y si fue texto, audio o foto. */
+async function anotado(days: Range) {
+  const rows = await db().query(
+    `select resolved_by, source, count(*)::int as n
+       from transactions where created_at >= now() - make_interval(days => $1::int)
+      group by 1, 2`,
+    [days],
+  );
+  const by = (k: 'resolved_by' | 'source') => {
+    const m: Record<string, number> = {};
+    for (const r of rows) m[r[k]] = (m[r[k]] ?? 0) + r.n;
+    return m;
+  };
+  return { total: rows.reduce((s, r) => s + r.n, 0), capa: by('resolved_by'), origen: by('source') };
+}
+
+/** El correo del banco (migración 0020). Solo conteos: ni el asunto ni el texto. */
+async function correo(days: Range) {
+  const sql = db();
+  const [dir] = await sql.query(
+    `select count(*) filter (where activa)::int as activas, count(distinct user_id) filter (where activa)::int as personas,
+            count(*) filter (where activa and codigo_llego is not null)::int as confirmadas
+       from correo_direcciones`,
+  );
+  const estados = await sql.query(
+    `select estado, count(*)::int as n from correo_recibidos
+      where recibido >= now() - make_interval(days => $1::int) group by 1 order by n desc`,
+    [days],
+  );
+  const [viejos] = await sql.query(
+    `select count(*)::int as n from correo_recibidos where estado = 'pendiente' and recibido < now() - interval '1 day'`,
+  );
+  return {
+    activas: dir.activas as number,
+    personas: dir.personas as number,
+    confirmadas: dir.confirmadas as number,
+    estados: estados as { estado: string; n: number }[],
+    pendientesViejos: viejos.n as number,
+  };
+}
+
+/** Lo que dejó el onboarding: cuántos lo terminaron y cada cuánto reciben su dinero. */
+async function perfil() {
+  const rows = await db().query(
+    `select coalesce(pay_schedule, 'sin_dato') as horario, count(*)::int as n
+       from users where onboarded_at is not null group by 1 order by n desc`,
+  );
+  const [t] = await db().query(
+    `select count(*)::int as total, count(*) filter (where onboarded_at is not null)::int as terminaron from users`,
+  );
+  return { total: t.total as number, terminaron: t.terminaron as number, horarios: rows as { horario: string; n: number }[] };
+}
+
+/** El último puntaje de salud de cada persona en los últimos 7 días (null = sin datos suficientes, 0021). */
+async function puntaje() {
+  const [r] = await db().query(
+    `with ultimo as (
+       select distinct on (user_id) user_id, score from daily_snapshots
+        where day >= (now() at time zone $1)::date - 7 order by user_id, day desc)
+     select count(*)::int as personas,
+            count(*) filter (where score is null)::int as sin_datos,
+            count(*) filter (where score < 40)::int as bajo,
+            count(*) filter (where score between 40 and 69)::int as medio,
+            count(*) filter (where score >= 70)::int as alto,
+            round(avg(score))::int as promedio
+       from ultimo`,
+    [TZ],
+  );
+  return r as { personas: number; sin_datos: number; bajo: number; medio: number; alto: number; promedio: number | null };
+}
+
+/** Frenos (usage_daily): pedidos sensibles que paró el alma (0016), topes del día y días sin gastos (0021). */
+async function frenos(days: Range) {
+  const [r] = await db().query(
+    `select coalesce(sum(flagged), 0)::int as sensibles, count(distinct user_id) filter (where flagged > 0)::int as quienes,
+            count(*) filter (where flagged >= 3)::int as silenciados,
+            count(*) filter (where limit_notice)::int as topes,
+            count(*) filter (where sin_gastos)::int as sin_gastos
+       from usage_daily where day > (now() at time zone $2)::date - $1::int`,
+    [days, TZ],
+  );
+  return r as { sensibles: number; quienes: number; silenciados: number; topes: number; sin_gastos: number };
+}
+
+/** Cuentas reservadas, «no se toca» (migración 0022): no cuentan para el disponible del día. */
+async function reservadas() {
+  const [r] = await db().query(
+    `select count(*)::int as cuentas, count(distinct a.user_id)::int as personas, coalesce(sum(b.balance), 0)::float8 as saldo
+       from accounts a left join account_balances b on b.account_id = a.id
+      where a.reservada and a.is_active`,
+  );
+  return r as { cuentas: number; personas: number; saldo: number };
+}
+
+export async function bot(days: Range) {
+  const [meta, anot, mail, perf, score, freno, reserv] = await Promise.all([
+    parte(() => metaReal(days)),
+    parte(() => anotado(days)),
+    parte(() => correo(days)),
+    parte(perfil),
+    parte(puntaje),
+    parte(() => frenos(days)),
+    parte(reservadas),
+  ]);
+  return { meta, anotado: anot, correo: mail, perfil: perf, puntaje: score, frenos: freno, reservadas: reserv };
+}
