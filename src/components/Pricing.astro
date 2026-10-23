@@ -456,7 +456,8 @@ const daily = (n: number, days: number) => `$${(n / days).toFixed(2)} ${t.perDay
       margin: var(--s-6) calc(var(--gutter) * -1) 0;
       padding: 8px var(--gutter) 24px;
       overflow-x: auto;
-      align-items: flex-start;
+      /* las tres de la misma altura: la más larga (Pro) manda */
+      align-items: stretch;
       scroll-snap-type: x mandatory;
       scroll-padding-inline: var(--gutter);
       overscroll-behavior-x: contain;
