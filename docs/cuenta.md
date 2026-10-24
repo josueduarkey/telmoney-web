@@ -53,8 +53,13 @@ Mientras la cuenta no esté vinculada, todo lo que no sea `GET /me` y `POST /me/
 
 ## En la web
 
-- `/cuenta`: conectar WhatsApp (si falta) o el resumen: plan y vencimiento, cuánto puedes gastar hoy, gasto del mes, gasto por día y por categoría, cuentas, metas.
-- `/cuenta/movimientos`: la lista completa.
+Un panel con barra lateral (en el celular se abre desde la izquierda), al estilo del sidebar de shadcn/ui. Cada módulo lee su ruta de `/me` (contrato en `telmoney-bot/docs/cuenta-web.md`); si el bot todavía no la tiene (404 «Not Found»), el módulo dice que viene pronto y muestra cómo hacerlo por WhatsApp.
+
+- `/cuenta` (Inicio): conectar WhatsApp (si falta) o el resumen: plan y vencimiento, cuánto puedes gastar hoy, gasto del mes, gasto por día y por categoría, cuentas, metas, últimos movimientos.
+- `/cuenta/movimientos`: la lista completa, con búsqueda, mes y tipo.
+- `/cuenta/cuentas`: cuentas y tarjetas (`/me/cuentas`): para usar, reservado 🔒 y lo que debe en tarjetas, con el uso del límite.
+- `/cuenta/deudas` (`/me/deudas`), `/cuenta/metas` (`/me/metas`), `/cuenta/presupuesto` (`/me/limites`), `/cuenta/fijos` (`/me/fijos`).
+- `/cuenta/reportes`: Excel, CSV o PDF del mes; la descarga pasa por `/cuenta/reporte`, que se la pide al bot (`/me/reporte`) con el token de la persona.
 - `/cuenta/correo`: conectar el correo del banco (docs/correo.md).
 - `/cuenta/plan`: tu plan, cuándo vence, pasar a Pro o renovar (Wompi), historial de pagos.
 - Botón "Entrar" en el menú de la página. `/chat`: enlace corto que abre el bot en WhatsApp (para compartir). `/pago`: a donde vuelve Wompi.

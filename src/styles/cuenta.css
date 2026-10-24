@@ -1,0 +1,367 @@
+/* Marco de "Mi cuenta": barra lateral fija en escritorio, panel deslizable en el celular.
+   Al estilo del sidebar de shadcn/ui: grupos con etiqueta chica, ítems con ícono, el activo con
+   fondo suave. Tarjetas y tablas siguen saliendo de admin.css. */
+
+.app {
+  --sb-w: 252px;
+  flex-direction: row;
+}
+.app__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ── Barra lateral ── */
+.sb {
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  width: var(--sb-w);
+  height: 100vh;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  padding: var(--s-4) var(--s-3);
+  background: var(--bg-alt);
+  border-right: 1px solid var(--hairline);
+  overflow-y: auto;
+  z-index: 30;
+}
+.sb__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px var(--s-2);
+}
+.sb__brand {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+.sb__close {
+  display: none;
+}
+.sb__cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  min-height: 42px;
+  border-radius: var(--r-md);
+  background: var(--accent);
+  color: var(--white);
+  font-weight: 700;
+  font-size: var(--fs-small);
+  text-decoration: none;
+}
+.sb__cta:hover {
+  filter: brightness(1.06);
+}
+.sb__nav {
+  display: grid;
+  gap: var(--s-4);
+}
+.sb__label {
+  margin: 0 0 6px;
+  padding: 0 var(--s-3);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.sb__group ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+.sb__group a {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: 38px;
+  padding: 0 var(--s-3);
+  border-radius: var(--r-md);
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: var(--fs-small);
+  text-decoration: none;
+}
+.sb__group a:hover {
+  color: var(--text);
+  background: var(--fill);
+}
+.sb__group a[aria-current='page'] {
+  color: var(--text);
+  background: var(--fill-strong);
+}
+.sb__group a[aria-current='page'] .ico {
+  color: var(--accent);
+}
+.ico {
+  flex: none;
+}
+.sb__foot {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+  padding: var(--s-3) var(--s-2) 0;
+  border-top: 1px solid var(--hairline);
+}
+.sb__out {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-weight: 600;
+  font-size: var(--fs-small);
+  padding: 8px 10px;
+  border-radius: var(--r-md);
+  cursor: pointer;
+}
+.sb__out:hover {
+  color: var(--text);
+  background: var(--fill);
+}
+
+/* ── Barra de arriba (en escritorio solo el título; en el celular, el botón del menú) ── */
+.app-top {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: 56px;
+  padding: 0 clamp(16px, 3vw, 32px);
+  background: var(--nav-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--hairline);
+}
+.app-top__menu {
+  display: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: var(--r-md);
+  background: var(--fill);
+  color: var(--text);
+  cursor: pointer;
+}
+.app-top__title {
+  margin: 0;
+  font-weight: 700;
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+.app-top__end {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+.app-main {
+  flex: 1;
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: var(--s-6) clamp(16px, 3vw, 32px) var(--s-8);
+}
+
+/* ── Celular y tableta: la barra lateral se vuelve un panel que entra desde la izquierda ── */
+@media (max-width: 1023px) {
+  .sb {
+    position: fixed;
+    inset: 0 auto 0 0;
+    height: 100%;
+    width: min(86vw, 300px);
+    transform: translateX(-102%);
+    box-shadow: 0 0 60px -10px var(--shadow);
+    visibility: hidden;
+  }
+  .sb.is-open {
+    transform: none;
+    visibility: visible;
+  }
+  .sb__close {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: var(--r-md);
+    background: var(--fill);
+    color: var(--text);
+    cursor: pointer;
+  }
+  .sb-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 25;
+    background: rgb(0 0 0 / 0.45);
+  }
+  .app-top__menu {
+    display: grid;
+  }
+  .sb-locked {
+    overflow: hidden;
+  }
+}
+@media (max-width: 1023px) and (prefers-reduced-motion: no-preference) {
+  .sb {
+    transition:
+      transform 0.22s var(--ease-out),
+      visibility 0.22s;
+  }
+}
+
+/* ── Piezas compartidas de los módulos ── */
+.mod-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: var(--s-4);
+  align-items: start;
+}
+.tile {
+  display: grid;
+  gap: var(--s-3);
+  align-content: start;
+}
+.tile__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+.tile__name {
+  margin: 0;
+  font-weight: 700;
+  font-size: 1rem;
+}
+.tile__meta {
+  margin: 2px 0 0;
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+.tile__amount {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.tile__amount--neg {
+  color: var(--danger);
+}
+.progress {
+  height: 8px;
+  border-radius: var(--r-full);
+  background: var(--fill-strong);
+  overflow: hidden;
+}
+.progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+}
+.progress--warn > span {
+  background: var(--gold);
+}
+.progress--over > span {
+  background: var(--danger);
+}
+.row-split {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s-3);
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--r-full);
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: var(--fill-strong);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.badge--accent {
+  background: var(--accent);
+  color: var(--white);
+}
+.badge--danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.ask {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+  margin-top: var(--s-5);
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+.ask a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--r-full);
+  background: var(--fill);
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+}
+.ask a:hover {
+  background: var(--fill-strong);
+}
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+  margin-bottom: var(--s-4);
+}
+.toolbar .field {
+  min-width: 0;
+}
+.search {
+  position: relative;
+  flex: 1 1 220px;
+}
+.search .ico {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-faint);
+  pointer-events: none;
+}
+.search .field {
+  width: 100%;
+  padding-left: 38px;
+}
+.kind-expense {
+  color: var(--text);
+}

@@ -1,0 +1,96 @@
+---
+// Gastos fijos: lo que paga cada mes (alquiler, cuotas, suscripciones, tarjetas) y cuándo toca. Lee /me/fijos.
+import Cuenta from '../../layouts/Cuenta.astro';
+import Head from '../../components/cuenta/Head.astro';
+import Pronto from '../../components/cuenta/Pronto.astro';
+import Pide from '../../components/cuenta/Pide.astro';
+import { me, pendiente, sinVincular, type Fijo } from '../../lib/admin/bot';
+import { tokenOf } from '../../lib/cuenta/session';
+import { date, usd } from '../../lib/admin/format';
+
+export const prerender = false;
+
+if (!Astro.locals.cuenta) return new Response('No autorizado', { status: 401 });
+const token = await tokenOf(Astro.locals);
+if (!token) return Astro.redirect('/cuenta/salir');
+
+const r = await me<{ fijos: Fijo[] }>('/me/fijos', token);
+if (sinVincular(r)) return Astro.redirect('/cuenta');
+const fijos = (r.ok ? (r.data?.fijos ?? []) : []).slice().sort((a, b) => (a.proximo ?? '9').localeCompare(b.proximo ?? '9'));
+// Lo que sale cada mes: fijos y cuotas. El pago de la tarjeta es lo que debe hoy, no un gasto fijo.
+const alMes = fijos.filter((f) => f.tipo !== 'tarjeta').reduce((s, f) => s + (f.monto ?? 0), 0);
+const etiqueta = (f: Fijo) =>
+  f.tipo === 'tarjeta' ? (f.evento === 'corte' ? 'Corte de tarjeta' : 'Pago de tarjeta') : (TIPO[f.tipo] ?? f.tipo);
+const TIPO: Record<string, string> = { fijo: 'Gasto fijo', cuota: 'Cuota' };
+const dias = (iso: string | null) => (iso ? Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000) : null);
+---
+
+<Cuenta title="Gastos fijos" section="fijos">
+  <Head titulo="Gastos fijos" sub="Lo que pagas cada mes y cuándo te toca. TelMoney te avisa un día antes." />
+
+  {
+    pendiente(r) && (
+      <Pronto
+        icon="fijos"
+        titulo="Tus pagos del mes van a aparecer aquí"
+        texto="Alquiler, cuotas, suscripciones y tarjetas, ordenados por fecha. Estamos conectándolo con TelMoney."
+        frases={['pago 300 de alquiler el 5', 'Netflix 9.99 el 12', '¿qué pagos tengo?']}
+      />
+    )
+  }
+  {!r.ok && !pendiente(r) && <p class="flash flash--error">{r.detail}</p>}
+
+  {
+    r.ok && (
+      <>
+        <div class="cards">
+          <div class="card">
+            <p class="stat__label">Al mes</p>
+            <p class="stat__value">{usd(alMes)}</p>
+            <p class="stat__note">en gastos fijos y cuotas</p>
+          </div>
+        </div>
+        {fijos.length ? (
+          <div class="table-wrap section">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Qué</th>
+                  <th>Próximo</th>
+                  <th>Cuenta</th>
+                  <th class="r">Monto</th>
+                </tr>
+              </thead>
+              <tbody>
+                {fijos.map((f) => {
+                  const n = dias(f.proximo);
+                  return (
+                    <tr>
+                      <td>
+                        {f.nombre} <span class="badge">{etiqueta(f)}</span>
+                        {f.cuotas_restantes ? <span class="muted"> · faltan {f.cuotas_restantes} cuotas</span> : null}
+                      </td>
+                      <td class="nowrap">
+                        {f.proximo ? date(f.proximo) : `el ${f.dia}`}
+                        {n !== null && n <= 3 && n >= 0 && (
+                          <span class="badge badge--danger" style="margin-left:6px">
+                            {n === 0 ? 'hoy' : n === 1 ? 'mañana' : `en ${n} días`}
+                          </span>
+                        )}
+                      </td>
+                      <td class="nowrap muted">{f.cuenta ?? '—'}</td>
+                      <td class="r">{f.monto ? usd(f.monto) : '—'}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p class="card empty section">No tienes pagos fijos. Cuéntale a TelMoney qué pagas cada mes.</p>
+        )}
+        <Pide frases={['pago 300 de alquiler el 5', 'Netflix 9.99 el 12', 'ya pagué el alquiler']} />
+      </>
+    )
+  }
+</Cuenta>

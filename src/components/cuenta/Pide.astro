@@ -1,0 +1,28 @@
+---
+// Frases para hacerlo por WhatsApp desde aquí: abren el chat con el mensaje ya escrito.
+// Sin número del bot (antes del lanzamiento), se muestran como texto.
+import Icon from './Icon.astro';
+import { WHATSAPP_NUMBER } from '../../config';
+
+interface Props {
+  frases: string[];
+  label?: string;
+}
+const { frases, label = 'Por WhatsApp:' } = Astro.props;
+const href = (f: string) => `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(f)}`;
+---
+
+<div class="ask">
+  <span>{label}</span>
+  {
+    frases.map((f) =>
+      WHATSAPP_NUMBER ? (
+        <a href={href(f)} target="_blank" rel="noopener">
+          <Icon name="mensaje" size={14} />«{f}»
+        </a>
+      ) : (
+        <span class="badge">«{f}»</span>
+      ),
+    )
+  }
+</div>

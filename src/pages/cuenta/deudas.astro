@@ -1,0 +1,103 @@
+---
+// Deudas: quién le debe (y cuánto falta) y a quién le debe. Lee /me/deudas.
+import Cuenta from '../../layouts/Cuenta.astro';
+import Head from '../../components/cuenta/Head.astro';
+import Pronto from '../../components/cuenta/Pronto.astro';
+import Pide from '../../components/cuenta/Pide.astro';
+import { me, pendiente, sinVincular, type Deuda, type Deudas } from '../../lib/admin/bot';
+import { tokenOf } from '../../lib/cuenta/session';
+import { date, usd } from '../../lib/admin/format';
+
+export const prerender = false;
+
+if (!Astro.locals.cuenta) return new Response('No autorizado', { status: 401 });
+const token = await tokenOf(Astro.locals);
+if (!token) return Astro.redirect('/cuenta/salir');
+
+const r = await me<Deudas>('/me/deudas', token);
+if (sinVincular(r)) return Astro.redirect('/cuenta');
+const d = r.ok ? r.data : null;
+const total = (l: Deuda[]) => l.reduce((s, x) => s + x.pendiente, 0);
+const hoy = new Date().toISOString().slice(0, 10);
+const grupos = d
+  ? [
+      { titulo: 'Te deben', vacio: 'Nadie te debe nada.', lista: d.me_deben ?? [] },
+      { titulo: 'Debes', vacio: 'No le debes a nadie.', lista: d.debo ?? [] },
+    ]
+  : [];
+---
+
+<Cuenta title="Deudas" section="deudas">
+  <Head titulo="Deudas" sub="Lo que te deben y lo que debes, con lo que ya se abonó." />
+
+  {
+    pendiente(r) && (
+      <Pronto
+        icon="deudas"
+        titulo="Tus deudas van a aparecer aquí"
+        texto="Quién te debe, cuánto falta y para cuándo; y lo que tú debes. Estamos conectándolo con TelMoney."
+        frases={['¿quién me debe?', 'Juan me debe 20 para el viernes', 'le pagué 50 a la financiera']}
+      />
+    )
+  }
+  {!r.ok && !pendiente(r) && <p class="flash flash--error">{r.detail}</p>}
+
+  {
+    d && (
+      <>
+        <div class="cards">
+          <div class="card">
+            <p class="stat__label">Te deben</p>
+            <p class="stat__value">{usd(total(d.me_deben ?? []))}</p>
+            <p class="stat__note">{(d.me_deben ?? []).length} personas</p>
+          </div>
+          <div class="card">
+            <p class="stat__label">Debes</p>
+            <p class="stat__value">{usd(total(d.debo ?? []))}</p>
+            <p class="stat__note">{(d.debo ?? []).length} deudas abiertas</p>
+          </div>
+        </div>
+
+        {grupos.map((g) => (
+          <section class="section">
+            <h2 class="section-title">{g.titulo}</h2>
+            {g.lista.length ? (
+              <div class="mod-grid" style="margin-top: var(--s-3)">
+                {g.lista.map((x) => {
+                  const pct = x.monto ? Math.min(100, (x.abonado / x.monto) * 100) : 0;
+                  const vencida = x.vence && x.vence < hoy;
+                  return (
+                    <article class="card tile">
+                      <div class="tile__top">
+                        <div>
+                          <p class="tile__name">{x.persona}</p>
+                          <p class="tile__meta">{x.descripcion || `Desde el ${date(x.creada)}`}</p>
+                        </div>
+                        {x.vence && (
+                          <span class:list={['badge', { 'badge--danger': vencida }]}>
+                            {vencida ? 'Venció' : 'Vence'} {date(x.vence)}
+                          </span>
+                        )}
+                      </div>
+                      <p class="tile__amount">{usd(x.pendiente)}</p>
+                      <div class="progress">
+                        <span style={`width:${pct.toFixed(1)}%`} />
+                      </div>
+                      <div class="row-split">
+                        <span>abonado {usd(x.abonado)}</span>
+                        <span>de {usd(x.monto)}</span>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            ) : (
+              <p class="card empty" style="margin-top: var(--s-3)">{g.vacio}</p>
+            )}
+          </section>
+        ))}
+        <Pide frases={['Juan me debe 20 para el viernes', 'Juan me abonó 10', 'recuérdale a Juan']} />
+      </>
+    )
+  }
+</Cuenta>

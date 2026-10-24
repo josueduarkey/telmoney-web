@@ -1,34 +1,117 @@
 ---
-// Todos los movimientos de la persona, de 50 en 50 (el bot pagina con "antes=<id>").
+// Todos los movimientos de la persona, de 50 en 50 (el bot pagina con "antes=<id>"), con filtros por
+// tipo, mes y texto. Los filtros van al bot (/me/movimientos); lo que llega se vuelve a filtrar aquí
+// por si el bot todavía no los conoce, así la lista nunca muestra algo que no coincide.
 import Cuenta from '../../layouts/Cuenta.astro';
-import { me, type Movimiento } from '../../lib/admin/bot';
+import Head from '../../components/cuenta/Head.astro';
+import Icon from '../../components/cuenta/Icon.astro';
+import Pide from '../../components/cuenta/Pide.astro';
+import { me, sinVincular, type Movimiento } from '../../lib/admin/bot';
 import { tokenOf } from '../../lib/cuenta/session';
 import { dateTime, usd } from '../../lib/admin/format';
 
 export const prerender = false;
 
+const TZ = 'America/El_Salvador';
+
 if (!Astro.locals.cuenta) return new Response('No autorizado', { status: 401 });
 const token = await tokenOf(Astro.locals);
 if (!token) return Astro.redirect('/cuenta/salir');
 
-const antes = Number(Astro.url.searchParams.get('antes')) || 0;
-const r = await me<{ movimientos: Movimiento[]; hay_mas: boolean }>(
-  `/me/movimientos?limite=50${antes ? `&antes=${antes}` : ''}`,
-  token,
+const sp = Astro.url.searchParams;
+const antes = Number(sp.get('antes')) || 0;
+const TIPOS = { expense: 'Gastos', income: 'Ingresos', transfer: 'Transferencias' } as const;
+const tipo = (sp.get('tipo') ?? '') in TIPOS ? (sp.get('tipo') as keyof typeof TIPOS) : '';
+const mes = /^\d{4}-\d{2}$/.test(sp.get('mes') ?? '') ? sp.get('mes')! : '';
+const q = (sp.get('q') ?? '').trim().slice(0, 60);
+
+// Mes → desde/hasta para el bot.
+const rango = (m: string) => {
+  const [y, mo] = m.split('-').map(Number);
+  const fin = new Date(Date.UTC(y, mo, 0)).getUTCDate();
+  return { desde: `${m}-01`, hasta: `${m}-${String(fin).padStart(2, '0')}` };
+};
+const params = new URLSearchParams({ limite: '50' });
+if (antes) params.set('antes', String(antes));
+if (tipo) params.set('tipo', tipo);
+if (mes) Object.entries(rango(mes)).forEach(([k, v]) => params.set(k, v));
+if (q) params.set('q', q);
+
+const r = await me<{ movimientos: Movimiento[]; hay_mas: boolean }>(`/me/movimientos?${params}`, token);
+if (sinVincular(r)) return Astro.redirect('/cuenta');
+
+const fold = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const mesDe = (iso: string) => new Date(iso).toLocaleDateString('en-CA', { timeZone: TZ }).slice(0, 7);
+const todos = r.ok ? (r.data?.movimientos ?? []) : [];
+const lista = todos.filter(
+  (m) =>
+    (!tipo || m.tipo === tipo) &&
+    (!mes || mesDe(m.fecha) === mes) &&
+    (!q || fold(`${m.descripcion ?? ''} ${m.categoria ?? ''} ${m.cuenta ?? ''}`).includes(fold(q))),
 );
-if (!r.ok && r.status === 404) return Astro.redirect('/cuenta');
+const filtrando = Boolean(tipo || mes || q);
+const gastos = lista.filter((m) => m.tipo === 'expense').reduce((s, m) => s + m.monto, 0);
+const ingresos = lista.filter((m) => m.tipo === 'income').reduce((s, m) => s + m.monto, 0);
+
+const now = new Date(new Date().toLocaleString('en-US', { timeZone: TZ }));
+const meses = Array.from({ length: 12 }, (_, i) => {
+  const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+  const v = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  const l = d.toLocaleDateString('es-SV', { month: 'long', year: 'numeric' });
+  return { v, l: l[0].toUpperCase() + l.slice(1) };
+});
+const link = (extra: Record<string, string>) => {
+  const p = new URLSearchParams();
+  if (tipo) p.set('tipo', tipo);
+  if (mes) p.set('mes', mes);
+  if (q) p.set('q', q);
+  Object.entries(extra).forEach(([k, v]) => (v ? p.set(k, v) : p.delete(k)));
+  const s = p.toString();
+  return `/cuenta/movimientos${s ? `?${s}` : ''}`;
+};
 const KIND = { expense: 'Gasto', income: 'Ingreso', transfer: 'Transferencia' } as const;
-const lista = r.ok ? (r.data?.movimientos ?? []) : [];
 ---
 
 <Cuenta title="Movimientos" section="movimientos">
-  <div class="admin-head">
-    <div>
-      <h1>Movimientos</h1>
-      <p>Todo lo que le has contado a TelMoney. Para corregir algo, díselo por WhatsApp.</p>
-    </div>
-  </div>
+  <Head titulo="Movimientos" sub="Todo lo que le has contado a TelMoney. Para corregir algo, díselo por WhatsApp." />
+
+  <form class="toolbar" method="get" action="/cuenta/movimientos">
+    <label class="search" for="q">
+      <Icon name="buscar" size={16} />
+      <input class="field" id="q" name="q" type="search" value={q} placeholder="Buscar: súper, Uber, BAC…" />
+    </label>
+    <select class="field" name="mes" aria-label="Mes" onchange="this.form.submit()">
+      <option value="">Todos los meses</option>
+      {meses.map((m) => <option value={m.v} selected={m.v === mes}>{m.l}</option>)}
+    </select>
+    <input type="hidden" name="tipo" value={tipo} />
+    <button class="btn-quiet" type="submit">Buscar</button>
+  </form>
+  <nav class="seg" aria-label="Tipo" style="margin-bottom: var(--s-4)">
+    <a href={link({ tipo: '' })} aria-current={!tipo ? 'true' : undefined}>Todo</a>
+    {
+      (Object.keys(TIPOS) as (keyof typeof TIPOS)[]).map((k) => (
+        <a href={link({ tipo: k })} aria-current={tipo === k ? 'true' : undefined}>
+          {TIPOS[k]}
+        </a>
+      ))
+    }
+  </nav>
+
   {!r.ok && <p class="flash flash--error">{r.detail}</p>}
+  {
+    r.ok && filtrando && lista.length > 0 && (
+      <p class="stat__note" style="margin-bottom: var(--s-3)">
+        {lista.length} movimientos · gastos <b>{usd(gastos)}</b> · ingresos <b>{usd(ingresos)}</b>
+        {filtrando && (
+          <>
+            {' '}
+            · <a href="/cuenta/movimientos">quitar filtros</a>
+          </>
+        )}
+      </p>
+    )
+  }
   {
     r.ok && (
       <div class="table-wrap">
@@ -49,7 +132,7 @@ const lista = r.ok ? (r.data?.movimientos ?? []) : [];
                 <td>{m.descripcion || KIND[m.tipo]}</td>
                 <td class="nowrap">{m.categoria ? `${m.emoji ?? ''} ${m.categoria}`.trim() : '—'}</td>
                 <td class="nowrap">{m.a_cuenta ? `${m.cuenta ?? 'afuera'} → ${m.a_cuenta}` : (m.cuenta ?? '—')}</td>
-                <td class:list={['r', { 'kind-income': m.tipo === 'income' }]}>
+                <td class:list={['r', 'nowrap', { 'kind-income': m.tipo === 'income' }]}>
                   {m.tipo === 'income' ? '+' : m.tipo === 'expense' ? '−' : ''}
                   {usd(m.monto)}
                 </td>
@@ -57,14 +140,26 @@ const lista = r.ok ? (r.data?.movimientos ?? []) : [];
             ))}
           </tbody>
         </table>
-        {!lista.length && <p class="empty">Todavía no anotas nada. Escríbele a TelMoney tu primer gasto.</p>}
+        {!lista.length && (
+          <p class="empty">
+            {filtrando ? (
+              <>
+                Nada coincide con esa búsqueda. <a href="/cuenta/movimientos">Ver todo</a>
+              </>
+            ) : (
+              'Todavía no anotas nada. Escríbele a TelMoney tu primer gasto.'
+            )}
+          </p>
+        )}
       </div>
     )
   }
   <div class="filters section">
-    {antes > 0 && <a class="btn-quiet" href="/cuenta/movimientos">← Los más recientes</a>}
-    {r.ok && r.data?.hay_mas && lista.length > 0 && (
-      <a class="btn-quiet" href={`/cuenta/movimientos?antes=${lista[lista.length - 1].id}`}>Anteriores →</a>
+    {antes > 0 && <a class="btn-quiet" href={link({ antes: '' })}>← Los más recientes</a>}
+    {r.ok && r.data?.hay_mas && todos.length > 0 && (
+      <a class="btn-quiet" href={link({ antes: String(todos[todos.length - 1].id) })}>Anteriores →</a>
     )}
   </div>
+
+  <Pide frases={['gasté 12 en el súper', 'borra el último', 'no eran 12, eran 15']} />
 </Cuenta>

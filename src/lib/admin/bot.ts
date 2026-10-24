@@ -176,3 +176,77 @@ export type Correo = {
   ultimo_correo: string | null;
   recibidos: Recibido[];
 };
+
+// ─────────────────────────────── módulos del panel de cuenta (telmoney-bot/docs/cuenta-web.md)
+// Mientras el bot no tenga una ruta, responde 404 «Not Found» y la página lo muestra como «pronto».
+
+/** cash · bank · card (tarjeta de crédito: saldo negativo = lo que debe) · savings · wallet */
+export type CuentaTipo = 'cash' | 'bank' | 'card' | 'savings' | 'wallet' | string;
+export type CuentaItem = {
+  id?: number;
+  nombre: string;
+  tipo: CuentaTipo;
+  saldo: number;
+  reservada?: boolean;
+  activa?: boolean;
+  limite?: number | null;
+  dia_corte?: number | null;
+  dia_pago?: number | null;
+  deuda?: number | null;
+};
+export type Deuda = {
+  id: number;
+  persona: string;
+  monto: number;
+  abonado: number;
+  pendiente: number;
+  vence: string | null;
+  creada: string;
+  contacto?: boolean;
+  descripcion?: string | null;
+};
+export type Deudas = { me_deben: Deuda[]; debo: Deuda[] };
+export type Meta = {
+  id?: number;
+  nombre: string;
+  meta: number;
+  actual: number;
+  fecha: string | null;
+  ritmo_semanal?: number | null;
+  cumplida?: boolean;
+};
+export type Limite = {
+  id: number;
+  periodo: 'semana' | 'mes';
+  categoria: string | null;
+  emoji?: string | null;
+  limite: number;
+  gastado: number;
+  desde?: string;
+  hasta?: string;
+};
+export type Fijo = {
+  id: number;
+  nombre: string;
+  monto: number | null;
+  dia: number;
+  proximo: string | null;
+  cuenta: string | null;
+  /** fijo · cuota · tarjeta (en las de tarjeta, `evento` dice si es el corte o el pago) */
+  tipo: string;
+  evento?: 'corte' | 'pago' | null;
+  cuotas_restantes?: number | null;
+};
+export type Puntaje = {
+  puntaje: number | null;
+  dia: string | null;
+  componentes: { clave: string; nombre: string; puntos: number; peso: number; detalle: string | null }[];
+  motivo_sin_datos: string | null;
+};
+export type Categoria = { id: number; nombre: string; emoji: string | null; tipo: string };
+
+/** El bot todavía no tiene esa ruta (FastAPI responde 404 «Not Found»). */
+export const pendiente = (r: BotOk<unknown> | BotError): r is BotError =>
+  !r.ok && r.status === 404 && /^not found$/i.test(r.detail.trim());
+/** 404 con su propio mensaje: la cuenta no tiene WhatsApp conectado. */
+export const sinVincular = (r: BotOk<unknown> | BotError): r is BotError => !r.ok && r.status === 404 && !pendiente(r);

@@ -1,0 +1,16 @@
+---
+// Encabezado de cada módulo: título, una línea de qué es y, a la derecha, lo que se puede hacer.
+interface Props {
+  titulo: string;
+  sub?: string;
+}
+const { titulo, sub } = Astro.props;
+---
+
+<div class="admin-head">
+  <div>
+    <h1>{titulo}</h1>
+    {sub && <p>{sub}</p>}
+  </div>
+  <slot />
+</div>

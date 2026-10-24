@@ -1,0 +1,106 @@
+---
+// Reportes: descargar el mes en Excel, CSV o PDF (los mismos que manda el bot por WhatsApp).
+// Las descargas pasan por /cuenta/reporte (el servidor de la web le pide el archivo al bot).
+import Cuenta from '../../layouts/Cuenta.astro';
+import Head from '../../components/cuenta/Head.astro';
+import Icon from '../../components/cuenta/Icon.astro';
+import Pide from '../../components/cuenta/Pide.astro';
+
+export const prerender = false;
+
+if (!Astro.locals.cuenta) return new Response('No autorizado', { status: 401 });
+
+// Los últimos 6 meses, en hora de El Salvador.
+const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/El_Salvador' }));
+const meses = Array.from({ length: 6 }, (_, i) => {
+  const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+  const v = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  const label = d.toLocaleDateString('es-SV', { month: 'long', year: 'numeric' });
+  return { v, label: label[0].toUpperCase() + label.slice(1) };
+});
+const FORMATOS = [
+  { f: 'xlsx', pro: true, titulo: 'Excel', texto: 'Todos tus movimientos y los totales por categoría.' },
+  { f: 'csv', pro: false, titulo: 'CSV', texto: 'Para Google Sheets o cualquier otra app.' },
+  { f: 'pdf', pro: true, titulo: 'PDF', texto: 'La gráfica del mes y tus movimientos, listo para imprimir.' },
+] as const;
+const fallo = Astro.url.searchParams.get('error');
+---
+
+<Cuenta title="Reportes" section="reportes">
+  <Head titulo="Reportes" sub="Llévate tus datos cuando quieras." />
+  {
+    fallo && (
+      <p class="flash flash--error">
+        {fallo === 'pronto'
+          ? 'Las descargas desde la web todavía no están listas. Mientras tanto, pídeselo por WhatsApp.'
+          : fallo}
+      </p>
+    )
+  }
+
+  <form class="card rep" method="get" action="/cuenta/reporte">
+    <label class="rep__mes" for="mes">
+      <span class="stat__label">Mes</span>
+      <select class="field" id="mes" name="mes">
+        {meses.map((m) => <option value={m.v}>{m.label}</option>)}
+      </select>
+    </label>
+    <div class="mod-grid">
+      {
+        FORMATOS.map((x) => (
+          <button class="rep__btn" type="submit" name="formato" value={x.f}>
+            <Icon name="descargar" size={20} />
+            <span>
+              <b>
+                {x.titulo} {x.pro && <span class="badge">Pro</span>}
+              </b>
+              <small>{x.texto}</small>
+            </span>
+          </button>
+        ))
+      }
+    </div>
+  </form>
+
+  <Pide frases={['excel', 'gráfica del mes', 'resumen del mes']} />
+</Cuenta>
+
+<style>
+  .rep {
+    display: grid;
+    gap: var(--s-4);
+  }
+  .rep__mes {
+    display: grid;
+    gap: var(--s-2);
+    max-width: 280px;
+  }
+  .rep__btn {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--s-3);
+    text-align: left;
+    padding: var(--s-4);
+    border-radius: var(--r-md);
+    border: 1px solid var(--hairline-strong);
+    background: var(--fill);
+    color: var(--text);
+    font: inherit;
+    cursor: pointer;
+  }
+  .rep__btn:hover {
+    background: var(--fill-strong);
+  }
+  .rep__btn .ico {
+    color: var(--accent);
+    margin-top: 2px;
+  }
+  .rep__btn span {
+    display: grid;
+    gap: 2px;
+  }
+  .rep__btn small {
+    color: var(--text-muted);
+    font-size: var(--fs-small);
+  }
+</style>

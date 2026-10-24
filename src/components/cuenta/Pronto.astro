@@ -1,0 +1,49 @@
+---
+// Un módulo que el bot todavía no comparte con la web: qué va a aparecer aquí y cómo hacerlo hoy por WhatsApp.
+import Icon from './Icon.astro';
+import Pide from './Pide.astro';
+
+interface Props {
+  icon: Parameters<typeof Icon>[0]['name'];
+  titulo: string;
+  texto: string;
+  frases: string[];
+}
+const { icon, titulo, texto, frases } = Astro.props;
+---
+
+<section class="card pronto">
+  <span class="pronto__ico"><Icon name={icon} size={22} /></span>
+  <h2>{titulo}</h2>
+  <p>{texto}</p>
+  <Pide frases={frases} label="Mientras tanto, pídeselo por WhatsApp:" />
+</section>
+
+<style>
+  .pronto {
+    display: grid;
+    justify-items: center;
+    text-align: center;
+    gap: var(--s-2);
+    padding-block: var(--s-7);
+  }
+  .pronto__ico {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border-radius: var(--r-md);
+    background: var(--fill-strong);
+    color: var(--accent);
+  }
+  .pronto h2 {
+    margin-top: var(--s-2);
+  }
+  .pronto p {
+    max-width: 46ch;
+    color: var(--text-muted);
+  }
+  .pronto :global(.ask) {
+    justify-content: center;
+  }
+</style>

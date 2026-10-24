@@ -1,0 +1,132 @@
+---
+// Cuentas y tarjetas: cuánto tiene en cada banco, billetera y efectivo, y cuánto debe en tarjetas.
+// Lee /me/cuentas; mientras el bot no la tenga, usa las cuentas del resumen (/me/resumen).
+import Cuenta from '../../layouts/Cuenta.astro';
+import Head from '../../components/cuenta/Head.astro';
+import Icon from '../../components/cuenta/Icon.astro';
+import Pide from '../../components/cuenta/Pide.astro';
+import { me, pendiente, sinVincular, type CuentaItem, type Resumen } from '../../lib/admin/bot';
+import { tokenOf } from '../../lib/cuenta/session';
+import { usd } from '../../lib/admin/format';
+
+export const prerender = false;
+
+if (!Astro.locals.cuenta) return new Response('No autorizado', { status: 401 });
+const token = await tokenOf(Astro.locals);
+if (!token) return Astro.redirect('/cuenta/salir');
+
+let r = await me<{ cuentas: CuentaItem[] }>('/me/cuentas', token);
+if (sinVincular(r)) return Astro.redirect('/cuenta');
+let cuentas: CuentaItem[] = r.ok ? (r.data?.cuentas ?? []) : [];
+let error = !r.ok && !pendiente(r) ? r.detail : '';
+if (pendiente(r)) {
+  const res = await me<Resumen>('/me/resumen?dias=30', token);
+  if (res.ok) cuentas = res.data.cuentas ?? [];
+  else error = res.detail;
+}
+cuentas = cuentas.filter((c) => c.activa !== false);
+
+const TIPO: Record<string, string> = {
+  cash: 'Efectivo',
+  bank: 'Banco',
+  savings: 'Ahorro',
+  wallet: 'Billetera',
+  card: 'Tarjeta de crédito',
+};
+const tarjetas = cuentas.filter((c) => c.tipo === 'card');
+const dinero = cuentas.filter((c) => c.tipo !== 'card');
+const libre = dinero.filter((c) => !c.reservada).reduce((s, c) => s + c.saldo, 0);
+const reservado = dinero.filter((c) => c.reservada).reduce((s, c) => s + c.saldo, 0);
+const deudaTarjetas = tarjetas.reduce((s, c) => s + (c.deuda ?? Math.max(0, -c.saldo)), 0);
+---
+
+<Cuenta title="Cuentas y tarjetas" section="cuentas">
+  <Head titulo="Cuentas y tarjetas" sub="Dónde está tu dinero hoy y cuánto debes en tus tarjetas." />
+  {error && <p class="flash flash--error">{error}</p>}
+
+  <div class="cards">
+    <div class="card">
+      <p class="stat__label">Para usar</p>
+      <p class="stat__value">{usd(libre)}</p>
+      <p class="stat__note">en {dinero.filter((c) => !c.reservada).length} cuentas</p>
+    </div>
+    <div class="card">
+      <p class="stat__label">Reservado 🔒</p>
+      <p class="stat__value">{usd(reservado)}</p>
+      <p class="stat__note">no cuenta para lo que puedes gastar al día</p>
+    </div>
+    <div class="card">
+      <p class="stat__label">Debes en tarjetas</p>
+      <p class="stat__value">{usd(deudaTarjetas)}</p>
+      <p class="stat__note">{tarjetas.length} {tarjetas.length === 1 ? 'tarjeta' : 'tarjetas'}</p>
+    </div>
+  </div>
+
+  <h2 class="section-title section">Tu dinero</h2>
+  {
+    dinero.length ? (
+      <div class="mod-grid" style="margin-top: var(--s-3)">
+        {dinero.map((c) => (
+          <article class="card tile">
+            <div class="tile__top">
+              <div>
+                <p class="tile__name">{c.nombre}</p>
+                <p class="tile__meta">{TIPO[c.tipo] ?? c.tipo}</p>
+              </div>
+              {c.reservada && (
+                <span class="badge" title="No cuenta para lo que puedes gastar al día">
+                  <Icon name="candado" size={12} /> Reservada
+                </span>
+              )}
+            </div>
+            <p class:list={['tile__amount', { 'tile__amount--neg': c.saldo < 0 }]}>{usd(c.saldo)}</p>
+          </article>
+        ))}
+      </div>
+    ) : (
+      <p class="card empty">Todavía no le dices a TelMoney cuánto tienes. Escríbele tus saldos y aparecen aquí.</p>
+    )
+  }
+
+  {
+    tarjetas.length > 0 && (
+      <>
+        <h2 class="section-title section">Tarjetas de crédito</h2>
+        <div class="mod-grid" style="margin-top: var(--s-3)">
+          {tarjetas.map((c) => {
+            const deuda = c.deuda ?? Math.max(0, -c.saldo);
+            const uso = c.limite ? Math.min(100, (deuda / c.limite) * 100) : null;
+            return (
+              <article class="card tile">
+                <div class="tile__top">
+                  <div>
+                    <p class="tile__name">{c.nombre}</p>
+                    <p class="tile__meta">
+                      {c.dia_corte ? `Corte el ${c.dia_corte}` : 'Tarjeta de crédito'}
+                      {c.dia_pago ? ` · paga el ${c.dia_pago}` : ''}
+                    </p>
+                  </div>
+                  {deuda === 0 && <span class="badge badge--accent">Al día</span>}
+                </div>
+                <p class:list={['tile__amount', { 'tile__amount--neg': deuda > 0 }]}>{usd(deuda)}</p>
+                {uso !== null && (
+                  <>
+                    <div class:list={['progress', { 'progress--warn': uso >= 50, 'progress--over': uso >= 90 }]}>
+                      <span style={`width:${uso.toFixed(1)}%`} />
+                    </div>
+                    <div class="row-split">
+                      <span>{Math.round(uso)}% usado</span>
+                      <span>límite {usd(c.limite!)}</span>
+                    </div>
+                  </>
+                )}
+              </article>
+            );
+          })}
+        </div>
+      </>
+    )
+  }
+
+  <Pide frases={['¿cuánto tengo en total?', 'en el BAC tengo 250', 'lo de Multimoney no se toca']} />
+</Cuenta>

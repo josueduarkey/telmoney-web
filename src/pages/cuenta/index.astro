@@ -180,7 +180,7 @@ const waHref = (msg: string) =>
 
             <div class="grid-2">
               <section class="card" aria-labelledby="t-cuentas">
-                <h2 id="t-cuentas" class="card__head">Tus cuentas</h2>
+                <div class="card__head"><h2 id="t-cuentas">Tus cuentas</h2><a class="card__sub" href="/cuenta/cuentas">Ver todas</a></div>
                 {(r.cuentas ?? []).length ? (
                   <table class="table table--card">
                     <tbody>
@@ -197,7 +197,7 @@ const waHref = (msg: string) =>
                 )}
               </section>
               <section class="card" aria-labelledby="t-metas">
-                <h2 id="t-metas" class="card__head">Tus metas</h2>
+                <div class="card__head"><h2 id="t-metas">Tus metas</h2><a class="card__sub" href="/cuenta/metas">Ver metas</a></div>
                 {(r.metas ?? []).length ? (
                   <ul class="hbars hbars--wide" role="list">
                     {(r.metas ?? []).map((m) => (

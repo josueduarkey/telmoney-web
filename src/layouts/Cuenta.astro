@@ -1,25 +1,66 @@
 ---
-// Marco de "Mi cuenta" (/cuenta): lo que cada persona ve de su TelMoney. Usa los estilos del panel
-// (admin.css) con su propio menú. Fuera de Google y sin caché (lo pone src/middleware.ts).
+// Marco de "Mi cuenta" (/cuenta): el otro medio para usar TelMoney, además de WhatsApp. Barra lateral
+// con los módulos (al estilo del sidebar de shadcn/ui); en el celular se abre como un panel desde la
+// izquierda. Usa los estilos del panel (admin.css) para tarjetas y tablas, y cuenta.css para el marco.
+// Fuera de Google y sin caché (lo pone src/middleware.ts).
 import '../styles/global.css';
 import '../styles/admin.css';
+import '../styles/cuenta.css';
 import Logo from '../components/Logo.astro';
 import ThemeToggle from '../components/ThemeToggle.astro';
+import Icon from '../components/cuenta/Icon.astro';
+import { WHATSAPP_NUMBER } from '../config';
+
+export type Seccion =
+  | 'resumen'
+  | 'movimientos'
+  | 'cuentas'
+  | 'deudas'
+  | 'metas'
+  | 'presupuesto'
+  | 'fijos'
+  | 'reportes'
+  | 'correo'
+  | 'plan';
 
 interface Props {
   title: string;
-  section?: 'resumen' | 'movimientos' | 'correo' | 'plan';
+  section?: Seccion;
   /** Sin menú (ej. mientras conecta su WhatsApp). */
   bare?: boolean;
 }
 const { title, section, bare = false } = Astro.props;
 
-const nav = [
-  { id: 'resumen', label: 'Resumen', href: '/cuenta' },
-  { id: 'movimientos', label: 'Movimientos', href: '/cuenta/movimientos' },
-  { id: 'correo', label: 'Correo', href: '/cuenta/correo' },
-  { id: 'plan', label: 'Mi plan', href: '/cuenta/plan' },
-] as const;
+type Item = { id: Seccion; label: string; href: string; icon: Parameters<typeof Icon>[0]['name'] };
+const groups: { label: string; items: Item[] }[] = [
+  {
+    label: 'General',
+    items: [
+      { id: 'resumen', label: 'Inicio', href: '/cuenta', icon: 'inicio' },
+      { id: 'movimientos', label: 'Movimientos', href: '/cuenta/movimientos', icon: 'movimientos' },
+    ],
+  },
+  {
+    label: 'Tu dinero',
+    items: [
+      { id: 'cuentas', label: 'Cuentas y tarjetas', href: '/cuenta/cuentas', icon: 'cuentas' },
+      { id: 'deudas', label: 'Deudas', href: '/cuenta/deudas', icon: 'deudas' },
+      { id: 'metas', label: 'Metas', href: '/cuenta/metas', icon: 'metas' },
+      { id: 'presupuesto', label: 'Presupuesto', href: '/cuenta/presupuesto', icon: 'presupuesto' },
+      { id: 'fijos', label: 'Gastos fijos', href: '/cuenta/fijos', icon: 'fijos' },
+    ],
+  },
+  {
+    label: 'Herramientas',
+    items: [
+      { id: 'reportes', label: 'Reportes', href: '/cuenta/reportes', icon: 'reportes' },
+      { id: 'correo', label: 'Correo del banco', href: '/cuenta/correo', icon: 'correo' },
+      { id: 'plan', label: 'Mi plan', href: '/cuenta/plan', icon: 'plan' },
+    ],
+  },
+];
+const current = groups.flatMap((g) => g.items).find((i) => i.id === section);
+const waHref = WHATSAPP_NUMBER ? `https://wa.me/${WHATSAPP_NUMBER}` : null;
 ---
 
 <!doctype html>
@@ -46,40 +87,113 @@ const nav = [
       })();
     </script>
   </head>
-  <body class="admin">
+  <body class:list={['admin', 'app', { 'app--bare': bare }]}>
     <a class="skip-link" href="#main">Saltar al contenido</a>
-    <header class="admin-top">
-      <div class="container admin-top__inner">
-        <a class="admin-top__brand" href="/" aria-label="TelMoney, inicio">
-          <Logo size={30} />
-        </a>
+
+    {
+      !bare && (
+        <aside class="sb" id="sb" aria-label="Menú de tu cuenta" data-sb>
+          <div class="sb__head">
+            <a class="sb__brand" href="/" aria-label="TelMoney, inicio">
+              <Logo size={28} />
+            </a>
+            <button class="sb__close" type="button" aria-label="Cerrar menú" data-sb-close>
+              <Icon name="cerrar" />
+            </button>
+          </div>
+
+          {waHref && (
+            <a class="sb__cta" href={waHref} target="_blank" rel="noopener">
+              <Icon name="mensaje" />
+              Anotar por WhatsApp
+            </a>
+          )}
+
+          <nav class="sb__nav">
+            {groups.map((g) => (
+              <div class="sb__group">
+                <p class="sb__label">{g.label}</p>
+                <ul role="list">
+                  {g.items.map((n) => (
+                    <li>
+                      <a href={n.href} aria-current={section === n.id ? 'page' : undefined}>
+                        <Icon name={n.icon} />
+                        <span>{n.label}</span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </nav>
+
+          <div class="sb__foot">
+            <ThemeToggle />
+            <form method="post" action="/cuenta/salir">
+              <button class="sb__out" type="submit">
+                <Icon name="salir" />
+                Salir
+              </button>
+            </form>
+          </div>
+        </aside>
+      )
+    }
+    {!bare && <div class="sb-scrim" data-sb-close hidden />}
+
+    <div class="app__body">
+      <header class="app-top">
         {
           !bare ? (
-            <nav class="admin-nav" aria-label="Mi cuenta">
-              {nav.map((n) => (
-                <a href={n.href} aria-current={section === n.id ? 'page' : undefined}>
-                  {n.label}
-                </a>
-              ))}
-            </nav>
+            <button class="app-top__menu" type="button" aria-label="Abrir menú" aria-controls="sb" aria-expanded="false" data-sb-open>
+              <Icon name="menu" size={20} />
+            </button>
           ) : (
-            <span class="admin-nav" />
+            <a class="sb__brand" href="/" aria-label="TelMoney, inicio">
+              <Logo size={28} />
+            </a>
           )
         }
-        <div class="admin-top__who">
-          <ThemeToggle />
-          <form method="post" action="/cuenta/salir">
-            <button class="btn-quiet" type="submit">Salir</button>
-          </form>
-        </div>
-      </div>
-    </header>
-    <main id="main" class="admin-main container">
-      <slot />
-    </main>
+        <p class="app-top__title">{current?.label ?? title}</p>
+        {
+          bare && (
+            <div class="app-top__end">
+              <ThemeToggle />
+              <form method="post" action="/cuenta/salir">
+                <button class="btn-quiet" type="submit">
+                  Salir
+                </button>
+              </form>
+            </div>
+          )
+        }
+      </header>
+      <main id="main" class="app-main">
+        <slot />
+      </main>
+    </div>
 
     <div class="tip" role="tooltip" hidden data-tip-box></div>
     <script>
+      // Menú en el celular: se abre desde la izquierda, se cierra con la X, tocando fuera o con Escape.
+      const sb = document.querySelector<HTMLElement>('[data-sb]');
+      const scrim = document.querySelector<HTMLElement>('.sb-scrim');
+      const opener = document.querySelector<HTMLButtonElement>('[data-sb-open]');
+      const setOpen = (open: boolean) => {
+        if (!sb || !scrim || !opener) return;
+        sb.classList.toggle('is-open', open);
+        scrim.hidden = !open;
+        opener.setAttribute('aria-expanded', String(open));
+        document.body.classList.toggle('sb-locked', open);
+        if (open) sb.querySelector<HTMLElement>('[aria-current="page"], a')?.focus();
+        else opener.focus();
+      };
+      opener?.addEventListener('click', () => setOpen(true));
+      document.querySelectorAll('[data-sb-close]').forEach((el) => el.addEventListener('click', () => setOpen(false)));
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && sb?.classList.contains('is-open')) setOpen(false);
+      });
+
       // Tooltip de las gráficas (igual que en el panel): primera línea en negrita, texto con textContent.
       const box = document.querySelector<HTMLElement>('[data-tip-box]')!;
       const show = (el: Element, x: number, y: number) => {
