@@ -7,6 +7,7 @@ import { defineMiddleware } from 'astro:middleware';
 import { clerkMiddleware } from '@clerk/astro/server';
 import { adminEmailOf, clerkApi, clerkKeys } from './lib/admin/clerk';
 import { adminDb } from './lib/db';
+import { avisar } from './lib/cuenta/pagina';
 
 const zone = (path: string) =>
   path === '/admin' || path.startsWith('/admin/')
@@ -28,7 +29,16 @@ const gate =
         // Salir siempre se puede, aunque la cuenta no tenga acceso (así se cambia de cuenta);
         // sin sesión no hay nada que cerrar: al inicio.
         if (SALIR.has(context.url.pathname)) return userId ? next() : context.redirect('/', 303);
-        if (!userId || !sessionId) return redirectToSignIn();
+        if (!userId || !sessionId) {
+          // Un formulario de /cuenta que llega con la sesión vencida (dura un minuto y en un POST Clerk no
+          // la puede renovar): de vuelta a la misma página, que al abrirse sí la renueva. Si de verdad
+          // salió, esa visita lo manda a /entrar.
+          if (context.request.method === 'POST' && zone(context.url.pathname) === 'cuenta') {
+            avisar(context.cookies, { tipo: 'error', texto: 'No se guardó porque tu sesión se renovó. Inténtalo otra vez.' });
+            return context.redirect(context.url.pathname + context.url.search, 303);
+          }
+          return redirectToSignIn();
+        }
 
         if (zone(context.url.pathname) === 'cuenta') {
           context.locals.cuenta = { userId, sessionId };

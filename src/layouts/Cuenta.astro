@@ -11,6 +11,7 @@ import ThemeToggle from '../components/ThemeToggle.astro';
 import Icon from '../components/cuenta/Icon.astro';
 import { WHATSAPP_NUMBER } from '../config';
 import { esAdmin } from '../lib/admin/clerk';
+import { NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, PUBLIC_CLERK_PUBLISHABLE_KEY } from 'astro:env/server';
 
 export type Seccion =
   | 'resumen'
@@ -34,6 +35,8 @@ interface Props {
   bare?: boolean;
 }
 const { title, section, bare = false } = Astro.props;
+// Para que el navegador renueve la sesión (script de abajo). La llave publicable no es secreta.
+const clerkKey = PUBLIC_CLERK_PUBLISHABLE_KEY || NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || '';
 
 type Item = { id: Seccion; label: string; href: string; icon: Parameters<typeof Icon>[0]['name'] };
 const groups: { label: string; items: Item[] }[] = [
@@ -96,7 +99,7 @@ const equipo = !bare && Astro.locals.cuenta ? await esAdmin(Astro.locals.cuenta.
       })();
     </script>
   </head>
-  <body class:list={['admin', 'app', { 'app--bare': bare }]}>
+  <body class:list={['admin', 'app', { 'app--bare': bare }]} data-clerk-key={clerkKey}>
     <a class="skip-link" href="#main">Saltar al contenido</a>
 
     {
@@ -251,10 +254,50 @@ const equipo = !bare && Astro.locals.cuenta ? await esAdmin(Astro.locals.cuenta.
         if (t.closest('[data-ask]')) return void t.closest('form')?.querySelector('[data-confirm]')?.removeAttribute('hidden');
         if (t instanceof HTMLDialogElement) t.close(); // tocar el fondo
       });
-      // Mientras se manda, el botón no se puede volver a tocar.
+      // La sesión de Clerk (cookie __session) dura un minuto. Al abrir una página el servidor la renueva
+      // con una redirección, pero al mandar un formulario (POST) no puede: si la persona tardó más de un
+      // minuto en llenarlo, llegaba «sin sesión» y se iba a /entrar sin guardar. Por eso aquí se carga
+      // Clerk (sin su interfaz), que la mantiene al día, y antes de mandar cada formulario se renueva.
+      type ClerkSesion = { load(): Promise<void>; session?: { getToken(o?: { skipCache?: boolean }): Promise<string | null> } | null };
+      const clerkKey = document.body.dataset.clerkKey ?? '';
+      const clerkListo: Promise<ClerkSesion | null> = clerkKey
+        ? import('@clerk/shared/loadClerkJsScript')
+            .then(({ loadClerkJSScript }) => loadClerkJSScript({ publishableKey: clerkKey }))
+            .then(async () => {
+              const c = (window as unknown as { Clerk: ClerkSesion }).Clerk;
+              await c.load();
+              return c;
+            })
+            .catch(() => null)
+        : Promise.resolve(null);
+      const renovar = async () => {
+        const espera = new Promise<null>((r) => setTimeout(() => r(null), 5000));
+        try {
+          const c = await Promise.race([clerkListo, espera]);
+          await Promise.race([c?.session?.getToken({ skipCache: true }), espera]);
+        } catch {}
+      };
+      const renovados = new WeakSet<HTMLFormElement>();
       document.addEventListener('submit', (e) => {
+        const form = e.target as HTMLFormElement;
         const btn = (e as SubmitEvent).submitter as HTMLButtonElement | null;
-        if (btn) setTimeout(() => (btn.disabled = true));
+        if (form.method.toLowerCase() !== 'post') return; // los filtros (GET) no lo necesitan
+        if (renovados.has(form)) {
+          // Ya con la sesión al día: se manda, y el botón no se puede volver a tocar.
+          renovados.delete(form);
+          if (btn) setTimeout(() => (btn.disabled = true));
+          return;
+        }
+        e.preventDefault();
+        if (form.dataset.enviando) return;
+        form.dataset.enviando = '1';
+        btn?.setAttribute('aria-busy', 'true');
+        void renovar().then(() => {
+          delete form.dataset.enviando;
+          renovados.add(form);
+          // requestSubmit con el mismo botón: así va su `accion` (p. ej. «Sí, borrar»).
+          form.requestSubmit(btn && btn.form === form ? btn : undefined);
+        });
       });
 
       // Tooltip de las gráficas (igual que en el panel): primera línea en negrita, texto con textContent.
