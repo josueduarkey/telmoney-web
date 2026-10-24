@@ -559,3 +559,81 @@
 .sb__admin + .sb__foot {
   margin-top: 0;
 }
+
+/* ── Lienzo y tarjetas: el fondo gris suave y las tarjetas blancas encima, con borde fino, una sombra
+   que apenas se nota y un brillo verde muy tenue arriba (en oscuro, al revés: tarjetas un poco más
+   claras que el fondo). ── */
+.app {
+  --page-bg: var(--bg-alt);
+  --card-bg: var(--bg);
+  --card-glow: color-mix(in srgb, var(--accent) 7%, transparent);
+  --card-shadow: 0 1px 2px rgb(16 24 20 / 0.05), 0 12px 32px -18px rgb(16 24 20 / 0.22);
+  background: var(--page-bg);
+}
+:root[data-theme='dark'] .app {
+  --page-bg: #040705;
+  --card-bg: #0c1310;
+  --card-glow: color-mix(in srgb, var(--accent) 9%, transparent);
+  --card-shadow: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 16px 40px -24px rgb(0 0 0 / 0.9);
+}
+.app .sb {
+  background: var(--card-bg);
+}
+.app .app-top {
+  background: color-mix(in srgb, var(--page-bg) 85%, transparent);
+}
+.app .card {
+  background:
+    radial-gradient(120% 70% at 0% 0%, var(--card-glow), transparent 55%),
+    var(--card-bg);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--card-shadow);
+}
+.app .table-wrap {
+  background: var(--card-bg);
+  border-color: var(--hairline);
+  box-shadow: var(--card-shadow);
+}
+.app .stat__value {
+  letter-spacing: -0.035em;
+}
+
+/* Los select con su flecha propia, separada del borde */
+.app select.field {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 40px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23889590' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px;
+  cursor: pointer;
+}
+.app select.field option {
+  background: var(--card-bg);
+  color: var(--text);
+}
+
+/* En las ventanas, los campos de una fila alineados por abajo aunque una etiqueta tenga nota */
+.fld-row {
+  align-items: end;
+}
+.fld small {
+  display: inline;
+}
+.dlg {
+  background: var(--card-bg, var(--bg));
+}
+
+/* Tarjetas de una misma fila, del mismo alto; los botones siempre abajo */
+.mod-grid {
+  align-items: stretch;
+}
+.tile {
+  display: flex;
+  flex-direction: column;
+}
+.tile > .acts {
+  margin-top: auto;
+  padding-top: var(--s-1);
+}

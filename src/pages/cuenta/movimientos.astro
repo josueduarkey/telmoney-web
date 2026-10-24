@@ -8,19 +8,20 @@ import Head from '../../components/cuenta/Head.astro';
 import Icon from '../../components/cuenta/Icon.astro';
 import Flash from '../../components/cuenta/Flash.astro';
 import Dialog from '../../components/cuenta/Dialog.astro';
+import CatIcon from '../../components/cuenta/CatIcon.astro';
 import Pide from '../../components/cuenta/Pide.astro';
-import { me, sinVincular, type Categoria, type CuentaItem, type Movimiento } from '../../lib/admin/bot';
+import { me, sinVincular, type Movimiento } from '../../lib/admin/bot';
 import { dinero, ejecutar, idDe, texto } from '../../lib/cuenta/acciones';
-import { tokenOf } from '../../lib/cuenta/session';
+import { cap, opciones, sesion } from '../../lib/cuenta/pagina';
 import { dateTime, usd } from '../../lib/admin/format';
 
 export const prerender = false;
 
 const TZ = 'America/El_Salvador';
 
-if (!Astro.locals.cuenta) return new Response('No autorizado', { status: 401 });
-const token = await tokenOf(Astro.locals);
-if (!token) return Astro.redirect('/cuenta/salir');
+const ses = await sesion(Astro);
+if ('salir' in ses) return ses.salir;
+const { token } = ses;
 
 if (Astro.request.method === 'POST') {
   return ejecutar(Astro, token, (accion, f) => {
@@ -41,7 +42,9 @@ if (Astro.request.method === 'POST') {
     if (accion === 'editar' && id) {
       // Una transferencia no cambia de tipo ni de categoría.
       const esTransfer = tipoF === 'transfer';
-      const body = { monto, descripcion: descripcion ?? '', fecha, cuenta_id: num('cuenta_id'), ...(esTransfer ? { a_cuenta_id: num('a_cuenta_id') } : { tipo: tipoF, categoria_id: num('categoria_id') }) };
+      // La fecha solo si la cambió: mandarla igual movería la hora del movimiento.
+      const fechaNueva = fecha && fecha !== texto(f.get('fecha_antes')) ? fecha : undefined;
+      const body = { monto, descripcion: descripcion ?? '', fecha: fechaNueva, cuenta_id: num('cuenta_id'), ...(esTransfer ? { a_cuenta_id: num('a_cuenta_id') } : { tipo: tipoF, categoria_id: num('categoria_id') }) };
       return { path: `/me/movimientos/${id}`, method: 'PATCH', body, ok: 'Movimiento corregido.' };
     }
     return 'Acción no válida.';
@@ -67,15 +70,12 @@ if (tipo) params.set('tipo', tipo);
 if (mes) Object.entries(rango(mes)).forEach(([k, v]) => params.set(k, v));
 if (q) params.set('q', q);
 
-const [r, rcat, rcue] = await Promise.all([
+const [r, ops] = await Promise.all([
   me<{ movimientos: Movimiento[]; hay_mas: boolean }>(`/me/movimientos?${params}`, token),
-  me<{ categorias: Categoria[] }>('/me/categorias', token),
-  me<{ cuentas: CuentaItem[] }>('/me/cuentas', token),
+  opciones(token),
 ]);
 // Editar necesita las categorías y las cuentas (fase 2 del bot); sin ellas, la lista sigue igual.
-const categorias = rcat.ok ? (rcat.data?.categorias ?? []) : [];
-const cuentasSel = rcue.ok ? (rcue.data?.cuentas ?? []).filter((c) => c.activa !== false && c.id) : [];
-const editable = rcat.ok && rcue.ok;
+const { categorias, cuentas: cuentasSel, ok: editable } = ops;
 const hoyIso = new Date().toLocaleDateString('en-CA', { timeZone: TZ });
 const valores = (m: Movimiento) =>
   JSON.stringify({
@@ -87,6 +87,7 @@ const valores = (m: Movimiento) =>
     cuenta_id: m.id_cuenta ?? '',
     a_cuenta_id: m.id_a_cuenta ?? '',
     fecha: new Date(m.fecha).toLocaleDateString('en-CA', { timeZone: TZ }),
+    fecha_antes: new Date(m.fecha).toLocaleDateString('en-CA', { timeZone: TZ }),
   });
 if (sinVincular(r)) return Astro.redirect('/cuenta');
 
@@ -190,7 +191,16 @@ const KIND = { expense: 'Gasto', income: 'Ingreso', transfer: 'Transferencia' } 
               <tr>
                 <td class="nowrap muted">{dateTime(m.fecha)}</td>
                 <td>{m.descripcion || KIND[m.tipo]}</td>
-                <td class="nowrap">{m.categoria ? `${m.emoji ?? ''} ${m.categoria}`.trim() : '—'}</td>
+                <td class="nowrap">
+                  {m.categoria ? (
+                    <span class="cat-name">
+                      <CatIcon name={m.categoria} emoji={m.emoji} />
+                      {cap(m.categoria)}
+                    </span>
+                  ) : (
+                    '—'
+                  )}
+                </td>
                 <td class="nowrap">{m.a_cuenta ? `${m.cuenta ?? 'afuera'} → ${m.a_cuenta}` : (m.cuenta ?? '—')}</td>
                 <td class:list={['r', 'nowrap', { 'kind-income': m.tipo === 'income' }]}>
                   {m.tipo === 'income' ? '+' : m.tipo === 'expense' ? '−' : ''}
@@ -233,6 +243,7 @@ const KIND = { expense: 'Gasto', income: 'Ingreso', transfer: 'Transferencia' } 
   {
     editable && (
       <Dialog id="dlg-mov" titulo="Anotar movimiento" accion="crear" borrar={{ accion: 'borrar', texto: 'Se borra este movimiento y tus saldos vuelven a como estaban.' }}>
+        <input type="hidden" name="fecha_antes" />
         <div class="fld-row">
           <label class="fld">
             Qué es
@@ -257,7 +268,7 @@ const KIND = { expense: 'Gasto', income: 'Ingreso', transfer: 'Transferencia' } 
             <option value="">Que la elija TelMoney</option>
             {categorias.map((c) => (
               <option value={c.id} data-cat-tipo={c.tipo}>
-                {`${c.emoji ?? ''} ${c.nombre}`.trim()}
+                {cap(c.nombre)}
               </option>
             ))}
           </select>

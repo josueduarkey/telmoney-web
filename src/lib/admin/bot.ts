@@ -240,6 +240,8 @@ export type Fijo = {
   tipo: string;
   evento?: 'corte' | 'pago' | null;
   cuotas_restantes?: number | null;
+  id_cuenta?: number | null;
+  id_categoria?: number | null;
 };
 export type Puntaje = {
   puntaje: number | null;

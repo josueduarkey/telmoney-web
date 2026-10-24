@@ -1,9 +1,11 @@
 // Lo que se edita desde el panel de cuenta: cada formulario hace POST a su propia página con un campo
 // `accion`; la página arma la llamada al bot (/me, fase 2 en telmoney-bot/docs/cuenta-web.md) y vuelve a
-// la misma página con ?ok=… o ?error=… (POST → 303 → GET: recargar no repite la acción).
+// la misma página con el resultado en un aviso (lib/cuenta/pagina.ts: avisar). POST → 303 → GET: recargar
+// no repite la acción.
 // Astro revisa el Origin de cada POST (security.checkOrigin), así que otro sitio no puede mandarlos.
 import type { AstroGlobal } from 'astro';
 import { me } from '../admin/bot';
+import { avisar } from './pagina';
 
 export type Llamada = { path: string; method: 'POST' | 'PATCH' | 'PUT' | 'DELETE'; body?: unknown; ok: string };
 /** Una llamada al bot, o el texto del error si el formulario no sirve. */
@@ -35,16 +37,15 @@ export async function ejecutar(
   const f = await Astro.request.formData();
   // El botón que se tocó va al final (p. ej. «Sí, borrar»); si no, la acción del campo oculto.
   const plan = planear(texto(f.getAll('accion').at(-1) ?? null), f);
-  const vuelta = new URL(Astro.url);
-  vuelta.searchParams.delete('ok');
-  vuelta.searchParams.delete('error');
   if (typeof plan === 'string') {
-    vuelta.searchParams.set('error', plan);
+    avisar(Astro.cookies, { tipo: 'error', texto: plan });
   } else {
     const r = await me(plan.path, token, { method: plan.method, body: plan.body });
-    if (r.ok) vuelta.searchParams.set('ok', plan.ok);
-    else if (r.status === 404 && /^not found$/i.test(r.detail)) vuelta.searchParams.set('error', 'Esto todavía no se puede hacer desde la web. Pídeselo por WhatsApp.');
-    else vuelta.searchParams.set('error', r.detail);
+    if (r.ok) avisar(Astro.cookies, { tipo: 'ok', texto: plan.ok });
+    else if (r.status === 404 && /^not found$/i.test(r.detail))
+      avisar(Astro.cookies, { tipo: 'error', texto: 'Esto todavía no se puede hacer desde la web. Pídeselo por WhatsApp.' });
+    else avisar(Astro.cookies, { tipo: 'error', texto: r.detail });
   }
-  return Astro.redirect(`${vuelta.pathname}${vuelta.search}`, 303);
+  // Vuelve a la misma página, con sus filtros.
+  return Astro.redirect(`${Astro.url.pathname}${Astro.url.search}`, 303);
 }

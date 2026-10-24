@@ -6,14 +6,14 @@ import Head from '../../components/cuenta/Head.astro';
 import Flash from '../../components/cuenta/Flash.astro';
 import Pronto from '../../components/cuenta/Pronto.astro';
 import { me, pendiente, sinVincular, type Perfil } from '../../lib/admin/bot';
-import { tokenOf } from '../../lib/cuenta/session';
+import { sesion } from '../../lib/cuenta/pagina';
 import { dinero, ejecutar, entero, texto } from '../../lib/cuenta/acciones';
 
 export const prerender = false;
 
-if (!Astro.locals.cuenta) return new Response('No autorizado', { status: 401 });
-const token = await tokenOf(Astro.locals);
-if (!token) return Astro.redirect('/cuenta/salir');
+const ses = await sesion(Astro);
+if ('salir' in ses) return ses.salir;
+const { token } = ses;
 
 const HORARIOS = {
   quincena: 'Cada quincena (el 15 y el último día)',
@@ -48,10 +48,11 @@ if (Astro.request.method === 'POST') {
     if (pct !== null && (pct < 1 || pct > 90)) return 'El % de ahorro va de 1 a 90.';
     const body = {
       nombre: texto(f.get('nombre')).slice(0, 40) || undefined,
-      ingreso_mensual: ingreso,
+      // Vacío = no se cambia (el bot no acepta borrarlos).
+      ingreso_mensual: ingreso ?? undefined,
       horario_pago: horario,
       dias_pago,
-      pct_ahorro: pct,
+      pct_ahorro: pct ?? undefined,
     };
     return { path: '/me/perfil', method: 'PATCH', body, ok: 'Listo. TelMoney recalculó cuánto puedes gastar al día.' };
   });

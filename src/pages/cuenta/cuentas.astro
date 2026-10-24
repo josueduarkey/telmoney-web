@@ -9,15 +9,15 @@ import Dialog from '../../components/cuenta/Dialog.astro';
 import Icon from '../../components/cuenta/Icon.astro';
 import Pide from '../../components/cuenta/Pide.astro';
 import { me, pendiente, sinVincular, type CuentaItem, type Resumen } from '../../lib/admin/bot';
-import { tokenOf } from '../../lib/cuenta/session';
+import { sesion } from '../../lib/cuenta/pagina';
 import { dinero, ejecutar, idDe, texto } from '../../lib/cuenta/acciones';
 import { usd } from '../../lib/admin/format';
 
 export const prerender = false;
 
-if (!Astro.locals.cuenta) return new Response('No autorizado', { status: 401 });
-const token = await tokenOf(Astro.locals);
-if (!token) return Astro.redirect('/cuenta/salir');
+const ses = await sesion(Astro);
+if ('salir' in ses) return ses.salir;
+const { token } = ses;
 
 const TIPO: Record<string, string> = {
   cash: 'Efectivo',
@@ -94,7 +94,7 @@ const valores = (c: CuentaItem) => JSON.stringify({ id: c.id, nombre: c.nombre, 
       <p class="stat__note">en {dinero_.filter((c) => !c.reservada).length} cuentas</p>
     </div>
     <div class="card">
-      <p class="stat__label">Reservado 🔒</p>
+      <p class="stat__label cat-name"><Icon name="candado" size={14} /> Reservado</p>
       <p class="stat__value">{usd(reservado)}</p>
       <p class="stat__note">no cuenta para lo que puedes gastar al día</p>
     </div>
@@ -219,7 +219,7 @@ const valores = (c: CuentaItem) => JSON.stringify({ id: c.id, nombre: c.nombre, 
             <input class="field" name="saldo" inputmode="decimal" />
           </label>
           <label class="check">
-            <input type="checkbox" name="reservada" /> 🔒 Reservada: no cuenta para lo que puedo gastar al día
+            <input type="checkbox" name="reservada" /> Reservada: no cuenta para lo que puedo gastar al día
           </label>
         </Dialog>
       </>

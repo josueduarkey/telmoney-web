@@ -8,16 +8,17 @@ import Dialog from '../../components/cuenta/Dialog.astro';
 import Icon from '../../components/cuenta/Icon.astro';
 import Pronto from '../../components/cuenta/Pronto.astro';
 import Pide from '../../components/cuenta/Pide.astro';
-import { me, pendiente, sinVincular, type Categoria, type Limite } from '../../lib/admin/bot';
-import { tokenOf } from '../../lib/cuenta/session';
+import CatIcon from '../../components/cuenta/CatIcon.astro';
+import { me, pendiente, sinVincular, type Limite } from '../../lib/admin/bot';
+import { cap, opciones, sesion } from '../../lib/cuenta/pagina';
 import { dinero, ejecutar, idDe, texto } from '../../lib/cuenta/acciones';
 import { usd } from '../../lib/admin/format';
 
 export const prerender = false;
 
-if (!Astro.locals.cuenta) return new Response('No autorizado', { status: 401 });
-const token = await tokenOf(Astro.locals);
-if (!token) return Astro.redirect('/cuenta/salir');
+const ses = await sesion(Astro);
+if ('salir' in ses) return ses.salir;
+const { token } = ses;
 
 if (Astro.request.method === 'POST') {
   return ejecutar(Astro, token, (accion, f) => {
@@ -35,13 +36,10 @@ if (Astro.request.method === 'POST') {
   });
 }
 
-const [r, rc] = await Promise.all([
-  me<{ limites: Limite[] }>('/me/limites', token),
-  me<{ categorias: Categoria[] }>('/me/categorias', token),
-]);
+const [r, ops] = await Promise.all([me<{ limites: Limite[] }>('/me/limites', token), opciones(token, { cuentas: false })]);
 if (sinVincular(r)) return Astro.redirect('/cuenta');
 const limites = r.ok ? (r.data?.limites ?? []) : [];
-const categorias = rc.ok ? (rc.data?.categorias ?? []).filter((c) => c.tipo !== 'income') : [];
+const categorias = ops.categorias.filter((c) => c.tipo !== 'income');
 const PERIODO = { semana: 'esta semana', mes: 'este mes' } as const;
 ---
 
@@ -81,9 +79,9 @@ const PERIODO = { semana: 'esta semana', mes: 'este mes' } as const;
               <article class="card tile">
                 <div class="tile__top">
                   <div>
-                    <p class="tile__name">
-                      {l.emoji ? `${l.emoji} ` : ''}
-                      {l.categoria ?? 'Todo lo que gastas'}
+                    <p class="tile__name cat-name">
+                      {l.categoria ? <CatIcon name={l.categoria} emoji={l.emoji} size="md" /> : <CatIcon name="todo" size="md" />}
+                      {l.categoria ? cap(l.categoria) : 'Todo lo que gastas'}
                     </p>
                     <p class="tile__meta">Límite de {usd(l.limite)} {PERIODO[l.periodo] ?? ''}</p>
                   </div>
@@ -134,7 +132,7 @@ const PERIODO = { semana: 'esta semana', mes: 'este mes' } as const;
           En qué
           <select class="field" name="categoria_id">
             <option value="">Todo lo que gasto</option>
-            {categorias.map((c) => <option value={c.id}>{`${c.emoji ?? ''} ${c.nombre}`.trim()}</option>)}
+            {categorias.map((c) => <option value={c.id}>{cap(c.nombre)}</option>)}
           </select>
         </label>
       </Dialog>

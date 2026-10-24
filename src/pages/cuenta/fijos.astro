@@ -1,32 +1,88 @@
 ---
-// Gastos fijos: lo que paga cada mes (alquiler, cuotas, suscripciones, tarjetas) y cuándo toca. Lee /me/fijos.
+// Gastos fijos: lo que paga cada mes (alquiler, cuotas, suscripciones, tarjetas) y cuándo toca;
+// agregar, editar, quitar y marcar «ya pagué». Lee /me/fijos. Los de tarjeta (corte y pago) salen de
+// la tarjeta: aquí solo se ven.
 import Cuenta from '../../layouts/Cuenta.astro';
 import Head from '../../components/cuenta/Head.astro';
+import Flash from '../../components/cuenta/Flash.astro';
+import Dialog from '../../components/cuenta/Dialog.astro';
+import Icon from '../../components/cuenta/Icon.astro';
+import CatIcon from '../../components/cuenta/CatIcon.astro';
 import Pronto from '../../components/cuenta/Pronto.astro';
 import Pide from '../../components/cuenta/Pide.astro';
 import { me, pendiente, sinVincular, type Fijo } from '../../lib/admin/bot';
-import { tokenOf } from '../../lib/cuenta/session';
+import { cap, opciones, sesion } from '../../lib/cuenta/pagina';
+import { dinero, ejecutar, entero, idDe, texto } from '../../lib/cuenta/acciones';
 import { date, usd } from '../../lib/admin/format';
 
 export const prerender = false;
 
-if (!Astro.locals.cuenta) return new Response('No autorizado', { status: 401 });
-const token = await tokenOf(Astro.locals);
-if (!token) return Astro.redirect('/cuenta/salir');
+const ses = await sesion(Astro);
+if ('salir' in ses) return ses.salir;
+const { token } = ses;
 
-const r = await me<{ fijos: Fijo[] }>('/me/fijos', token);
+if (Astro.request.method === 'POST') {
+  return ejecutar(Astro, token, (accion, f) => {
+    const id = idDe(f.get('id'));
+    const num = (k: string) => (idDe(f.get(k)) ? Number(f.get(k)) : undefined);
+    if (accion === 'crear' || accion === 'editar') {
+      const nombre = texto(f.get('nombre')).slice(0, 40);
+      const tipo = texto(f.get('tipo')) === 'cuota' ? 'cuota' : 'fijo';
+      const montoTxt = texto(f.get('monto'));
+      const monto = montoTxt ? dinero(montoTxt) : null;
+      const dia = entero(f.get('dia'));
+      const cuotas = tipo === 'cuota' ? entero(f.get('cuotas_restantes')) : null;
+      if (!nombre) return 'Escribe qué pagas (alquiler, Netflix, cuota del carro…).';
+      if (montoTxt && (!monto || monto <= 0)) return 'El monto tiene que ser mayor que cero.';
+      if (!dia || dia < 1 || dia > 31) return 'Elige el día del mes en que lo pagas.';
+      if (tipo === 'cuota' && (cuotas === null || cuotas < 1)) return 'Escribe cuántas cuotas te faltan.';
+      if (accion === 'crear') {
+        const body = { nombre, monto: monto ?? undefined, dia, tipo, cuotas_restantes: cuotas ?? undefined, cuenta_id: num('cuenta_id'), categoria_id: num('categoria_id') };
+        return { path: '/me/fijos', method: 'POST', body, ok: `Listo: «${nombre}» el ${dia} de cada mes. Te aviso un día antes.` };
+      }
+      if (!id) return 'No encontramos ese pago.';
+      // Al editar, el tipo no cambia; vacío = quitarlo (monto variable, la cuenta y la categoría de siempre).
+      const body = { nombre, monto, dia, cuotas_restantes: cuotas ?? undefined, cuenta_id: num('cuenta_id') ?? null, categoria_id: num('categoria_id') ?? null };
+      return { path: `/me/fijos/${id}`, method: 'PATCH', body, ok: 'Pago fijo actualizado.' };
+    }
+    if (!id) return 'No encontramos ese pago.';
+    if (accion === 'borrar') return { path: `/me/fijos/${id}`, method: 'DELETE', ok: 'Ya no te lo recuerdo.' };
+    if (accion === 'pagado') {
+      const montoTxt = texto(f.get('monto'));
+      const monto = montoTxt ? dinero(montoTxt) : undefined;
+      if (montoTxt && (!monto || monto <= 0)) return 'El monto tiene que ser mayor que cero.';
+      return { path: `/me/fijos/${id}/pagado`, method: 'POST', body: { cuenta_id: num('cuenta_id'), monto }, ok: 'Anotado como pagado.' };
+    }
+    return 'Acción no válida.';
+  });
+}
+
+const [r, ops] = await Promise.all([me<{ fijos: Fijo[] }>('/me/fijos', token), opciones(token)]);
+// Los gastos fijos son de Pro (como por WhatsApp): el bot responde 403.
+const soloPro = !r.ok && r.status === 403;
 if (sinVincular(r)) return Astro.redirect('/cuenta');
 const fijos = (r.ok ? (r.data?.fijos ?? []) : []).slice().sort((a, b) => (a.proximo ?? '9').localeCompare(b.proximo ?? '9'));
+const categorias = ops.categorias.filter((c) => c.tipo !== 'income');
+const { cuentas } = ops;
 // Lo que sale cada mes: fijos y cuotas. El pago de la tarjeta es lo que debe hoy, no un gasto fijo.
 const alMes = fijos.filter((f) => f.tipo !== 'tarjeta').reduce((s, f) => s + (f.monto ?? 0), 0);
+const TIPO: Record<string, string> = { fijo: 'Gasto fijo', cuota: 'Cuota' };
 const etiqueta = (f: Fijo) =>
   f.tipo === 'tarjeta' ? (f.evento === 'corte' ? 'Corte de tarjeta' : 'Pago de tarjeta') : (TIPO[f.tipo] ?? f.tipo);
-const TIPO: Record<string, string> = { fijo: 'Gasto fijo', cuota: 'Cuota' };
 const dias = (iso: string | null) => (iso ? Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000) : null);
 ---
 
 <Cuenta title="Gastos fijos" section="fijos">
-  <Head titulo="Gastos fijos" sub="Lo que pagas cada mes y cuándo te toca. TelMoney te avisa un día antes." />
+  <Head titulo="Gastos fijos" sub="Lo que pagas cada mes y cuándo te toca. TelMoney te avisa un día antes.">
+    {
+      r.ok && (
+        <button class="act act--main" type="button" data-dialog="dlg-fijo" data-title="Agregar pago fijo" data-accion="crear" data-values={JSON.stringify({ tipo: 'fijo' })}>
+          <Icon name="mas" size={16} /> Agregar pago
+        </button>
+      )
+    }
+  </Head>
+  <Flash />
 
   {
     pendiente(r) && (
@@ -38,7 +94,16 @@ const dias = (iso: string | null) => (iso ? Math.ceil((new Date(iso).getTime() -
       />
     )
   }
-  {!r.ok && !pendiente(r) && <p class="flash flash--error">{r.detail}</p>}
+  {
+    soloPro && (
+      <section class="card pro-up">
+        <h2>Tus pagos del mes, con aviso un día antes</h2>
+        <p class="stat__note">{r.ok ? '' : r.detail} Con Pro, TelMoney te recuerda el alquiler, tus cuotas y suscripciones, y te dice cuánto te queda después de pagarlas.</p>
+        <a class="btn btn--primary" href="/cuenta/plan">Ver planes</a>
+      </section>
+    )
+  }
+  {!r.ok && !pendiente(r) && !soloPro && <p class="flash flash--error">{r.detail}</p>}
 
   {
     r.ok && (
@@ -59,16 +124,27 @@ const dias = (iso: string | null) => (iso ? Math.ceil((new Date(iso).getTime() -
                   <th>Próximo</th>
                   <th>Cuenta</th>
                   <th class="r">Monto</th>
+                  <th>
+                    <span class="sr-only">Acciones</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {fijos.map((f) => {
                   const n = dias(f.proximo);
+                  // Las de tarjeta salen de la tarjeta: no se editan aquí; el pago sí se marca, el corte no.
+                  const editable = f.tipo !== 'tarjeta';
+                  const pagable = editable || f.evento === 'pago';
                   return (
                     <tr>
                       <td>
-                        {f.nombre} <span class="badge">{etiqueta(f)}</span>
-                        {f.cuotas_restantes ? <span class="muted"> · faltan {f.cuotas_restantes} cuotas</span> : null}
+                        <span class="cat-name">
+                          <CatIcon name={f.tipo === 'tarjeta' ? 'tarjeta' : f.nombre} />
+                          <span>
+                            {cap(f.nombre)} <span class="badge">{etiqueta(f)}</span>
+                            {f.cuotas_restantes ? <span class="muted"> · faltan {f.cuotas_restantes}</span> : null}
+                          </span>
+                        </span>
                       </td>
                       <td class="nowrap">
                         {f.proximo ? date(f.proximo) : `el ${f.dia}`}
@@ -79,7 +155,20 @@ const dias = (iso: string | null) => (iso ? Math.ceil((new Date(iso).getTime() -
                         )}
                       </td>
                       <td class="nowrap muted">{f.cuenta ?? '—'}</td>
-                      <td class="r">{f.monto ? usd(f.monto) : '—'}</td>
+                      <td class="r nowrap">{f.monto ? usd(f.monto) : '—'}</td>
+                      <td class="r nowrap">
+                        {pagable && (
+                          <button class="row-act" type="button" data-dialog="dlg-pagado" data-title={`Ya pagaste ${f.nombre}`} data-values={JSON.stringify({ id: f.id, cuenta_id: f.id_cuenta ?? '' })}>
+                            Ya pagué
+                          </button>
+                        )}
+                        {editable && (
+                            <button class="row-act" type="button" data-dialog="dlg-fijo" data-title="Editar pago fijo" data-accion="editar"
+                              data-values={JSON.stringify({ id: f.id, nombre: f.nombre, monto: f.monto ?? '', dia: f.dia, tipo: f.tipo, cuotas_restantes: f.cuotas_restantes ?? '', cuenta_id: f.id_cuenta ?? '', categoria_id: f.id_categoria ?? '' })}>
+                              Editar
+                            </button>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}
@@ -87,10 +176,82 @@ const dias = (iso: string | null) => (iso ? Math.ceil((new Date(iso).getTime() -
             </table>
           </div>
         ) : (
-          <p class="card empty section">No tienes pagos fijos. Cuéntale a TelMoney qué pagas cada mes.</p>
+          <p class="card empty section">No tienes pagos fijos. Agrega el alquiler, tus cuotas o suscripciones y te aviso antes de cada una.</p>
         )}
         <Pide frases={['pago 300 de alquiler el 5', 'Netflix 9.99 el 12', 'ya pagué el alquiler']} />
+
+        <Dialog id="dlg-fijo" titulo="Agregar pago fijo" accion="crear" borrar={{ accion: 'borrar', texto: 'Ya no te lo recuerdo. Lo que ya pagaste sigue en tus movimientos.' }}>
+          <label class="fld">
+            Qué pagas
+            <input class="field" name="nombre" required maxlength="40" placeholder="Alquiler, Netflix, cuota del carro…" />
+          </label>
+          <div class="fld-row">
+            <label class="fld">
+              Monto <small>(si cambia, déjalo vacío)</small>
+              <input class="field" name="monto" inputmode="decimal" placeholder="300" />
+            </label>
+            <label class="fld">
+              Día del mes
+              <input class="field" name="dia" type="number" min="1" max="31" required placeholder="5" />
+            </label>
+          </div>
+          <div class="fld-row">
+            <label class="fld" data-solo-nuevo>
+              Tipo
+              <select class="field" name="tipo" data-fijo-tipo>
+                <option value="fijo">Todos los meses</option>
+                <option value="cuota">Cuota (tiene fin)</option>
+              </select>
+            </label>
+            <label class="fld" data-cuotas hidden>
+              Cuotas que faltan
+              <input class="field" name="cuotas_restantes" type="number" min="1" max="600" placeholder="12" />
+            </label>
+          </div>
+          <div class="fld-row">
+            <label class="fld">
+              De qué cuenta
+              <select class="field" name="cuenta_id">
+                <option value="">La de siempre</option>
+                {cuentas.map((c) => <option value={c.id}>{c.nombre}</option>)}
+              </select>
+            </label>
+            <label class="fld">
+              Categoría
+              <select class="field" name="categoria_id">
+                <option value="">Que la elija TelMoney</option>
+                {categorias.map((c) => <option value={c.id}>{cap(c.nombre)}</option>)}
+              </select>
+            </label>
+          </div>
+        </Dialog>
+
+        <Dialog id="dlg-pagado" titulo="Ya pagué" accion="pagado" enviar="Anotar pago">
+          <p class="stat__note" style="margin:0">Se anota como gasto de hoy y se marca el vencimiento como pagado.</p>
+          <label class="fld">
+            Monto <small>(solo si no tiene monto fijo o pagaste otro)</small>
+            <input class="field" name="monto" inputmode="decimal" placeholder="Lo de siempre" />
+          </label>
+          <label class="fld">
+            De qué cuenta salió
+            <select class="field" name="cuenta_id">
+              <option value="">La de siempre</option>
+              {cuentas.map((c) => <option value={c.id}>{c.nombre}</option>)}
+            </select>
+          </label>
+        </Dialog>
       </>
     )
   }
 </Cuenta>
+
+<script>
+  // Las cuotas piden cuántas faltan; un gasto de todos los meses, no.
+  const dlg = document.getElementById('dlg-fijo');
+  const sync = () => {
+    const cuota = dlg?.querySelector<HTMLSelectElement>('[data-fijo-tipo]')?.value === 'cuota';
+    dlg?.querySelector<HTMLElement>('[data-cuotas]')?.toggleAttribute('hidden', !cuota);
+  };
+  dlg?.addEventListener('change', (e) => (e.target as HTMLElement).matches('[data-fijo-tipo]') && sync());
+  new MutationObserver(() => dlg?.hasAttribute('open') && sync()).observe(dlg ?? document.body, { attributes: true, attributeFilter: ['open'] });
+</script>

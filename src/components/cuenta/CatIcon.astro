@@ -1,0 +1,82 @@
+---
+// El ícono de una categoría (en vez del emoji que guarda el bot), en un cuadrito con el color de la
+// marca. Se elige por el nombre (las categorías de siempre: telmoney-bot/migrations/0001 y 0003) y, si
+// es una que inventó la persona, por su emoji; si no se reconoce, una etiqueta.
+interface Props {
+  name: string | null;
+  emoji?: string | null;
+  size?: 'sm' | 'md';
+}
+const { name, emoji, size = 'sm' } = Astro.props;
+
+const P = {
+  carrito: 'M3 4h2l2.4 11.2a1 1 0 0 0 1 .8h8.9a1 1 0 0 0 1-.8L20 8H6M9 20h.01M17 20h.01',
+  cubiertos: 'M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 3c-2 1-3 3.5-3 7h3M17 3v18',
+  bus: 'M6 17V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v11M4 11h16M5 17h14M7 20v-3M17 20v-3M8.5 14h.01M15.5 14h.01',
+  casa: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z',
+  rayo: 'M13 2 4 14h7l-1 8 9-12h-7z',
+  salud: 'M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 12 5.5 5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7zM3.5 12h5l1.5-3 2 6 1.5-3h7',
+  libro: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5zM4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5',
+  camisa: 'M8 3 3 6l2 5 3-1v11h8V10l3 1 2-5-5-3a4 4 0 0 1-8 0z',
+  pelicula: 'M4 4h16v16H4zM8 4v16M16 4v16M4 9h4M4 15h4M16 9h4M16 15h4',
+  repetir: 'M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3',
+  regalo: 'M4 11h16v10H4zM3 7h18v4H3zM12 7v14M12 7S10.5 3 8 3a2 2 0 0 0 0 4M12 7s1.5-4 4-4a2 2 0 0 1 0 4',
+  banco: 'M3 21h18M5 21V10M19 21V10M9.5 21V10M14.5 21V10M2 10l10-7 10 7z',
+  tarjeta: 'M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM3 10h18M7 15h3',
+  caja: 'M3 7.5 12 3l9 4.5v9L12 21l-9-4.5zM3 7.5l9 4.5 9-4.5M12 12v9',
+  billete: 'M3 6h18v12H3zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6.5 9.5v.01M17.5 14.5v.01',
+  laptop: 'M5 5h14v10H5zM2 19h20',
+  tienda: 'M4 9l1.5-5h13L20 9M4 9v11h16V9M4 9c0 1.5 1.2 2.5 2.7 2.5S9.3 10.5 9.3 9c0 1.5 1.2 2.5 2.7 2.5s2.7-1 2.7-2.5c0 1.5 1.2 2.5 2.6 2.5S20 10.5 20 9M10 20v-5h4v5',
+  camion: 'M3 6h11v10H3zM14 9h4l3 3v4h-7M7 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM17 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4z',
+  personas: 'M16 3.5a4 4 0 0 1 0 7.5M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21v-1a6 6 0 0 1 12 0v1M22 21v-1a6 6 0 0 0-4-5.6',
+  recibo: 'M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2zM9 8h6M9 12h6M9 16h4',
+  mascota: 'M12 21c-3 0-6-1.5-6-4 0-2 2.5-4 6-4s6 2 6 4c0 2.5-3 4-6 4zM5 11a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM19 11a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM9 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM15 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4z',
+  telefono: 'M7 2h10a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zM11 18h2',
+  combustible: 'M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M3 21h12M4 10h10M14 8h2a2 2 0 0 1 2 2v6a1.5 1.5 0 0 0 3 0V8l-3-3',
+  etiqueta: 'M3 12V4h8l9 9-8 8zM7.5 7.5h.01',
+} as const;
+type Clave = keyof typeof P;
+
+// Por palabras del nombre (sin tildes, en minúsculas). El primero que coincide gana.
+const POR_NOMBRE: [RegExp, Clave][] = [
+  [/mercado|super|despensa|abarrot/, 'carrito'],
+  [/comida|restaur|almuerzo|cafe|antojo|delivery/, 'cubiertos'],
+  [/gasolina|combustible/, 'combustible'],
+  [/transporte|bus|uber|taxi|carro|auto|moto/, 'bus'],
+  [/vivienda|alquiler|renta|casa|hogar/, 'casa'],
+  [/servicio|luz|agua|energia|internet/, 'rayo'],
+  [/telefono|celular|recarga/, 'telefono'],
+  [/salud|medic|farmacia|doctor/, 'salud'],
+  [/educacion|colegio|escuela|universidad|curso|libro/, 'libro'],
+  [/ropa|zapato|vestido/, 'camisa'],
+  [/entreten|cine|salida|diversion|juego/, 'pelicula'],
+  [/suscrip/, 'repetir'],
+  [/regalo/, 'regalo'],
+  [/ahorro|inversion/, 'banco'],
+  [/deuda|tarjeta|prestamo|cuota/, 'tarjeta'],
+  [/salario|sueldo$|quincena|pension|remesa/, 'billete'],
+  [/sueldos|empleado|planilla/, 'personas'],
+  [/freelance|trabajo|cliente/, 'laptop'],
+  [/negocio|venta|tienda/, 'tienda'],
+  [/proveedor|mercaderia|inventario/, 'camion'],
+  [/impuesto|iva|renta anual/, 'recibo'],
+  [/mascota|perro|gato|veterin/, 'mascota'],
+  [/otro/, 'caja'],
+];
+// Si es una categoría propia, por su emoji.
+const POR_EMOJI: Record<string, Clave> = {
+  '🛒': 'carrito', '🍽️': 'cubiertos', '🍔': 'cubiertos', '🚌': 'bus', '🚗': 'bus', '⛽': 'combustible', '🏠': 'casa',
+  '💡': 'rayo', '💊': 'salud', '📚': 'libro', '👕': 'camisa', '🎬': 'pelicula', '🔁': 'repetir', '🎁': 'regalo',
+  '🎀': 'regalo', '🏦': 'banco', '💳': 'tarjeta', '📦': 'caja', '📥': 'caja', '💵': 'billete', '💰': 'billete',
+  '💻': 'laptop', '🏪': 'tienda', '🚚': 'camion', '👷': 'personas', '🧾': 'recibo', '🐶': 'mascota', '📱': 'telefono',
+};
+const fold = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+const n = fold(name ?? '');
+const clave: Clave =
+  POR_NOMBRE.find(([re]) => re.test(n))?.[1] ?? (emoji ? POR_EMOJI[emoji.trim()] : undefined) ?? 'etiqueta';
+const px = size === 'md' ? 18 : 15;
+---
+
+<span class:list={['cat', `cat--${size}`]} aria-hidden="true">
+  <svg viewBox="0 0 24 24" width={px} height={px} fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d={P[clave]}></path></svg>
+</span>

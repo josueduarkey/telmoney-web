@@ -5,6 +5,7 @@ import Cuenta from '../../layouts/Cuenta.astro';
 import Head from '../../components/cuenta/Head.astro';
 import Icon from '../../components/cuenta/Icon.astro';
 import Pide from '../../components/cuenta/Pide.astro';
+import Flash from '../../components/cuenta/Flash.astro';
 
 export const prerender = false;
 
@@ -23,20 +24,11 @@ const FORMATOS = [
   { f: 'csv', pro: false, titulo: 'CSV', texto: 'Para Google Sheets o cualquier otra app.' },
   { f: 'pdf', pro: true, titulo: 'PDF', texto: 'La gráfica del mes y tus movimientos, listo para imprimir.' },
 ] as const;
-const fallo = Astro.url.searchParams.get('error');
 ---
 
 <Cuenta title="Reportes" section="reportes">
   <Head titulo="Reportes" sub="Llévate tus datos cuando quieras." />
-  {
-    fallo && (
-      <p class="flash flash--error">
-        {fallo === 'pronto'
-          ? 'Las descargas desde la web todavía no están listas. Mientras tanto, pídeselo por WhatsApp.'
-          : fallo}
-      </p>
-    )
-  }
+  <Flash />
 
   <form class="card rep" method="get" action="/cuenta/reporte">
     <label class="rep__mes" for="mes">
@@ -45,16 +37,22 @@ const fallo = Astro.url.searchParams.get('error');
         {meses.map((m) => <option value={m.v}>{m.label}</option>)}
       </select>
     </label>
-    <div class="mod-grid">
+    <div class="rep__grid">
       {
         FORMATOS.map((x) => (
           <button class="rep__btn" type="submit" name="formato" value={x.f}>
-            <Icon name="descargar" size={20} />
-            <span>
-              <b>
-                {x.titulo} {x.pro && <span class="badge">Pro</span>}
-              </b>
+            <span class="rep__ico">
+              <Icon name="reportes" size={20} />
+            </span>
+            <span class="rep__txt">
+              <span class="rep__title">
+                {x.titulo}
+                {x.pro && <span class="badge">Pro</span>}
+              </span>
               <small>{x.texto}</small>
+            </span>
+            <span class="rep__dl">
+              <Icon name="descargar" size={16} /> Descargar
             </span>
           </button>
         ))
@@ -68,39 +66,73 @@ const fallo = Astro.url.searchParams.get('error');
 <style>
   .rep {
     display: grid;
-    gap: var(--s-4);
+    gap: var(--s-5);
   }
   .rep__mes {
     display: grid;
     gap: var(--s-2);
     max-width: 280px;
   }
+  .rep__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+    gap: var(--s-3);
+  }
+  /* Las tres del mismo alto: el texto crece y "Descargar" queda siempre abajo */
   .rep__btn {
-    display: flex;
-    align-items: flex-start;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
     gap: var(--s-3);
     text-align: left;
     padding: var(--s-4);
-    border-radius: var(--r-md);
-    border: 1px solid var(--hairline-strong);
-    background: var(--fill);
+    border-radius: var(--r-lg, 14px);
+    border: 1px solid var(--hairline);
+    background: var(--card-bg, var(--bg));
     color: var(--text);
     font: inherit;
     cursor: pointer;
+    transition:
+      border-color 0.15s,
+      transform 0.15s;
   }
   .rep__btn:hover {
-    background: var(--fill-strong);
+    border-color: var(--accent);
   }
-  .rep__btn .ico {
-    color: var(--accent);
-    margin-top: 2px;
+  .rep__btn:active {
+    transform: translateY(1px);
   }
-  .rep__btn span {
+  .rep__ico {
     display: grid;
-    gap: 2px;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--accent) 13%, transparent);
+    color: var(--accent);
   }
-  .rep__btn small {
+  .rep__txt {
+    display: grid;
+    align-content: start;
+    gap: 4px;
+  }
+  .rep__title {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    font-weight: 700;
+    font-size: 1.05rem;
+  }
+  .rep__txt small {
     color: var(--text-muted);
     font-size: var(--fs-small);
+    line-height: 1.45;
+  }
+  .rep__dl {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--fs-small);
+    font-weight: 600;
+    color: var(--accent);
   }
 </style>

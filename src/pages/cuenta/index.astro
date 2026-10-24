@@ -4,6 +4,7 @@
 import Cuenta from '../../layouts/Cuenta.astro';
 import DailyColumns from '../../components/admin/DailyColumns.astro';
 import CategoryBars from '../../components/admin/CategoryBars.astro';
+import CatIcon from '../../components/cuenta/CatIcon.astro';
 import { me, type Me, type Movimiento, type Resumen } from '../../lib/admin/bot';
 import { tokenOf, planLabel } from '../../lib/cuenta/session';
 import { date, dateTime, phone, usd, usdShort } from '../../lib/admin/format';
@@ -231,8 +232,10 @@ const waHref = (msg: string) =>
                     <tr>
                       <td class="nowrap muted">{dateTime(m.fecha)}</td>
                       <td>
-                        {m.emoji && <span aria-hidden="true">{m.emoji} </span>}
-                        {m.descripcion || m.categoria || KIND[m.tipo]}
+                        <span class="cat-name">
+                          <CatIcon name={m.categoria} emoji={m.emoji} />
+                          {m.descripcion || m.categoria || KIND[m.tipo]}
+                        </span>
                       </td>
                       <td class:list={['r', { 'kind-income': m.tipo === 'income' }]}>
                         {m.tipo === 'income' ? '+' : m.tipo === 'expense' ? '−' : ''}

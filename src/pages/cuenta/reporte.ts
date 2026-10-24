@@ -3,19 +3,23 @@
 import type { APIRoute } from 'astro';
 import { BOT_API_URL } from 'astro:env/server';
 import { tokenOf } from '../../lib/cuenta/session';
+import { avisar } from '../../lib/cuenta/pagina';
 
 export const prerender = false;
 
 const FORMATOS = new Set(['xlsx', 'csv', 'pdf']);
 
-export const GET: APIRoute = async ({ locals, url, redirect }) => {
+export const GET: APIRoute = async ({ locals, url, redirect, cookies }) => {
   if (!locals.cuenta) return new Response('No autorizado', { status: 401 });
   const token = await tokenOf(locals);
   if (!token) return redirect('/cuenta/salir');
 
   const formato = url.searchParams.get('formato') ?? '';
   const mes = url.searchParams.get('mes') ?? '';
-  const volver = (error: string) => redirect(`/cuenta/reportes?error=${encodeURIComponent(error)}`);
+  const volver = (error: string) => {
+    avisar(cookies, { tipo: 'error', texto: error === 'pronto' ? 'Las descargas desde la web todavía no están listas. Mientras tanto, pídeselo por WhatsApp.' : error });
+    return redirect('/cuenta/reportes', 303);
+  };
   if (!FORMATOS.has(formato) || !/^\d{4}-\d{2}$/.test(mes)) return volver('Elige un mes y un formato.');
   if (!BOT_API_URL) return volver('pronto');
 

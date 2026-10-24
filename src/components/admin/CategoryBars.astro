@@ -3,6 +3,7 @@
 // Una sola serie y un solo color. Las que no caben en `limit` se juntan en "otras", sin barra:
 // es una suma de varias y aplastaría a las demás.
 import { usd } from '../../lib/admin/format';
+import CatIcon from '../cuenta/CatIcon.astro';
 
 interface Props {
   data: { name: string; emoji: string; total: number; n: number }[];
@@ -22,8 +23,8 @@ const max = Math.max(...shown.map((d) => d.total), 0) || 1;
       {shown.map((d) => (
         <li data-tip={`${usd(d.total)}\n${d.name} · ${d.n} ${d.n === 1 ? 'gasto' : 'gastos'}`}>
           <span class="hbars__name">
-            {d.emoji && <span aria-hidden="true">{d.emoji} </span>}
-            {d.name}
+            <CatIcon name={d.name} emoji={d.emoji} />
+            {d.name.charAt(0).toUpperCase() + d.name.slice(1)}
           </span>
           <span class="hbars__track" aria-hidden="true">
             <span class="hbars__bar" style={`width:${((d.total / max) * 100).toFixed(1)}%`} />
