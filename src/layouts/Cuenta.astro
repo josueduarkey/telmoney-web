@@ -10,6 +10,7 @@ import Logo from '../components/Logo.astro';
 import ThemeToggle from '../components/ThemeToggle.astro';
 import Icon from '../components/cuenta/Icon.astro';
 import { WHATSAPP_NUMBER } from '../config';
+import { esAdmin } from '../lib/admin/clerk';
 
 export type Seccion =
   | 'resumen'
@@ -63,6 +64,8 @@ const groups: { label: string; items: Item[] }[] = [
 ];
 const current = groups.flatMap((g) => g.items).find((i) => i.id === section);
 const waHref = WHATSAPP_NUMBER ? `https://wa.me/${WHATSAPP_NUMBER}` : null;
+// Si la persona también es del equipo, un enlace al panel de administración.
+const equipo = !bare && Astro.locals.cuenta ? await esAdmin(Astro.locals.cuenta.userId) : false;
 ---
 
 <!doctype html>
@@ -128,6 +131,13 @@ const waHref = WHATSAPP_NUMBER ? `https://wa.me/${WHATSAPP_NUMBER}` : null;
               </div>
             ))}
           </nav>
+
+          {equipo && (
+            <a class="sb__admin" href="/admin">
+              <Icon name="puntaje" />
+              Panel de admin
+            </a>
+          )}
 
           <div class="sb__foot">
             <ThemeToggle />

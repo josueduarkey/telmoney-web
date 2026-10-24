@@ -37,3 +37,21 @@ export async function adminEmailOf(userId: string): Promise<string | null> {
   );
   return email?.emailAddress ?? null;
 }
+
+// Para el menú de "Mi cuenta": ¿esta persona también es del equipo? Se recuerda 5 minutos por
+// usuario (no hace falta preguntarle a Clerk en cada página). Solo decide si se muestra el enlace al
+// panel: /admin vuelve a revisar el correo con adminEmailOf en cada visita.
+const esAdminCache = new Map<string, { si: boolean; hasta: number }>();
+export async function esAdmin(userId: string): Promise<boolean> {
+  const hit = esAdminCache.get(userId);
+  if (hit && hit.hasta > Date.now()) return hit.si;
+  let si = false;
+  try {
+    si = Boolean(await adminEmailOf(userId));
+  } catch {
+    return false;
+  }
+  if (esAdminCache.size > 500) esAdminCache.clear();
+  esAdminCache.set(userId, { si, hasta: Date.now() + 5 * 60_000 });
+  return si;
+}

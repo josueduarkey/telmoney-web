@@ -538,3 +538,24 @@
 .dlg__del[hidden] {
   display: none;
 }
+.sb__admin {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: 38px;
+  margin-top: auto;
+  padding: 0 var(--s-3);
+  border: 1px dashed var(--hairline-strong);
+  border-radius: var(--r-md);
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: var(--fs-small);
+  text-decoration: none;
+}
+.sb__admin:hover {
+  color: var(--text);
+  background: var(--fill);
+}
+.sb__admin + .sb__foot {
+  margin-top: 0;
+}
