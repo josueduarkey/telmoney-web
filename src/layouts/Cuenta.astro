@@ -21,6 +21,7 @@ export type Seccion =
   | 'fijos'
   | 'reportes'
   | 'correo'
+  | 'ajustes'
   | 'plan';
 
 interface Props {
@@ -55,6 +56,7 @@ const groups: { label: string; items: Item[] }[] = [
     items: [
       { id: 'reportes', label: 'Reportes', href: '/cuenta/reportes', icon: 'reportes' },
       { id: 'correo', label: 'Correo del banco', href: '/cuenta/correo', icon: 'correo' },
+      { id: 'ajustes', label: 'Ajustes', href: '/cuenta/ajustes', icon: 'ajustes' },
       { id: 'plan', label: 'Mi plan', href: '/cuenta/plan', icon: 'plan' },
     ],
   },
@@ -192,6 +194,49 @@ const waHref = WHATSAPP_NUMBER ? `https://wa.me/${WHATSAPP_NUMBER}` : null;
       document.querySelectorAll('[data-sb-close]').forEach((el) => el.addEventListener('click', () => setOpen(false)));
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && sb?.classList.contains('is-open')) setOpen(false);
+      });
+
+      // Ventanas de edición (components/cuenta/Dialog.astro): se abren con [data-dialog], se llenan con
+      // data-values y se cierran con [data-close], tocando fuera o con Escape (lo hace <dialog> solo).
+      document.addEventListener('click', (e) => {
+        const t = e.target as HTMLElement;
+        const opener = t.closest<HTMLElement>('[data-dialog]');
+        if (opener) {
+          const dlg = document.getElementById(opener.dataset.dialog!) as HTMLDialogElement | null;
+          const form = dlg?.querySelector('form');
+          if (!dlg || !form) return;
+          form.reset();
+          // reset() no limpia los campos ocultos que se cambiaron por código: el id y la acción, a mano.
+          form.querySelectorAll<HTMLInputElement>('input[type=hidden]').forEach((h) => (h.value = h.dataset.default ?? ''));
+          dlg.querySelector<HTMLElement>('[data-confirm]')?.setAttribute('hidden', '');
+          const values = JSON.parse(opener.dataset.values ?? '{}') as Record<string, unknown>;
+          for (const [k, v] of Object.entries(values)) {
+            const el = form.elements.namedItem(k);
+            if (el instanceof HTMLInputElement && el.type === 'checkbox') el.checked = Boolean(v);
+            else if (el instanceof HTMLInputElement || el instanceof HTMLSelectElement || el instanceof HTMLTextAreaElement)
+              el.value = v == null ? '' : String(v);
+          }
+          // Los campos marcados con data-solo-nuevo / data-solo-editar se muestran según haya id o no.
+          const editando = Boolean(values.id);
+          form.querySelectorAll<HTMLElement>('[data-solo-nuevo]').forEach((x) => (x.hidden = editando));
+          form.querySelectorAll<HTMLElement>('[data-solo-editar]').forEach((x) => (x.hidden = !editando));
+          const title = dlg.querySelector('[data-dlg-title]');
+          if (title && opener.dataset.title) title.textContent = opener.dataset.title;
+          const accion = form.querySelector<HTMLInputElement>('input[type=hidden][name=accion]');
+          if (accion && opener.dataset.accion) accion.value = opener.dataset.accion;
+          if (title && !opener.dataset.title) title.textContent = title.getAttribute('data-default') ?? title.textContent;
+          dlg.showModal();
+          form.querySelector<HTMLElement>('input:not([type=hidden]):not([hidden]), select, textarea')?.focus();
+          return;
+        }
+        if (t.closest('[data-close]')) return void t.closest('dialog')?.close();
+        if (t.closest('[data-ask]')) return void t.closest('form')?.querySelector('[data-confirm]')?.removeAttribute('hidden');
+        if (t instanceof HTMLDialogElement) t.close(); // tocar el fondo
+      });
+      // Mientras se manda, el botón no se puede volver a tocar.
+      document.addEventListener('submit', (e) => {
+        const btn = (e as SubmitEvent).submitter as HTMLButtonElement | null;
+        if (btn) setTimeout(() => (btn.disabled = true));
       });
 
       // Tooltip de las gráficas (igual que en el panel): primera línea en negrita, texto con textContent.

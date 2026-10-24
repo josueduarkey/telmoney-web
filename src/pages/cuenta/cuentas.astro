@@ -1,12 +1,16 @@
 ---
-// Cuentas y tarjetas: cuánto tiene en cada banco, billetera y efectivo, y cuánto debe en tarjetas.
-// Lee /me/cuentas; mientras el bot no la tenga, usa las cuentas del resumen (/me/resumen).
+// Cuentas y tarjetas: cuánto tiene en cada banco, billetera y efectivo, y cuánto debe en tarjetas;
+// agregar una cuenta, renombrarla, ajustar su saldo y reservarla (🔒 no cuenta para el disponible).
+// Lee /me/cuentas; mientras el bot no la tenga, usa las cuentas del resumen (sin poder editarlas).
 import Cuenta from '../../layouts/Cuenta.astro';
 import Head from '../../components/cuenta/Head.astro';
+import Flash from '../../components/cuenta/Flash.astro';
+import Dialog from '../../components/cuenta/Dialog.astro';
 import Icon from '../../components/cuenta/Icon.astro';
 import Pide from '../../components/cuenta/Pide.astro';
 import { me, pendiente, sinVincular, type CuentaItem, type Resumen } from '../../lib/admin/bot';
 import { tokenOf } from '../../lib/cuenta/session';
+import { dinero, ejecutar, idDe, texto } from '../../lib/cuenta/acciones';
 import { usd } from '../../lib/admin/format';
 
 export const prerender = false;
@@ -15,17 +19,6 @@ if (!Astro.locals.cuenta) return new Response('No autorizado', { status: 401 });
 const token = await tokenOf(Astro.locals);
 if (!token) return Astro.redirect('/cuenta/salir');
 
-let r = await me<{ cuentas: CuentaItem[] }>('/me/cuentas', token);
-if (sinVincular(r)) return Astro.redirect('/cuenta');
-let cuentas: CuentaItem[] = r.ok ? (r.data?.cuentas ?? []) : [];
-let error = !r.ok && !pendiente(r) ? r.detail : '';
-if (pendiente(r)) {
-  const res = await me<Resumen>('/me/resumen?dias=30', token);
-  if (res.ok) cuentas = res.data.cuentas ?? [];
-  else error = res.detail;
-}
-cuentas = cuentas.filter((c) => c.activa !== false);
-
 const TIPO: Record<string, string> = {
   cash: 'Efectivo',
   bank: 'Banco',
@@ -33,22 +26,72 @@ const TIPO: Record<string, string> = {
   wallet: 'Billetera',
   card: 'Tarjeta de crédito',
 };
+
+if (Astro.request.method === 'POST') {
+  return ejecutar(Astro, token, (accion, f) => {
+    const nombre = texto(f.get('nombre')).slice(0, 40);
+    // El saldo puede ser 0 o negativo (una tarjeta que se debe).
+    const saldoTxt = texto(f.get('saldo'));
+    const saldo = saldoTxt ? dinero(saldoTxt.replace(/^-/, '')) : null;
+    const saldoFirmado = saldo === null ? undefined : saldoTxt.startsWith('-') ? -saldo : saldo;
+    if (saldoTxt && saldo === null) return 'El saldo tiene que ser un número.';
+    if (accion === 'crear') {
+      const tipo = texto(f.get('tipo'));
+      if (!nombre) return 'Ponle un nombre a la cuenta.';
+      if (!(tipo in TIPO)) return 'Elige qué tipo de cuenta es.';
+      return { path: '/me/cuentas', method: 'POST', body: { nombre, tipo, saldo: saldoFirmado ?? 0 }, ok: `Cuenta «${nombre}» agregada.` };
+    }
+    const id = idDe(f.get('id'));
+    if (accion === 'editar' && id) {
+      if (!nombre) return 'El nombre no puede quedar vacío.';
+      // Solo se ajusta el saldo si lo cambió (cada ajuste queda como un movimiento).
+      const antes = Number(texto(f.get('saldo_antes')));
+      const saldo_actual = saldoFirmado !== undefined && saldoFirmado !== antes ? saldoFirmado : undefined;
+      const body = { nombre, reservada: f.get('reservada') === 'on', saldo_actual };
+      return { path: `/me/cuentas/${id}`, method: 'PATCH', body, ok: 'Cuenta actualizada.' };
+    }
+    return 'Acción no válida.';
+  });
+}
+
+let r = await me<{ cuentas: CuentaItem[] }>('/me/cuentas', token);
+if (sinVincular(r)) return Astro.redirect('/cuenta');
+let cuentas: CuentaItem[] = r.ok ? (r.data?.cuentas ?? []) : [];
+let error = !r.ok && !pendiente(r) ? r.detail : '';
+const editable = r.ok;
+if (pendiente(r)) {
+  const res = await me<Resumen>('/me/resumen?dias=30', token);
+  if (res.ok) cuentas = res.data.cuentas ?? [];
+  else error = res.detail;
+}
+cuentas = cuentas.filter((c) => c.activa !== false);
+
 const tarjetas = cuentas.filter((c) => c.tipo === 'card');
-const dinero = cuentas.filter((c) => c.tipo !== 'card');
-const libre = dinero.filter((c) => !c.reservada).reduce((s, c) => s + c.saldo, 0);
-const reservado = dinero.filter((c) => c.reservada).reduce((s, c) => s + c.saldo, 0);
+const dinero_ = cuentas.filter((c) => c.tipo !== 'card');
+const libre = dinero_.filter((c) => !c.reservada).reduce((s, c) => s + c.saldo, 0);
+const reservado = dinero_.filter((c) => c.reservada).reduce((s, c) => s + c.saldo, 0);
 const deudaTarjetas = tarjetas.reduce((s, c) => s + (c.deuda ?? Math.max(0, -c.saldo)), 0);
+const valores = (c: CuentaItem) => JSON.stringify({ id: c.id, nombre: c.nombre, saldo: c.saldo, saldo_antes: c.saldo, reservada: Boolean(c.reservada) });
 ---
 
 <Cuenta title="Cuentas y tarjetas" section="cuentas">
-  <Head titulo="Cuentas y tarjetas" sub="Dónde está tu dinero hoy y cuánto debes en tus tarjetas." />
+  <Head titulo="Cuentas y tarjetas" sub="Dónde está tu dinero hoy y cuánto debes en tus tarjetas.">
+    {
+      editable && (
+        <button class="act act--main" type="button" data-dialog="dlg-nueva">
+          <Icon name="mas" size={16} /> Agregar cuenta
+        </button>
+      )
+    }
+  </Head>
+  <Flash />
   {error && <p class="flash flash--error">{error}</p>}
 
   <div class="cards">
     <div class="card">
       <p class="stat__label">Para usar</p>
       <p class="stat__value">{usd(libre)}</p>
-      <p class="stat__note">en {dinero.filter((c) => !c.reservada).length} cuentas</p>
+      <p class="stat__note">en {dinero_.filter((c) => !c.reservada).length} cuentas</p>
     </div>
     <div class="card">
       <p class="stat__label">Reservado 🔒</p>
@@ -64,9 +107,9 @@ const deudaTarjetas = tarjetas.reduce((s, c) => s + (c.deuda ?? Math.max(0, -c.s
 
   <h2 class="section-title section">Tu dinero</h2>
   {
-    dinero.length ? (
+    dinero_.length ? (
       <div class="mod-grid" style="margin-top: var(--s-3)">
-        {dinero.map((c) => (
+        {dinero_.map((c) => (
           <article class="card tile">
             <div class="tile__top">
               <div>
@@ -80,11 +123,18 @@ const deudaTarjetas = tarjetas.reduce((s, c) => s + (c.deuda ?? Math.max(0, -c.s
               )}
             </div>
             <p class:list={['tile__amount', { 'tile__amount--neg': c.saldo < 0 }]}>{usd(c.saldo)}</p>
+            {editable && c.id && (
+              <div class="acts">
+                <button class="act" type="button" data-dialog="dlg-editar" data-title={`Editar ${c.nombre}`} data-values={valores(c)}>
+                  Editar
+                </button>
+              </div>
+            )}
           </article>
         ))}
       </div>
     ) : (
-      <p class="card empty">Todavía no le dices a TelMoney cuánto tienes. Escríbele tus saldos y aparecen aquí.</p>
+      <p class="card empty">Todavía no le dices a TelMoney cuánto tienes. Agrega tus cuentas aquí o escríbele tus saldos.</p>
     )
   }
 
@@ -120,6 +170,13 @@ const deudaTarjetas = tarjetas.reduce((s, c) => s + (c.deuda ?? Math.max(0, -c.s
                     </div>
                   </>
                 )}
+                {editable && c.id && (
+                  <div class="acts">
+                    <button class="act" type="button" data-dialog="dlg-editar" data-title={`Editar ${c.nombre}`} data-values={valores(c)}>
+                      Editar
+                    </button>
+                  </div>
+                )}
               </article>
             );
           })}
@@ -128,5 +185,44 @@ const deudaTarjetas = tarjetas.reduce((s, c) => s + (c.deuda ?? Math.max(0, -c.s
     )
   }
 
-  <Pide frases={['¿cuánto tengo en total?', 'en el BAC tengo 250', 'lo de Multimoney no se toca']} />
+  <Pide frases={['¿cuánto tengo en total?', 'en el BAC tengo 250', 'mi tarjeta corta el 5 y pago el 25']} />
+
+  {
+    editable && (
+      <>
+        <Dialog id="dlg-nueva" titulo="Agregar cuenta" accion="crear">
+          <label class="fld">
+            Nombre
+            <input class="field" name="nombre" required maxlength="40" placeholder="BAC, Tigo Money, Efectivo…" />
+          </label>
+          <div class="fld-row">
+            <label class="fld">
+              Tipo
+              <select class="field" name="tipo">
+                {Object.entries(TIPO).map(([v, l]) => <option value={v}>{l}</option>)}
+              </select>
+            </label>
+            <label class="fld">
+              Saldo de hoy <small>(una tarjeta: lo que debes, en negativo)</small>
+              <input class="field" name="saldo" inputmode="decimal" placeholder="250" />
+            </label>
+          </div>
+        </Dialog>
+        <Dialog id="dlg-editar" titulo="Editar cuenta" accion="editar">
+          <input type="hidden" name="saldo_antes" />
+          <label class="fld">
+            Nombre
+            <input class="field" name="nombre" required maxlength="40" />
+          </label>
+          <label class="fld">
+            Saldo de hoy <small>(si no cuadra con lo que ves en tu banco, ajústalo aquí)</small>
+            <input class="field" name="saldo" inputmode="decimal" />
+          </label>
+          <label class="check">
+            <input type="checkbox" name="reservada" /> 🔒 Reservada: no cuenta para lo que puedo gastar al día
+          </label>
+        </Dialog>
+      </>
+    )
+  }
 </Cuenta>

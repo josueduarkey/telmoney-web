@@ -1,11 +1,16 @@
 ---
-// Presupuesto: el límite de la semana o del mes (general o por categoría) y cuánto lleva. Lee /me/limites.
+// Presupuesto: el límite de la semana o del mes (general o por categoría) y cuánto lleva; poner,
+// cambiar y quitar límites. Lee /me/limites.
 import Cuenta from '../../layouts/Cuenta.astro';
 import Head from '../../components/cuenta/Head.astro';
+import Flash from '../../components/cuenta/Flash.astro';
+import Dialog from '../../components/cuenta/Dialog.astro';
+import Icon from '../../components/cuenta/Icon.astro';
 import Pronto from '../../components/cuenta/Pronto.astro';
 import Pide from '../../components/cuenta/Pide.astro';
-import { me, pendiente, sinVincular, type Limite } from '../../lib/admin/bot';
+import { me, pendiente, sinVincular, type Categoria, type Limite } from '../../lib/admin/bot';
 import { tokenOf } from '../../lib/cuenta/session';
+import { dinero, ejecutar, idDe, texto } from '../../lib/cuenta/acciones';
 import { usd } from '../../lib/admin/format';
 
 export const prerender = false;
@@ -14,14 +19,43 @@ if (!Astro.locals.cuenta) return new Response('No autorizado', { status: 401 });
 const token = await tokenOf(Astro.locals);
 if (!token) return Astro.redirect('/cuenta/salir');
 
-const r = await me<{ limites: Limite[] }>('/me/limites', token);
+if (Astro.request.method === 'POST') {
+  return ejecutar(Astro, token, (accion, f) => {
+    if (accion === 'guardar') {
+      const periodo = texto(f.get('periodo'));
+      const limite = dinero(f.get('limite'));
+      const categoria_id = idDe(f.get('categoria_id')) ? Number(f.get('categoria_id')) : null;
+      if (periodo !== 'semana' && periodo !== 'mes') return 'Elige si es por semana o por mes.';
+      if (!limite || limite <= 0) return 'Escribe un límite mayor que cero.';
+      return { path: '/me/limites', method: 'PUT', body: { periodo, categoria_id, limite }, ok: `Límite de ${usd(limite)} guardado.` };
+    }
+    const id = idDe(f.get('id'));
+    if (accion === 'borrar' && id) return { path: `/me/limites/${id}`, method: 'DELETE', ok: 'Límite quitado.' };
+    return 'Acción no válida.';
+  });
+}
+
+const [r, rc] = await Promise.all([
+  me<{ limites: Limite[] }>('/me/limites', token),
+  me<{ categorias: Categoria[] }>('/me/categorias', token),
+]);
 if (sinVincular(r)) return Astro.redirect('/cuenta');
 const limites = r.ok ? (r.data?.limites ?? []) : [];
+const categorias = rc.ok ? (rc.data?.categorias ?? []).filter((c) => c.tipo !== 'income') : [];
 const PERIODO = { semana: 'esta semana', mes: 'este mes' } as const;
 ---
 
 <Cuenta title="Presupuesto" section="presupuesto">
-  <Head titulo="Presupuesto" sub="Lo máximo que quieres gastar, y cómo vas." />
+  <Head titulo="Presupuesto" sub="Lo máximo que quieres gastar, y cómo vas.">
+    {
+      r.ok && (
+        <button class="act act--main" type="button" data-dialog="dlg-limite" data-title="Poner límite">
+          <Icon name="mas" size={16} /> Poner límite
+        </button>
+      )
+    }
+  </Head>
+  <Flash />
 
   {
     pendiente(r) && (
@@ -42,6 +76,7 @@ const PERIODO = { semana: 'esta semana', mes: 'este mes' } as const;
           {limites.map((l) => {
             const pct = (l.gastado / Math.max(0.01, l.limite)) * 100;
             const queda = l.limite - l.gastado;
+            const idCat = l.id_categoria ?? '';
             return (
               <article class="card tile">
                 <div class="tile__top">
@@ -52,23 +87,21 @@ const PERIODO = { semana: 'esta semana', mes: 'este mes' } as const;
                     </p>
                     <p class="tile__meta">Límite de {usd(l.limite)} {PERIODO[l.periodo] ?? ''}</p>
                   </div>
-                  {pct >= 100 ? (
-                    <span class="badge badge--danger">Te pasaste</span>
-                  ) : pct >= 80 ? (
-                    <span class="badge">Casi</span>
-                  ) : null}
+                  {pct >= 100 ? <span class="badge badge--danger">Te pasaste</span> : pct >= 80 ? <span class="badge">Casi</span> : null}
                 </div>
-                <p class:list={['tile__amount', { 'tile__amount--neg': queda < 0 }]}>
-                  {queda >= 0 ? usd(queda) : `−${usd(-queda)}`}
-                </p>
+                <p class:list={['tile__amount', { 'tile__amount--neg': queda < 0 }]}>{queda >= 0 ? usd(queda) : `−${usd(-queda)}`}</p>
                 <div class:list={['progress', { 'progress--warn': pct >= 80, 'progress--over': pct >= 100 }]}>
                   <span style={`width:${Math.min(100, pct).toFixed(1)}%`} />
                 </div>
                 <div class="row-split">
                   <span>{queda >= 0 ? 'te quedan' : 'te pasaste por'}</span>
-                  <span>
-                    gastado {usd(l.gastado)} · {Math.round(pct)}%
-                  </span>
+                  <span>gastado {usd(l.gastado)} · {Math.round(pct)}%</span>
+                </div>
+                <div class="acts">
+                  <button class="act" type="button" data-dialog="dlg-limite" data-title="Cambiar límite"
+                    data-values={JSON.stringify({ id: l.id, periodo: l.periodo, categoria_id: idCat, limite: l.limite })}>
+                    Cambiar
+                  </button>
                 </div>
               </article>
             );
@@ -80,4 +113,31 @@ const PERIODO = { semana: 'esta semana', mes: 'este mes' } as const;
   }
 
   {r.ok && <Pide frases={['mi límite semanal es 100', 'máximo 60 al mes en comida fuera', 'quita el límite de comida']} />}
+
+  {
+    r.ok && (
+      <Dialog id="dlg-limite" titulo="Poner límite" accion="guardar" borrar={{ accion: 'borrar', texto: 'Se quita este límite. Tus gastos no cambian.' }}>
+        <div class="fld-row">
+          <label class="fld">
+            Cada
+            <select class="field" name="periodo">
+              <option value="semana">Semana</option>
+              <option value="mes">Mes</option>
+            </select>
+          </label>
+          <label class="fld">
+            Máximo
+            <input class="field" name="limite" inputmode="decimal" required placeholder="100" />
+          </label>
+        </div>
+        <label class="fld">
+          En qué
+          <select class="field" name="categoria_id">
+            <option value="">Todo lo que gasto</option>
+            {categorias.map((c) => <option value={c.id}>{`${c.emoji ?? ''} ${c.nombre}`.trim()}</option>)}
+          </select>
+        </label>
+      </Dialog>
+    )
+  }
 </Cuenta>

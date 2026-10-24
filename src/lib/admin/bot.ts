@@ -153,6 +153,9 @@ export type Movimiento = {
   cuenta: string | null;
   a_cuenta: string | null;
   descripcion: string | null;
+  id_categoria?: number | null;
+  id_cuenta?: number | null;
+  id_a_cuenta?: number | null;
 };
 export type Pago = { fecha: string; plan: string; monto: number; estado: 'approved' | 'pending' | 'failed' };
 
@@ -219,6 +222,7 @@ export type Limite = {
   id: number;
   periodo: 'semana' | 'mes';
   categoria: string | null;
+  id_categoria?: number | null;
   emoji?: string | null;
   limite: number;
   gastado: number;
@@ -244,6 +248,16 @@ export type Puntaje = {
   motivo_sin_datos: string | null;
 };
 export type Categoria = { id: number; nombre: string; emoji: string | null; tipo: string };
+export type Perfil = {
+  nombre: string | null;
+  ingreso_mensual: number | null;
+  /** quincena · fin_de_mes · semanal · otro */
+  horario_pago: string | null;
+  /** semanal: 1 = lunes … 7 = domingo; si no, días del mes (31 = el último). */
+  dias_pago: number[];
+  pct_ahorro: number | null;
+  cuenta_cobro?: string | null;
+};
 
 /** El bot todavía no tiene esa ruta (FastAPI responde 404 «Not Found»). */
 export const pendiente = (r: BotOk<unknown> | BotError): r is BotError =>

@@ -1,0 +1,174 @@
+---
+// Ajustes: lo que respondió en el onboarding (nombre, ingreso, días de pago, % de ahorro). Con esto el
+// bot calcula cuánto puede gastar al día. Lee y guarda /me/perfil.
+import Cuenta from '../../layouts/Cuenta.astro';
+import Head from '../../components/cuenta/Head.astro';
+import Flash from '../../components/cuenta/Flash.astro';
+import Pronto from '../../components/cuenta/Pronto.astro';
+import { me, pendiente, sinVincular, type Perfil } from '../../lib/admin/bot';
+import { tokenOf } from '../../lib/cuenta/session';
+import { dinero, ejecutar, entero, texto } from '../../lib/cuenta/acciones';
+
+export const prerender = false;
+
+if (!Astro.locals.cuenta) return new Response('No autorizado', { status: 401 });
+const token = await tokenOf(Astro.locals);
+if (!token) return Astro.redirect('/cuenta/salir');
+
+const HORARIOS = {
+  quincena: 'Cada quincena (el 15 y el último día)',
+  fin_de_mes: 'A fin de mes',
+  semanal: 'Cada semana',
+  otro: 'Otros días del mes',
+} as const;
+const SEMANA = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+
+if (Astro.request.method === 'POST') {
+  return ejecutar(Astro, token, (accion, f) => {
+    if (accion !== 'guardar') return 'Acción no válida.';
+    const horario = texto(f.get('horario_pago'));
+    if (!(horario in HORARIOS)) return 'Elige cada cuánto te llega el dinero.';
+    let dias_pago: number[] | undefined;
+    if (horario === 'semanal') {
+      const d = entero(f.get('dia_semana'));
+      if (!d || d < 1 || d > 7) return 'Elige qué día de la semana te llega.';
+      dias_pago = [d];
+    } else if (horario === 'otro') {
+      dias_pago = texto(f.get('dias_mes'))
+        .split(/[^\d]+/)
+        .filter(Boolean)
+        .map(Number);
+      if (!dias_pago.length || dias_pago.some((n) => n < 1 || n > 31)) return 'Escribe los días del mes, por ejemplo: 5 y 20.';
+      dias_pago = [...new Set(dias_pago)].sort((a, b) => a - b);
+      if (dias_pago.length > 4) return 'Son 4 días como máximo.';
+    }
+    const ingreso = texto(f.get('ingreso_mensual')) ? dinero(f.get('ingreso_mensual')) : null;
+    if (texto(f.get('ingreso_mensual')) && (ingreso === null || ingreso < 0)) return 'El ingreso tiene que ser un número.';
+    const pct = texto(f.get('pct_ahorro')) ? entero(f.get('pct_ahorro')) : null;
+    if (pct !== null && (pct < 1 || pct > 90)) return 'El % de ahorro va de 1 a 90.';
+    const body = {
+      nombre: texto(f.get('nombre')).slice(0, 40) || undefined,
+      ingreso_mensual: ingreso,
+      horario_pago: horario,
+      dias_pago,
+      pct_ahorro: pct,
+    };
+    return { path: '/me/perfil', method: 'PATCH', body, ok: 'Listo. TelMoney recalculó cuánto puedes gastar al día.' };
+  });
+}
+
+const r = await me<{ perfil: Perfil }>('/me/perfil', token);
+if (sinVincular(r)) return Astro.redirect('/cuenta');
+const p = r.ok ? (r.data?.perfil ?? null) : null;
+const diasMes = p && p.horario_pago === 'otro' ? p.dias_pago.join(' y ') : '';
+const diaSemana = p && p.horario_pago === 'semanal' ? (p.dias_pago[0] ?? 0) : 0;
+---
+
+<Cuenta title="Ajustes" section="ajustes">
+  <Head titulo="Ajustes" sub="Con esto TelMoney calcula cuánto puedes gastar cada día hasta que te vuelva a llegar dinero." />
+  <Flash />
+
+  {
+    pendiente(r) && (
+      <Pronto
+        icon="ajustes"
+        titulo="Tus ajustes van a aparecer aquí"
+        texto="Tu nombre, tu ingreso, tus días de pago y cuánto quieres ahorrar. Estamos conectándolo con TelMoney."
+        frases={['me pagan el 15 y el 30', 'gano 650 al mes', 'quiero ahorrar el 20%']}
+      />
+    )
+  }
+  {!r.ok && !pendiente(r) && <p class="flash flash--error">{r.detail}</p>}
+
+  {
+    p && (
+      <form class="card ajustes" method="post">
+        <input type="hidden" name="accion" value="guardar" />
+        <label class="fld">
+          Cómo te llamo
+          <input class="field" name="nombre" maxlength="40" value={p.nombre ?? ''} />
+        </label>
+        <label class="fld">
+          Cuánto recibes al mes <small>(más o menos; sirve para estimar tu ahorro)</small>
+          <input class="field" name="ingreso_mensual" inputmode="decimal" value={p.ingreso_mensual ?? ''} placeholder="650" />
+        </label>
+        <fieldset class="fld">
+          <legend>Cada cuánto te llega el dinero</legend>
+          <div class="opts">
+            {Object.entries(HORARIOS).map(([v, l]) => (
+              <label class="opt">
+                <input type="radio" name="horario_pago" value={v} checked={p.horario_pago === v} required data-horario />
+                {l}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <label class="fld" data-si="semanal" hidden={p.horario_pago !== 'semanal'}>
+          Qué día de la semana
+          <select class="field" name="dia_semana">
+            {SEMANA.map((d, i) => <option value={i + 1} selected={diaSemana === i + 1}>{d[0].toUpperCase() + d.slice(1)}</option>)}
+          </select>
+        </label>
+        <label class="fld" data-si="otro" hidden={p.horario_pago !== 'otro'}>
+          Qué días del mes <small>(31 = el último día)</small>
+          <input class="field" name="dias_mes" value={diasMes} placeholder="5 y 20" />
+        </label>
+        <label class="fld">
+          Cuánto quieres ahorrar de lo que te entra <small>(%)</small>
+          <input class="field" name="pct_ahorro" inputmode="numeric" value={p.pct_ahorro ?? ''} placeholder="10" />
+        </label>
+        {p.cuenta_cobro && <p class="stat__note">Tu dinero entra en: <b>{p.cuenta_cobro}</b></p>}
+        <div class="acts">
+          <button class="btn btn--primary" type="submit">Guardar</button>
+        </div>
+      </form>
+    )
+  }
+</Cuenta>
+
+<script>
+  // Muestra el campo de días que corresponde al horario elegido.
+  document.addEventListener('change', (e) => {
+    const t = e.target as HTMLInputElement;
+    if (!t.matches('[data-horario]')) return;
+    document.querySelectorAll<HTMLElement>('[data-si]').forEach((el) => (el.hidden = el.dataset.si !== t.value));
+  });
+</script>
+
+<style>
+  .ajustes {
+    display: grid;
+    gap: var(--s-4);
+    max-width: 560px;
+  }
+  fieldset.fld {
+    border: 0;
+    padding: 0;
+    margin: 0;
+  }
+  fieldset.fld legend {
+    padding: 0;
+    margin-bottom: 6px;
+  }
+  .opts {
+    display: grid;
+    gap: 6px;
+  }
+  .opt {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    padding: 10px 12px;
+    border: 1px solid var(--hairline-strong);
+    border-radius: var(--r-md);
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .opt:has(input:checked) {
+    border-color: var(--accent);
+    background: var(--fill);
+  }
+  .opt input {
+    accent-color: var(--accent);
+  }
+</style>

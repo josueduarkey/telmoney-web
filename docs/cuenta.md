@@ -59,6 +59,8 @@ Un panel con barra lateral (en el celular se abre desde la izquierda), al estilo
 - `/cuenta/movimientos`: la lista completa, con búsqueda, mes y tipo.
 - `/cuenta/cuentas`: cuentas y tarjetas (`/me/cuentas`): para usar, reservado 🔒 y lo que debe en tarjetas, con el uso del límite.
 - `/cuenta/deudas` (`/me/deudas`), `/cuenta/metas` (`/me/metas`), `/cuenta/presupuesto` (`/me/limites`), `/cuenta/fijos` (`/me/fijos`).
+- **Editar** (fase 2 del bot): cada módulo tiene sus botones (Anotar, Editar, Abonar, Saldar, Poner límite, Agregar cuenta…) que abren una ventana (`components/cuenta/Dialog.astro`). El formulario hace POST a la misma página con `accion`; `lib/cuenta/acciones.ts` valida, llama a `/me` (POST/PATCH/PUT/DELETE) y vuelve con `?ok=` o `?error=` (303, así recargar no repite nada). Astro revisa el Origin de cada POST. Borrar pide confirmación dentro de la ventana.
+- `/cuenta/ajustes`: nombre, ingreso, cada cuánto le llega el dinero y qué días, y % de ahorro (`/me/perfil`).
 - `/cuenta/reportes`: Excel, CSV o PDF del mes; la descarga pasa por `/cuenta/reporte`, que se la pide al bot (`/me/reporte`) con el token de la persona.
 - `/cuenta/correo`: conectar el correo del banco (docs/correo.md).
 - `/cuenta/plan`: tu plan, cuándo vence, pasar a Pro o renovar (Wompi), historial de pagos.

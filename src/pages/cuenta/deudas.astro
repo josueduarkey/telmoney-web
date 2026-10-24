@@ -1,11 +1,16 @@
 ---
-// Deudas: quién le debe (y cuánto falta) y a quién le debe. Lee /me/deudas.
+// Deudas: quién le debe (y cuánto falta) y a quién le debe; anotar una, abonar y saldar. Abonar y saldar
+// mueven el dinero en la cuenta que elija, igual que por WhatsApp. Lee /me/deudas.
 import Cuenta from '../../layouts/Cuenta.astro';
 import Head from '../../components/cuenta/Head.astro';
+import Flash from '../../components/cuenta/Flash.astro';
+import Dialog from '../../components/cuenta/Dialog.astro';
+import Icon from '../../components/cuenta/Icon.astro';
 import Pronto from '../../components/cuenta/Pronto.astro';
 import Pide from '../../components/cuenta/Pide.astro';
-import { me, pendiente, sinVincular, type Deuda, type Deudas } from '../../lib/admin/bot';
+import { me, pendiente, sinVincular, type CuentaItem, type Deuda, type Deudas } from '../../lib/admin/bot';
 import { tokenOf } from '../../lib/cuenta/session';
+import { dinero, ejecutar, idDe, texto } from '../../lib/cuenta/acciones';
 import { date, usd } from '../../lib/admin/format';
 
 export const prerender = false;
@@ -14,21 +19,56 @@ if (!Astro.locals.cuenta) return new Response('No autorizado', { status: 401 });
 const token = await tokenOf(Astro.locals);
 if (!token) return Astro.redirect('/cuenta/salir');
 
-const r = await me<Deudas>('/me/deudas', token);
+if (Astro.request.method === 'POST') {
+  return ejecutar(Astro, token, (accion, f) => {
+    const id = idDe(f.get('id'));
+    const cuenta_id = idDe(f.get('cuenta_id')) ? Number(f.get('cuenta_id')) : undefined;
+    if (accion === 'crear') {
+      const direccion = texto(f.get('direccion'));
+      const persona = texto(f.get('persona')).slice(0, 60);
+      const monto = dinero(f.get('monto'));
+      if (direccion !== 'me_deben' && direccion !== 'debo') return 'Elige si te deben o si debes.';
+      if (!persona) return 'Escribe con quién es la deuda.';
+      if (!monto || monto <= 0) return 'Escribe un monto mayor que cero.';
+      const body = { direccion, persona, monto, descripcion: texto(f.get('descripcion')).slice(0, 120) || undefined, vence: texto(f.get('vence')) || undefined };
+      return { path: '/me/deudas', method: 'POST', body, ok: `Anotado: ${persona}, ${usd(monto)}.` };
+    }
+    if (!id) return 'No encontramos esa deuda.';
+    if (accion === 'abonar') {
+      const monto = dinero(f.get('monto'));
+      if (!monto || monto <= 0) return 'Escribe un monto mayor que cero.';
+      return { path: `/me/deudas/${id}/abono`, method: 'POST', body: { monto, cuenta_id }, ok: `Abono de ${usd(monto)} anotado.` };
+    }
+    if (accion === 'saldar') return { path: `/me/deudas/${id}/saldar`, method: 'POST', body: { cuenta_id }, ok: 'Deuda saldada.' };
+    return 'Acción no válida.';
+  });
+}
+
+const [r, rc] = await Promise.all([me<Deudas>('/me/deudas', token), me<{ cuentas: CuentaItem[] }>('/me/cuentas', token)]);
 if (sinVincular(r)) return Astro.redirect('/cuenta');
 const d = r.ok ? r.data : null;
+const cuentas = rc.ok ? (rc.data?.cuentas ?? []).filter((c) => c.activa !== false && c.id) : [];
 const total = (l: Deuda[]) => l.reduce((s, x) => s + x.pendiente, 0);
 const hoy = new Date().toISOString().slice(0, 10);
 const grupos = d
   ? [
-      { titulo: 'Te deben', vacio: 'Nadie te debe nada.', lista: d.me_deben ?? [] },
-      { titulo: 'Debes', vacio: 'No le debes a nadie.', lista: d.debo ?? [] },
+      { titulo: 'Te deben', vacio: 'Nadie te debe nada.', lista: d.me_deben ?? [], recibe: true },
+      { titulo: 'Debes', vacio: 'No le debes a nadie.', lista: d.debo ?? [], recibe: false },
     ]
   : [];
 ---
 
 <Cuenta title="Deudas" section="deudas">
-  <Head titulo="Deudas" sub="Lo que te deben y lo que debes, con lo que ya se abonó." />
+  <Head titulo="Deudas" sub="Lo que te deben y lo que debes, con lo que ya se abonó.">
+    {
+      d && (
+        <button class="act act--main" type="button" data-dialog="dlg-deuda">
+          <Icon name="mas" size={16} /> Anotar deuda
+        </button>
+      )
+    }
+  </Head>
+  <Flash />
 
   {
     pendiente(r) && (
@@ -87,6 +127,18 @@ const grupos = d
                         <span>abonado {usd(x.abonado)}</span>
                         <span>de {usd(x.monto)}</span>
                       </div>
+                      <div class="acts">
+                        <button class="act act--main" type="button" data-dialog="dlg-abono" data-accion="abonar"
+                          data-title={g.recibe ? `${x.persona} te abonó` : `Le abonaste a ${x.persona}`}
+                          data-values={JSON.stringify({ id: x.id })}>
+                          Abonar
+                        </button>
+                        <button class="act" type="button" data-dialog="dlg-saldar"
+                          data-title={g.recibe ? `${x.persona} te pagó todo` : `Le pagaste todo a ${x.persona}`}
+                          data-values={JSON.stringify({ id: x.id })}>
+                          Saldar {usd(x.pendiente)}
+                        </button>
+                      </div>
                     </article>
                   );
                 })}
@@ -97,7 +149,77 @@ const grupos = d
           </section>
         ))}
         <Pide frases={['Juan me debe 20 para el viernes', 'Juan me abonó 10', 'recuérdale a Juan']} />
+
+        <Dialog id="dlg-deuda" titulo="Anotar deuda" accion="crear">
+          <div class="fld">
+            ¿Quién le debe a quién?
+            <div class="seg" role="radiogroup">
+              <label class="seg__opt"><input type="radio" name="direccion" value="me_deben" checked /> Me deben</label>
+              <label class="seg__opt"><input type="radio" name="direccion" value="debo" /> Debo</label>
+            </div>
+          </div>
+          <div class="fld-row">
+            <label class="fld">
+              Persona
+              <input class="field" name="persona" required maxlength="60" placeholder="Juan" />
+            </label>
+            <label class="fld">
+              Monto
+              <input class="field" name="monto" inputmode="decimal" required placeholder="20" />
+            </label>
+          </div>
+          <label class="fld">
+            Para qué <small>(opcional)</small>
+            <input class="field" name="descripcion" maxlength="120" placeholder="El almuerzo del viernes" />
+          </label>
+          <label class="fld">
+            Para cuándo <small>(opcional)</small>
+            <input class="field" name="vence" type="date" />
+          </label>
+        </Dialog>
+
+        {[
+          { id: 'dlg-abono', titulo: 'Abonar', accion: 'abonar', monto: true },
+          { id: 'dlg-saldar', titulo: 'Saldar', accion: 'saldar', monto: false },
+        ].map((x) => (
+          <Dialog id={x.id} titulo={x.titulo} accion={x.accion} enviar={x.monto ? 'Abonar' : 'Saldar'}>
+            {x.monto && (
+              <label class="fld">
+                Monto
+                <input class="field" name="monto" inputmode="decimal" required placeholder="10" />
+              </label>
+            )}
+            <label class="fld">
+              ¿En qué cuenta? <small>(entra o sale de ahí)</small>
+              <select class="field" name="cuenta_id">
+                <option value="">La de siempre</option>
+                {cuentas.map((c) => <option value={c.id}>{c.nombre}</option>)}
+              </select>
+            </label>
+          </Dialog>
+        ))}
       </>
     )
   }
 </Cuenta>
+
+<style>
+  .seg__opt {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: var(--r-full);
+    font-weight: 600;
+    font-size: var(--fs-small);
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+  .seg__opt:has(input:checked) {
+    background: var(--fill-strong);
+    color: var(--text);
+  }
+  .seg__opt input {
+    accent-color: var(--accent);
+  }
+</style>

@@ -1,0 +1,8 @@
+---
+// El resultado de lo último que se hizo en la página (?ok=… o ?error=…, lo pone lib/cuenta/acciones.ts).
+const ok = Astro.url.searchParams.get('ok')?.slice(0, 200);
+const error = Astro.url.searchParams.get('error')?.slice(0, 300);
+---
+
+{error && <p class="flash flash--error" role="alert">{error}</p>}
+{!error && ok && <p class="flash flash--ok" role="status">{ok}</p>}

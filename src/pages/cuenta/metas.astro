@@ -1,11 +1,15 @@
 ---
-// Metas de ahorro: cuánto lleva de cada una y el ritmo para llegar. Lee /me/metas; mientras el bot
-// no la tenga, usa las metas del resumen.
+// Metas de ahorro: cuánto lleva de cada una y el ritmo para llegar; crear, editar, abonar (o sacar) y
+// borrar. Lee /me/metas; mientras el bot no la tenga, usa las metas del resumen (sin poder editarlas).
 import Cuenta from '../../layouts/Cuenta.astro';
 import Head from '../../components/cuenta/Head.astro';
+import Flash from '../../components/cuenta/Flash.astro';
+import Dialog from '../../components/cuenta/Dialog.astro';
+import Icon from '../../components/cuenta/Icon.astro';
 import Pide from '../../components/cuenta/Pide.astro';
 import { me, pendiente, sinVincular, type Meta, type Resumen } from '../../lib/admin/bot';
 import { tokenOf } from '../../lib/cuenta/session';
+import { dinero, ejecutar, idDe, texto } from '../../lib/cuenta/acciones';
 import { date, usd } from '../../lib/admin/format';
 
 export const prerender = false;
@@ -14,10 +18,36 @@ if (!Astro.locals.cuenta) return new Response('No autorizado', { status: 401 });
 const token = await tokenOf(Astro.locals);
 if (!token) return Astro.redirect('/cuenta/salir');
 
+if (Astro.request.method === 'POST') {
+  return ejecutar(Astro, token, (accion, f) => {
+    const id = idDe(f.get('id'));
+    const fecha = texto(f.get('fecha')) || null;
+    if (accion === 'crear' || accion === 'editar') {
+      const nombre = texto(f.get('nombre')).slice(0, 60);
+      const meta = dinero(f.get('meta'));
+      if (!nombre) return 'Ponle un nombre a la meta.';
+      if (!meta || meta <= 0) return 'Escribe cuánto quieres juntar.';
+      if (accion === 'crear') return { path: '/me/metas', method: 'POST', body: { nombre, meta, fecha }, ok: `Meta «${nombre}» creada.` };
+      if (!id) return 'No encontramos esa meta.';
+      return { path: `/me/metas/${id}`, method: 'PATCH', body: { nombre, meta, fecha }, ok: 'Meta actualizada.' };
+    }
+    if (accion === 'abonar' || accion === 'sacar') {
+      const monto = dinero(f.get('monto'));
+      if (!id) return 'No encontramos esa meta.';
+      if (!monto || monto <= 0) return 'Escribe un monto mayor que cero.';
+      const body = { monto: accion === 'sacar' ? -monto : monto, confirmar: f.get('confirmar') === 'on' };
+      return { path: `/me/metas/${id}/abono`, method: 'POST', body, ok: accion === 'sacar' ? `Sacaste ${usd(monto)}.` : `Abonaste ${usd(monto)}.` };
+    }
+    if (accion === 'borrar' && id) return { path: `/me/metas/${id}`, method: 'DELETE', ok: 'Meta borrada.' };
+    return 'Acción no válida.';
+  });
+}
+
 const r = await me<{ metas: Meta[] }>('/me/metas', token);
 if (sinVincular(r)) return Astro.redirect('/cuenta');
 let metas: Meta[] = r.ok ? (r.data?.metas ?? []) : [];
 let error = !r.ok && !pendiente(r) ? r.detail : '';
+const editable = r.ok;
 if (pendiente(r)) {
   const res = await me<Resumen>('/me/resumen?dias=30', token);
   if (res.ok) metas = res.data.metas ?? [];
@@ -30,7 +60,16 @@ const semanasA = (iso: string | null) =>
 ---
 
 <Cuenta title="Metas" section="metas">
-  <Head titulo="Metas" sub="Para qué estás ahorrando y cuánto te falta." />
+  <Head titulo="Metas" sub="Para qué estás ahorrando y cuánto te falta.">
+    {
+      editable && (
+        <button class="act act--main" type="button" data-dialog="dlg-meta" data-title="Nueva meta" data-accion="crear">
+          <Icon name="mas" size={16} /> Nueva meta
+        </button>
+      )
+    }
+  </Head>
+  <Flash />
   {error && <p class="flash flash--error">{error}</p>}
 
   {
@@ -74,14 +113,59 @@ const semanasA = (iso: string | null) =>
                 <span>meta {usd(m.meta)}</span>
               </div>
               {!lista && ritmo && <p class="tile__meta">Guarda unos {usd(ritmo)} por semana para llegar a tiempo.</p>}
+              {editable && m.id && (
+                <div class="acts">
+                  <button class="act act--main" type="button" data-dialog="dlg-abono" data-title={`Abonar a ${m.nombre}`} data-accion="abonar" data-values={JSON.stringify({ id: m.id })}>
+                    Abonar
+                  </button>
+                  <button class="act" type="button" data-dialog="dlg-abono" data-title={`Sacar de ${m.nombre}`} data-accion="sacar" data-values={JSON.stringify({ id: m.id })}>
+                    Sacar
+                  </button>
+                  <button class="act" type="button" data-dialog="dlg-meta" data-title="Editar meta" data-accion="editar" data-values={JSON.stringify({ id: m.id, nombre: m.nombre, meta: m.meta, fecha: m.fecha?.slice(0, 10) ?? '' })}>
+                    Editar
+                  </button>
+                </div>
+              )}
             </article>
           );
         })}
       </div>
     ) : (
-      !error && <p class="card empty">Todavía no tienes metas. Dile a TelMoney para qué quieres ahorrar.</p>
+      !error && <p class="card empty">Todavía no tienes metas. Crea una aquí o dile a TelMoney para qué quieres ahorrar.</p>
     )
   }
 
   <Pide frases={['quiero ahorrar 500 para diciembre', 'guardé 25 para la moto', '¿cuánto me falta?']} />
+
+  {
+    editable && (
+      <>
+        <Dialog id="dlg-meta" titulo="Nueva meta" accion="crear" borrar={{ accion: 'borrar', texto: 'Se borra la meta. Lo que ya abonaste sigue en tus cuentas.' }}>
+          <label class="fld">
+            Para qué
+            <input class="field" name="nombre" required maxlength="60" placeholder="Moto, viaje, emergencias…" />
+          </label>
+          <div class="fld-row">
+            <label class="fld">
+              Cuánto quieres juntar
+              <input class="field" name="meta" inputmode="decimal" required placeholder="500" />
+            </label>
+            <label class="fld">
+              Para cuándo <small>(opcional)</small>
+              <input class="field" name="fecha" type="date" />
+            </label>
+          </div>
+        </Dialog>
+        <Dialog id="dlg-abono" titulo="Abonar" accion="abonar" enviar="Listo">
+          <label class="fld">
+            Monto
+            <input class="field" name="monto" inputmode="decimal" required placeholder="25" />
+          </label>
+          <label class="check">
+            <input type="checkbox" name="confirmar" /> Si se pasa de la meta, abonar igual
+          </label>
+        </Dialog>
+      </>
+    )
+  }
 </Cuenta>

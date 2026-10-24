@@ -2,11 +2,15 @@
 // Todos los movimientos de la persona, de 50 en 50 (el bot pagina con "antes=<id>"), con filtros por
 // tipo, mes y texto. Los filtros van al bot (/me/movimientos); lo que llega se vuelve a filtrar aquí
 // por si el bot todavía no los conoce, así la lista nunca muestra algo que no coincide.
+// Desde aquí también se agrega, corrige y borra (POST/PATCH/DELETE /me/movimientos, como por WhatsApp).
 import Cuenta from '../../layouts/Cuenta.astro';
 import Head from '../../components/cuenta/Head.astro';
 import Icon from '../../components/cuenta/Icon.astro';
+import Flash from '../../components/cuenta/Flash.astro';
+import Dialog from '../../components/cuenta/Dialog.astro';
 import Pide from '../../components/cuenta/Pide.astro';
-import { me, sinVincular, type Movimiento } from '../../lib/admin/bot';
+import { me, sinVincular, type Categoria, type CuentaItem, type Movimiento } from '../../lib/admin/bot';
+import { dinero, ejecutar, idDe, texto } from '../../lib/cuenta/acciones';
 import { tokenOf } from '../../lib/cuenta/session';
 import { dateTime, usd } from '../../lib/admin/format';
 
@@ -17,6 +21,32 @@ const TZ = 'America/El_Salvador';
 if (!Astro.locals.cuenta) return new Response('No autorizado', { status: 401 });
 const token = await tokenOf(Astro.locals);
 if (!token) return Astro.redirect('/cuenta/salir');
+
+if (Astro.request.method === 'POST') {
+  return ejecutar(Astro, token, (accion, f) => {
+    const id = idDe(f.get('id'));
+    if (accion === 'borrar') return id ? { path: `/me/movimientos/${id}`, method: 'DELETE', ok: 'Movimiento borrado.' } : 'No encontramos ese movimiento.';
+    const tipoF = texto(f.get('tipo'));
+    const monto = dinero(f.get('monto'));
+    if (!monto || monto <= 0) return 'Escribe un monto mayor que cero.';
+    const num = (k: string) => (idDe(f.get(k)) ? Number(f.get(k)) : undefined);
+    const fecha = texto(f.get('fecha')) || undefined;
+    const descripcion = texto(f.get('descripcion')).slice(0, 120) || undefined;
+    if (accion === 'crear') {
+      if (!['expense', 'income', 'transfer'].includes(tipoF)) return 'Elige si es gasto, ingreso o transferencia.';
+      if (tipoF === 'transfer' && (!num('cuenta_id') || !num('a_cuenta_id'))) return 'Elige de qué cuenta sale y a cuál entra.';
+      const body = { tipo: tipoF, monto, descripcion, categoria_id: tipoF === 'transfer' ? undefined : num('categoria_id'), cuenta_id: num('cuenta_id'), a_cuenta_id: tipoF === 'transfer' ? num('a_cuenta_id') : undefined, fecha };
+      return { path: '/me/movimientos', method: 'POST', body, ok: 'Movimiento anotado.' };
+    }
+    if (accion === 'editar' && id) {
+      // Una transferencia no cambia de tipo ni de categoría.
+      const esTransfer = tipoF === 'transfer';
+      const body = { monto, descripcion: descripcion ?? '', fecha, cuenta_id: num('cuenta_id'), ...(esTransfer ? { a_cuenta_id: num('a_cuenta_id') } : { tipo: tipoF, categoria_id: num('categoria_id') }) };
+      return { path: `/me/movimientos/${id}`, method: 'PATCH', body, ok: 'Movimiento corregido.' };
+    }
+    return 'Acción no válida.';
+  });
+}
 
 const sp = Astro.url.searchParams;
 const antes = Number(sp.get('antes')) || 0;
@@ -37,7 +67,27 @@ if (tipo) params.set('tipo', tipo);
 if (mes) Object.entries(rango(mes)).forEach(([k, v]) => params.set(k, v));
 if (q) params.set('q', q);
 
-const r = await me<{ movimientos: Movimiento[]; hay_mas: boolean }>(`/me/movimientos?${params}`, token);
+const [r, rcat, rcue] = await Promise.all([
+  me<{ movimientos: Movimiento[]; hay_mas: boolean }>(`/me/movimientos?${params}`, token),
+  me<{ categorias: Categoria[] }>('/me/categorias', token),
+  me<{ cuentas: CuentaItem[] }>('/me/cuentas', token),
+]);
+// Editar necesita las categorías y las cuentas (fase 2 del bot); sin ellas, la lista sigue igual.
+const categorias = rcat.ok ? (rcat.data?.categorias ?? []) : [];
+const cuentasSel = rcue.ok ? (rcue.data?.cuentas ?? []).filter((c) => c.activa !== false && c.id) : [];
+const editable = rcat.ok && rcue.ok;
+const hoyIso = new Date().toLocaleDateString('en-CA', { timeZone: TZ });
+const valores = (m: Movimiento) =>
+  JSON.stringify({
+    id: m.id,
+    tipo: m.tipo,
+    monto: m.monto,
+    descripcion: m.descripcion ?? '',
+    categoria_id: m.id_categoria ?? '',
+    cuenta_id: m.id_cuenta ?? '',
+    a_cuenta_id: m.id_a_cuenta ?? '',
+    fecha: new Date(m.fecha).toLocaleDateString('en-CA', { timeZone: TZ }),
+  });
 if (sinVincular(r)) return Astro.redirect('/cuenta');
 
 const fold = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -73,7 +123,16 @@ const KIND = { expense: 'Gasto', income: 'Ingreso', transfer: 'Transferencia' } 
 ---
 
 <Cuenta title="Movimientos" section="movimientos">
-  <Head titulo="Movimientos" sub="Todo lo que le has contado a TelMoney. Para corregir algo, díselo por WhatsApp." />
+  <Head titulo="Movimientos" sub={editable ? 'Todo lo que le has contado a TelMoney. Toca uno para corregirlo.' : 'Todo lo que le has contado a TelMoney. Para corregir algo, díselo por WhatsApp.'}>
+    {
+      editable && (
+        <button class="act act--main" type="button" data-dialog="dlg-mov" data-title="Anotar movimiento" data-accion="crear" data-values={JSON.stringify({ tipo: 'expense', fecha: hoyIso })}>
+          <Icon name="mas" size={16} /> Anotar
+        </button>
+      )
+    }
+  </Head>
+  <Flash />
 
   <form class="toolbar" method="get" action="/cuenta/movimientos">
     <label class="search" for="q">
@@ -123,6 +182,7 @@ const KIND = { expense: 'Gasto', income: 'Ingreso', transfer: 'Transferencia' } 
               <th>Categoría</th>
               <th>Cuenta</th>
               <th class="r">Monto</th>
+              {editable && <th><span class="sr-only">Corregir</span></th>}
             </tr>
           </thead>
           <tbody>
@@ -136,6 +196,13 @@ const KIND = { expense: 'Gasto', income: 'Ingreso', transfer: 'Transferencia' } 
                   {m.tipo === 'income' ? '+' : m.tipo === 'expense' ? '−' : ''}
                   {usd(m.monto)}
                 </td>
+                {editable && (
+                  <td class="r">
+                    <button class="row-act" type="button" data-dialog="dlg-mov" data-title="Corregir movimiento" data-accion="editar" data-values={valores(m)}>
+                      Editar
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
@@ -162,4 +229,79 @@ const KIND = { expense: 'Gasto', income: 'Ingreso', transfer: 'Transferencia' } 
   </div>
 
   <Pide frases={['gasté 12 en el súper', 'borra el último', 'no eran 12, eran 15']} />
+
+  {
+    editable && (
+      <Dialog id="dlg-mov" titulo="Anotar movimiento" accion="crear" borrar={{ accion: 'borrar', texto: 'Se borra este movimiento y tus saldos vuelven a como estaban.' }}>
+        <div class="fld-row">
+          <label class="fld">
+            Qué es
+            <select class="field" name="tipo" data-tipo>
+              <option value="expense">Gasto</option>
+              <option value="income">Ingreso</option>
+              <option value="transfer" data-solo-nuevo>Transferencia</option>
+            </select>
+          </label>
+          <label class="fld">
+            Monto
+            <input class="field" name="monto" inputmode="decimal" required placeholder="12.50" />
+          </label>
+        </div>
+        <label class="fld">
+          Descripción <small>(opcional)</small>
+          <input class="field" name="descripcion" maxlength="120" placeholder="Súper, almuerzo, Uber…" />
+        </label>
+        <label class="fld" data-no-transfer>
+          Categoría
+          <select class="field" name="categoria_id">
+            <option value="">Que la elija TelMoney</option>
+            {categorias.map((c) => (
+              <option value={c.id} data-cat-tipo={c.tipo}>
+                {`${c.emoji ?? ''} ${c.nombre}`.trim()}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div class="fld-row">
+          <label class="fld">
+            <span data-cuenta-label>Cuenta</span>
+            <select class="field" name="cuenta_id">
+              <option value="">La de siempre</option>
+              {cuentasSel.map((c) => <option value={c.id}>{c.nombre}</option>)}
+            </select>
+          </label>
+          <label class="fld" data-solo-transfer hidden>
+            A qué cuenta
+            <select class="field" name="a_cuenta_id">
+              <option value="">Elige</option>
+              {cuentasSel.map((c) => <option value={c.id}>{c.nombre}</option>)}
+            </select>
+          </label>
+          <label class="fld" data-fecha>
+            Fecha
+            <input class="field" name="fecha" type="date" max={hoyIso} />
+          </label>
+        </div>
+      </Dialog>
+    )
+  }
 </Cuenta>
+
+<script>
+  // En la ventana de movimientos: una transferencia pide la cuenta de destino y no lleva categoría.
+  const dlg = document.getElementById('dlg-mov');
+  const sync = () => {
+    const tipo = dlg?.querySelector<HTMLSelectElement>('[data-tipo]')?.value;
+    const t = tipo === 'transfer';
+    dlg?.querySelector<HTMLElement>('[data-no-transfer]')?.toggleAttribute('hidden', t);
+    dlg?.querySelector<HTMLElement>('[data-solo-transfer]')?.toggleAttribute('hidden', !t);
+    const label = dlg?.querySelector('[data-cuenta-label]');
+    if (label) label.textContent = t ? 'De qué cuenta' : 'Cuenta';
+    // Al editar una transferencia no se puede cambiar el tipo.
+    const sel = dlg?.querySelector<HTMLSelectElement>('[data-tipo]');
+    if (sel) sel.disabled = false;
+  };
+  dlg?.addEventListener('change', (e) => (e.target as HTMLElement).matches('[data-tipo]') && sync());
+  // Se llama cuando la ventana se abre (el layout ya llenó los campos).
+  new MutationObserver(() => dlg?.hasAttribute('open') && sync()).observe(dlg ?? document.body, { attributes: true, attributeFilter: ['open'] });
+</script>

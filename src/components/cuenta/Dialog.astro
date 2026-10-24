@@ -1,0 +1,51 @@
+---
+// Ventana para editar (al estilo del Dialog de shadcn/ui): un <dialog> nativo con su formulario.
+// Se abre con cualquier botón [data-dialog="<id>"]; si el botón trae data-values='{"campo": valor}',
+// llena el formulario con eso, y data-title cambia el título (script en layouts/Cuenta.astro).
+interface Props {
+  id: string;
+  titulo: string;
+  /** Lo que hace el botón principal ("Guardar", "Abonar"…). */
+  enviar?: string;
+  /** La acción por defecto (campo oculto `accion`). */
+  accion: string;
+  /** Si trae botón de borrar: la acción y el texto de la confirmación. */
+  borrar?: { accion: string; texto: string };
+}
+const { id, titulo, enviar = 'Guardar', accion, borrar } = Astro.props;
+---
+
+<dialog class="dlg" id={id} aria-labelledby={`${id}-t`}>
+  <form method="post" class="dlg__form">
+    <div class="dlg__head">
+      <h2 id={`${id}-t`} data-dlg-title data-default={titulo}>{titulo}</h2>
+      <button type="button" class="dlg__x" aria-label="Cerrar" data-close>×</button>
+    </div>
+    <input type="hidden" name="accion" value={accion} data-default={accion} />
+    <input type="hidden" name="id" />
+    <div class="dlg__body">
+      <slot />
+    </div>
+    {
+      borrar && (
+        <div class="dlg__danger" data-confirm hidden>
+          <p>{borrar.texto}</p>
+          <button class="btn btn--danger" type="submit" name="accion" value={borrar.accion}>
+            Sí, borrar
+          </button>
+        </div>
+      )
+    }
+    <div class="dlg__foot">
+      {
+        borrar && (
+          <button type="button" class="dlg__del" data-ask data-solo-editar>
+            Borrar
+          </button>
+        )
+      }
+      <button type="button" class="btn-quiet" data-close>Cancelar</button>
+      <button class="btn btn--primary" type="submit">{enviar}</button>
+    </div>
+  </form>
+</dialog>
