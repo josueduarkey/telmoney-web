@@ -637,3 +637,57 @@
   margin-top: auto;
   padding-top: var(--s-1);
 }
+
+/* ── Opciones en los formularios: grupos con <fieldset>, tarjetas para elegir (radio/casilla) y chips
+   para opciones cortas (días de la semana). */
+.app fieldset.fld {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.app fieldset.fld legend {
+  padding: 0;
+  margin-bottom: 6px;
+}
+.app .opts {
+  display: grid;
+  gap: 6px;
+}
+.app .opt,
+.app .chip-opt {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 10px 12px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-md);
+  font-weight: 500;
+  cursor: pointer;
+}
+.app .chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.app .chip-opt {
+  display: inline-flex;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--r-full);
+  font-weight: 600;
+  font-size: var(--fs-small);
+  text-transform: capitalize;
+}
+.app .opt:has(input:checked),
+.app .chip-opt:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--fill);
+}
+.app .opt:has(input:disabled) {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.app .opt input,
+.app .chip-opt input {
+  accent-color: var(--accent);
+}

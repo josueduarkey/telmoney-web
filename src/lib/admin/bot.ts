@@ -243,6 +243,57 @@ export type Fijo = {
   id_cuenta?: number | null;
   id_categoria?: number | null;
 };
+/** Una fuente de ingreso: lo que le entra a la persona, fijo o variable, y cada cuánto. */
+export type Ingreso = {
+  id: number;
+  nombre: string;
+  tipo: 'fijo' | 'variable';
+  /** Por cada vez que llega; null si es variable. */
+  monto: number | null;
+  frecuencia: 'semanal' | 'quincenal' | 'mensual' | 'dias';
+  /** semanal: 1 = lunes … 7 = domingo; si no, días del mes (31 = el último). */
+  dias: number[];
+  id_cuenta: number | null;
+  id_categoria: number | null;
+  /** Dinero con destino: lo que entra se aparta para esta categoría (un sobre). */
+  id_sobre_categoria: number | null;
+  activa: boolean;
+  principal: boolean;
+  /** esperado: hoy o después · atrasado: ya pasó y no ha llegado · recibido · no_llego. */
+  proximo: { fecha: string; monto: number | null; estado: 'esperado' | 'atrasado' | 'recibido' | 'no_llego' } | null;
+  /** Lo que da al mes (si es variable, el promedio de lo que le ha llegado). */
+  mensual: number | null;
+  recibido_mes: number;
+};
+/** Un porcentaje de lo que entra que la persona aparta para algo (ahorro, emergencias…). */
+export type Apartado = {
+  id: number;
+  nombre: string;
+  pct: number;
+  /** "todas" o los ids de las fuentes de las que sale. */
+  base: 'todas' | number[];
+  destino_tipo: 'gasto' | 'meta' | 'cuenta';
+  id_destino: number | null;
+  /** Lo que falta apartar de lo que ya entró. */
+  pendiente: number;
+};
+/** El plan del mes y la línea de lo que viene hasta el próximo ingreso fijo. */
+export type PlanMes = {
+  ingresos_mes: number;
+  fijos_mes: number;
+  /** Al mes. */
+  apartados: { id: number; nombre: string; monto: number }[];
+  /** Dinero con destino: por ciclo de su fuente (semanal si la fuente es semanal…), neto de apartados. */
+  sobres: { id_fuente: number; nombre: string; id_categoria: number; ciclo: number | null; queda: number; desde: string; hasta: string }[];
+  libre_mes: number;
+  semanal: number;
+  /** Por día; null si no hay saldos. Ya descuenta lo pendiente de apartar y lo que está en sobres. */
+  disponible_hoy: number | null;
+  pendiente_apartados: number;
+  en_sobres: number;
+  horizonte: string | null;
+  linea: { fecha: string; concepto: string; monto: number }[];
+};
 export type Puntaje = {
   puntaje: number | null;
   dia: string | null;

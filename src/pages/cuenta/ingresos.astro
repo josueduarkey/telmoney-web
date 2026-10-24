@@ -1,0 +1,334 @@
+---
+// Ingresos: de dónde le entra dinero a la persona (fijo o variable, cada cuánto y en qué cuenta), si ya le
+// llegó el de esta vez y cuánto suma al mes. Con esto el bot calcula el disponible del día y el plan del
+// mes. Lee /me/ingresos; agregar, editar, quitar, «me llegó» y «no llegó».
+import Cuenta from '../../layouts/Cuenta.astro';
+import Head from '../../components/cuenta/Head.astro';
+import Flash from '../../components/cuenta/Flash.astro';
+import Dialog from '../../components/cuenta/Dialog.astro';
+import Icon from '../../components/cuenta/Icon.astro';
+import CatIcon from '../../components/cuenta/CatIcon.astro';
+import Pronto from '../../components/cuenta/Pronto.astro';
+import Pide from '../../components/cuenta/Pide.astro';
+import { me, pendiente, sinVincular, type Ingreso } from '../../lib/admin/bot';
+import { cap, opciones, sesion } from '../../lib/cuenta/pagina';
+import { dinero, ejecutar, idDe, texto } from '../../lib/cuenta/acciones';
+import { FRECUENCIAS, SEMANA, cadaCuanto, leerDias, type Frecuencia } from '../../lib/cuenta/ingresos';
+import { date, usd } from '../../lib/admin/format';
+
+export const prerender = false;
+
+const ses = await sesion(Astro);
+if ('salir' in ses) return ses.salir;
+const { token } = ses;
+
+if (Astro.request.method === 'POST') {
+  return ejecutar(Astro, token, (accion, f) => {
+    const id = idDe(f.get('id'));
+    const num = (k: string) => (idDe(f.get(k)) ? Number(f.get(k)) : undefined);
+    if (accion === 'crear' || accion === 'editar') {
+      const nombre = texto(f.get('nombre')).slice(0, 40);
+      const tipo = texto(f.get('tipo')) === 'variable' ? 'variable' : 'fijo';
+      const frecuencia = texto(f.get('frecuencia')) as Frecuencia;
+      const montoTxt = texto(f.get('monto'));
+      const monto = montoTxt ? dinero(montoTxt) : null;
+      if (!nombre) return 'Ponle un nombre (salario, ventas, lo que te mandan…).';
+      if (!(frecuencia in FRECUENCIAS)) return 'Elige cada cuánto te llega.';
+      if (montoTxt && (!monto || monto <= 0)) return 'El monto tiene que ser mayor que cero.';
+      if (tipo === 'fijo' && !monto) return 'Si es fijo, escribe cuánto te llega cada vez.';
+      const dias = leerDias(frecuencia, f);
+      if (typeof dias === 'string') return dias;
+      const comun = { nombre, tipo, frecuencia, dias };
+      if (accion === 'crear') {
+        const body = { ...comun, monto: monto ?? undefined, cuenta_id: num('cuenta_id'), categoria_id: num('categoria_id'), sobre_categoria_id: num('sobre_categoria_id') };
+        return { path: '/me/ingresos', method: 'POST', body, ok: `Listo: «${nombre}» ya cuenta en tu disponible.` };
+      }
+      if (!id) return 'No encontramos ese ingreso.';
+      // Al editar, vacío = quitarlo (monto si es variable, la cuenta y la categoría de siempre, sin sobre).
+      const body = { ...comun, monto, cuenta_id: num('cuenta_id') ?? null, categoria_id: num('categoria_id') ?? null, sobre_categoria_id: num('sobre_categoria_id') ?? null };
+      return { path: `/me/ingresos/${id}`, method: 'PATCH', body, ok: 'Ingreso actualizado.' };
+    }
+    if (!id) return 'No encontramos ese ingreso.';
+    if (accion === 'borrar') return { path: `/me/ingresos/${id}`, method: 'DELETE', ok: 'Ya no cuento con ese ingreso. Lo que te llegó sigue en tus movimientos.' };
+    if (accion === 'recibido') {
+      const montoTxt = texto(f.get('monto'));
+      const monto = montoTxt ? dinero(montoTxt) : undefined;
+      if (montoTxt && (!monto || monto <= 0)) return 'El monto tiene que ser mayor que cero.';
+      const fecha = texto(f.get('fecha')) || undefined;
+      if (fecha && !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return 'La fecha no es válida.';
+      return { path: `/me/ingresos/${id}/recibido`, method: 'POST', body: { monto, cuenta_id: num('cuenta_id'), fecha }, ok: 'Anotado. Si tienes apartados, ya los ves en Apartados.' };
+    }
+    if (accion === 'no_llego') {
+      const fecha = texto(f.get('fecha'));
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return 'No sabemos de qué fecha era.';
+      return { path: `/me/ingresos/${id}/no_llego`, method: 'POST', body: { fecha }, ok: 'Listo: no cuento con ese dinero hasta que te llegue.' };
+    }
+    return 'Acción no válida.';
+  });
+}
+
+const [r, ops] = await Promise.all([me<{ ingresos: Ingreso[]; total_mensual: number }>('/me/ingresos', token), opciones(token)]);
+if (sinVincular(r)) return Astro.redirect('/cuenta');
+const ingresos = (r.ok ? (r.data?.ingresos ?? []) : [])
+  .filter((i) => i.activa !== false)
+  .sort((a, b) => Number(b.principal) - Number(a.principal) || (b.mensual ?? 0) - (a.mensual ?? 0));
+const totalMes = r.ok ? (r.data?.total_mensual ?? 0) : 0;
+const recibidoMes = ingresos.reduce((s, i) => s + (i.recibido_mes ?? 0), 0);
+const siguiente = ingresos
+  .filter((i) => i.proximo?.estado === 'esperado')
+  .sort((a, b) => a.proximo!.fecha.localeCompare(b.proximo!.fecha))[0];
+const { cuentas, categorias } = ops;
+const deIngreso = categorias.filter((c) => c.tipo === 'income');
+const deGasto = categorias.filter((c) => c.tipo !== 'income');
+const nombreCat = (id: number | null) => (id ? cap(categorias.find((c) => c.id === id)?.nombre) : '');
+const hoy = new Date().toISOString().slice(0, 10);
+const ESTADO = { esperado: '', atrasado: 'Atrasado', recibido: 'Ya llegó', no_llego: 'No llegó' } as const;
+---
+
+<Cuenta title="Ingresos" section="ingresos">
+  <Head titulo="Ingresos" sub="De dónde te entra dinero y cada cuánto. Con esto TelMoney sabe cuánto puedes gastar hasta que te llegue el siguiente.">
+    {
+      r.ok && (
+        <button class="act act--main" type="button" data-dialog="dlg-ingreso" data-title="Agregar ingreso" data-accion="crear" data-values={JSON.stringify({ tipo: 'fijo', frecuencia: 'mensual' })}>
+          <Icon name="mas" size={16} /> Agregar ingreso
+        </button>
+      )
+    }
+  </Head>
+  <Flash />
+
+  {
+    pendiente(r) && (
+      <Pronto
+        icon="ingresos"
+        titulo="Tus ingresos van a aparecer aquí"
+        texto="Tu salario, lo que vendes, lo que te mandan: cada uno con su fecha. Estamos conectándolo con TelMoney."
+        frases={['me pagan 400 cada quincena', 'cada lunes me dan 50 para comida', 'a veces vendo, como 100 al mes']}
+      />
+    )
+  }
+  {!r.ok && !pendiente(r) && <p class="flash flash--error">{r.detail}</p>}
+
+  {
+    r.ok && (
+      <>
+        <div class="cards">
+          <div class="card">
+            <p class="stat__label">Te entra al mes</p>
+            <p class="stat__value">{usd(totalMes)}</p>
+            <p class="stat__note">sumando {ingresos.length} {ingresos.length === 1 ? 'fuente' : 'fuentes'} (las variables, en promedio)</p>
+          </div>
+          <div class="card">
+            <p class="stat__label">Te llegó este mes</p>
+            <p class="stat__value">{usd(recibidoMes)}</p>
+            <p class="stat__note">{totalMes ? `${Math.round((recibidoMes / totalMes) * 100)}% de lo que esperas` : 'de tus fuentes de ingreso'}</p>
+          </div>
+          <div class="card">
+            <p class="stat__label">El próximo</p>
+            <p class="stat__value">{siguiente?.proximo ? date(siguiente.proximo.fecha) : '—'}</p>
+            <p class="stat__note">
+              {siguiente?.proximo ? (
+                <>
+                  {siguiente.nombre}
+                  {siguiente.proximo.monto ? <> · <b>{usd(siguiente.proximo.monto)}</b></> : null}
+                </>
+              ) : (
+                'Agrega un ingreso fijo y aquí sale cuándo llega.'
+              )}
+            </p>
+          </div>
+        </div>
+
+        {ingresos.length ? (
+          <div class="table-wrap section">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Fuente</th>
+                  <th>Cada cuánto</th>
+                  <th>Próximo</th>
+                  <th class="r">Cada vez</th>
+                  <th class="r">Al mes</th>
+                  <th>
+                    <span class="sr-only">Acciones</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {ingresos.map((i) => (
+                  <tr>
+                    <td>
+                      <span class="cat-name">
+                        <CatIcon name={nombreCat(i.id_categoria) || i.nombre} />
+                        <span>
+                          {cap(i.nombre)} <span class="badge">{i.tipo === 'fijo' ? 'Fijo' : 'Variable'}</span>
+                          {i.principal && <span class="badge badge--accent">Principal</span>}
+                          {i.id_sobre_categoria && <span class="muted"> · para {nombreCat(i.id_sobre_categoria).toLowerCase() || 'un sobre'}</span>}
+                        </span>
+                      </span>
+                    </td>
+                    <td class="muted">{cadaCuanto(i)}</td>
+                    <td class="nowrap">
+                      {i.proximo ? date(i.proximo.fecha) : <span class="muted">cuando llegue</span>}
+                      {i.proximo && ESTADO[i.proximo.estado] && (
+                        <span class:list={['badge', { 'badge--accent': i.proximo.estado === 'recibido', 'badge--danger': i.proximo.estado === 'no_llego' || i.proximo.estado === 'atrasado' }]} style="margin-left:6px">
+                          {ESTADO[i.proximo.estado]}
+                        </span>
+                      )}
+                    </td>
+                    <td class="r nowrap">{i.monto ? usd(i.monto) : '—'}</td>
+                    <td class="r nowrap">{i.mensual ? usd(i.mensual) : '—'}</td>
+                    <td class="r nowrap">
+                      <button class="row-act" type="button" data-dialog="dlg-recibido" data-title={`Te llegó: ${i.nombre}`}
+                        data-values={JSON.stringify({ id: i.id, cuenta_id: i.id_cuenta ?? '', fecha: hoy, monto: '' })}
+                        data-variable={i.tipo === 'variable' ? '' : undefined}>
+                        Me llegó
+                      </button>
+                      {i.proximo && ((i.proximo.estado === 'esperado' && i.proximo.fecha === hoy) || i.proximo.estado === 'atrasado') && (
+                        <button class="row-act" type="button" data-dialog="dlg-nollego" data-title={`¿No te llegó ${i.nombre}?`} data-values={JSON.stringify({ id: i.id, fecha: i.proximo.fecha })}>
+                          No llegó
+                        </button>
+                      )}
+                      <button class="row-act" type="button" data-dialog="dlg-ingreso" data-title="Editar ingreso" data-accion="editar"
+                        data-values={JSON.stringify({
+                          id: i.id, nombre: i.nombre, tipo: i.tipo, monto: i.monto ?? '', frecuencia: i.frecuencia,
+                          dia_semana: i.frecuencia === 'semanal' ? i.dias : [],
+                          dias_mes: i.frecuencia === 'semanal' ? '' : i.dias.join(' y '),
+                          cuenta_id: i.id_cuenta ?? '', categoria_id: i.id_categoria ?? '', sobre_categoria_id: i.id_sobre_categoria ?? '',
+                        })}>
+                        Editar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p class="card empty section">Todavía no tienes ingresos. Agrega tu salario, lo que vendes o lo que te mandan, con la fecha en que te llega.</p>
+        )}
+        <Pide frases={['me pagan 400 cada quincena', 'cada lunes me dan 50 para comida', 'mis ingresos']} />
+
+        <Dialog id="dlg-ingreso" titulo="Agregar ingreso" accion="crear" borrar={{ accion: 'borrar', texto: 'TelMoney deja de contar con este ingreso. Lo que ya te llegó sigue en tus movimientos.' }}>
+          <label class="fld">
+            Qué es
+            <input class="field" name="nombre" required maxlength="40" placeholder="Salario, ventas, freelance…" />
+          </label>
+          <div class="fld-row">
+            <label class="fld">
+              Es
+              <select class="field" name="tipo" data-ing-tipo>
+                <option value="fijo">Fijo (llega lo mismo)</option>
+                <option value="variable">Variable (cambia)</option>
+              </select>
+            </label>
+            <label class="fld">
+              <span data-solo-tipo="fijo">Cuánto te llega cada vez</span>
+              <span data-solo-tipo="variable" hidden>Más o menos cuánto <small>(opcional)</small></span>
+              <input class="field" name="monto" inputmode="decimal" placeholder="400" />
+            </label>
+          </div>
+          <label class="fld">
+            Cada cuánto
+            <select class="field" name="frecuencia" data-ing-frec>
+              {Object.entries(FRECUENCIAS).map(([v, l]) => <option value={v}>{l}</option>)}
+            </select>
+          </label>
+          <fieldset class="fld dias-sem" data-frec="semanal" hidden>
+            <legend>Qué días de la semana <small>(hasta 4)</small></legend>
+            <div class="chips">
+              {SEMANA.map((d, n) => (
+                <label class="chip-opt">
+                  <input type="checkbox" name="dia_semana" value={n + 1} /> {d.slice(0, 3)}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <label class="fld" data-frec="quincenal mensual dias">
+            <span data-frec="quincenal">Qué días <small>(vacío = el 15 y el último)</small></span>
+            <span data-frec="mensual" hidden>Qué día del mes <small>(31 = el último)</small></span>
+            <span data-frec="dias" hidden>Qué días del mes <small>(hasta 4; 31 = el último)</small></span>
+            <input class="field" name="dias_mes" placeholder="15 y 31" />
+          </label>
+          <div class="fld-row">
+            <label class="fld">
+              A qué cuenta entra
+              <select class="field" name="cuenta_id">
+                <option value="">La de siempre</option>
+                {cuentas.map((c) => <option value={c.id}>{c.nombre}</option>)}
+              </select>
+            </label>
+            <label class="fld">
+              Categoría
+              <select class="field" name="categoria_id">
+                <option value="">Que la elija TelMoney</option>
+                {deIngreso.map((c) => <option value={c.id}>{cap(c.nombre)}</option>)}
+              </select>
+            </label>
+          </div>
+          <label class="fld">
+            ¿Es para algo en especial? <small>(se aparta solo para eso)</small>
+            <select class="field" name="sobre_categoria_id">
+              <option value="">No, es dinero libre</option>
+              {deGasto.map((c) => <option value={c.id}>Solo para {c.nombre}</option>)}
+            </select>
+          </label>
+        </Dialog>
+
+        <Dialog id="dlg-recibido" titulo="Me llegó" accion="recibido" enviar="Anotar ingreso">
+          <p class="stat__note" style="margin:0">Se anota como ingreso y, si tienes apartados, te dice cuánto separar.</p>
+          <div class="fld-row">
+            <label class="fld">
+              Monto <small data-rec-fijo>(vacío = lo de siempre)</small>
+              <input class="field" name="monto" inputmode="decimal" placeholder="Lo de siempre" />
+            </label>
+            <label class="fld">
+              Cuándo
+              <input class="field" name="fecha" type="date" max={hoy} />
+            </label>
+          </div>
+          <label class="fld">
+            A qué cuenta entró
+            <select class="field" name="cuenta_id">
+              <option value="">La de siempre</option>
+              {cuentas.map((c) => <option value={c.id}>{c.nombre}</option>)}
+            </select>
+          </label>
+        </Dialog>
+
+        <Dialog id="dlg-nollego" titulo="No llegó" accion="no_llego" enviar="No me llegó">
+          <input type="hidden" name="fecha" />
+          <p class="stat__note" style="margin:0">TelMoney deja de contar con ese dinero en tu disponible. Cuando te llegue, márcalo con «Me llegó».</p>
+        </Dialog>
+      </>
+    )
+  }
+</Cuenta>
+
+<script>
+  // El formulario muestra los días según la frecuencia, y el texto del monto según sea fijo o variable.
+  const dlg = document.getElementById('dlg-ingreso');
+  const sync = () => {
+    const frec = dlg?.querySelector<HTMLSelectElement>('[data-ing-frec]')?.value ?? '';
+    const tipo = dlg?.querySelector<HTMLSelectElement>('[data-ing-tipo]')?.value ?? '';
+    dlg?.querySelectorAll<HTMLElement>('[data-frec]').forEach((el) => (el.hidden = !el.dataset.frec!.split(' ').includes(frec)));
+    dlg?.querySelectorAll<HTMLElement>('[data-solo-tipo]').forEach((el) => (el.hidden = el.dataset.soloTipo !== tipo));
+    const monto = dlg?.querySelector<HTMLInputElement>('input[name=monto]');
+    if (monto) monto.required = tipo === 'fijo';
+  };
+  dlg?.addEventListener('change', (e) => (e.target as HTMLElement).matches('[data-ing-frec], [data-ing-tipo]') && sync());
+  new MutationObserver(() => dlg?.hasAttribute('open') && sync()).observe(dlg ?? document.body, { attributes: true, attributeFilter: ['open'] });
+
+  // «Me llegó»: si la fuente es variable, el monto es obligatorio.
+  const rec = document.getElementById('dlg-recibido');
+  document.addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLElement>('[data-dialog="dlg-recibido"]');
+    if (!b || !rec) return;
+    const variable = b.hasAttribute('data-variable');
+    const monto = rec.querySelector<HTMLInputElement>('input[name=monto]')!;
+    monto.required = variable;
+    monto.placeholder = variable ? 'Cuánto te llegó' : 'Lo de siempre';
+    rec.querySelector<HTMLElement>('[data-rec-fijo]')!.hidden = variable;
+  });
+</script>
+

@@ -1,0 +1,290 @@
+---
+// Apartados: el porcentaje de lo que entra que la persona separa para algo (ahorro, emergencias, lo que
+// ella decida), de todos sus ingresos o solo de algunos, y a dónde va (un gasto, una meta o una cuenta).
+// Cada vez que le llega dinero, lo pendiente se resta del disponible hasta que lo aparta. Lee /me/apartados.
+import Cuenta from '../../layouts/Cuenta.astro';
+import Head from '../../components/cuenta/Head.astro';
+import Flash from '../../components/cuenta/Flash.astro';
+import Dialog from '../../components/cuenta/Dialog.astro';
+import Icon from '../../components/cuenta/Icon.astro';
+import Pronto from '../../components/cuenta/Pronto.astro';
+import Pide from '../../components/cuenta/Pide.astro';
+import { me, pendiente, sinVincular, type Apartado, type Ingreso, type Meta } from '../../lib/admin/bot';
+import { cap, opciones, sesion } from '../../lib/cuenta/pagina';
+import { dinero, ejecutar, idDe, texto } from '../../lib/cuenta/acciones';
+import { usd } from '../../lib/admin/format';
+
+export const prerender = false;
+
+const ses = await sesion(Astro);
+if ('salir' in ses) return ses.salir;
+const { token } = ses;
+
+const DESTINOS = {
+  meta: 'Lo junto en una meta',
+  cuenta: 'Lo paso a otra cuenta',
+  gasto: 'Lo doy o lo gasto en algo',
+} as const;
+type Destino = keyof typeof DESTINOS;
+
+if (Astro.request.method === 'POST') {
+  return ejecutar(Astro, token, (accion, f) => {
+    const id = idDe(f.get('id'));
+    if (accion === 'crear' || accion === 'editar') {
+      const nombre = texto(f.get('nombre')).slice(0, 40);
+      const pct = Number(texto(f.get('pct')).replace(',', '.').replace('%', ''));
+      const destino_tipo = texto(f.get('destino_tipo')) as Destino;
+      if (!nombre) return 'Ponle un nombre (ahorro, emergencias…).';
+      if (!Number.isFinite(pct) || pct < 0.5 || pct > 100) return 'El porcentaje va de 0.5 a 100.';
+      if (!(destino_tipo in DESTINOS)) return 'Elige a dónde va lo que apartas.';
+      let base: 'todas' | number[] = 'todas';
+      if (texto(f.get('base')) === 'algunas') {
+        base = [...new Set(f.getAll('fuente').filter((v) => idDe(v)).map(Number))];
+        if (!base.length) return 'Elige de qué ingresos sale.';
+      }
+      // Cada destino tiene su propia lista en el formulario; la meta vacía = la principal.
+      const destino = idDe(f.get(`destino_${destino_tipo}`));
+      if (destino_tipo === 'cuenta' && !destino) return 'Elige a qué cuenta lo pasas.';
+      if (destino_tipo === 'gasto' && !destino) return 'Elige en qué categoría lo gastas.';
+      const body = { nombre, pct: Math.round(pct * 100) / 100, base, destino_tipo, id_destino: destino ? Number(destino) : null };
+      if (accion === 'crear') return { path: '/me/apartados', method: 'POST', body, ok: `Listo: cada vez que te entre dinero, te digo cuánto apartar para «${nombre}».` };
+      if (!id) return 'No encontramos ese apartado.';
+      return { path: `/me/apartados/${id}`, method: 'PATCH', body, ok: 'Apartado actualizado.' };
+    }
+    if (!id) return 'No encontramos ese apartado.';
+    if (accion === 'borrar') return { path: `/me/apartados/${id}`, method: 'DELETE', ok: 'Apartado borrado. Lo que ya apartaste no se mueve.' };
+    if (accion === 'omitir') return { path: `/me/apartados/${id}/omitir`, method: 'POST', ok: 'Listo: esta vez no lo apartas.' };
+    if (accion === 'hecho') {
+      const montoTxt = texto(f.get('monto'));
+      const monto = montoTxt ? dinero(montoTxt) : undefined;
+      if (montoTxt && (!monto || monto <= 0)) return 'El monto tiene que ser mayor que cero.';
+      const cuenta_id = idDe(f.get('cuenta_id')) ? Number(f.get('cuenta_id')) : undefined;
+      return { path: `/me/apartados/${id}/hecho`, method: 'POST', body: { monto, cuenta_id }, ok: 'Anotado como apartado.' };
+    }
+    return 'Acción no válida.';
+  });
+}
+
+const [r, ri, rm, ops] = await Promise.all([
+  me<{ apartados: Apartado[] }>('/me/apartados', token),
+  me<{ ingresos: Ingreso[]; total_mensual: number }>('/me/ingresos', token),
+  me<{ metas: Meta[] }>('/me/metas', token),
+  opciones(token),
+]);
+if (sinVincular(r)) return Astro.redirect('/cuenta');
+const apartados = r.ok ? (r.data?.apartados ?? []) : [];
+const ingresos = ri.ok ? (ri.data?.ingresos ?? []).filter((i) => i.activa !== false) : [];
+const metas = rm.ok ? (rm.data?.metas ?? []).filter((m) => m.id && !m.cumplida) : [];
+const { cuentas } = ops;
+const deGasto = ops.categorias.filter((c) => c.tipo !== 'income');
+
+// Lo que da al mes cada apartado, con lo que entra de su base.
+const mensualDe = (a: Apartado) => {
+  const fuentes = a.base === 'todas' ? ingresos : ingresos.filter((i) => (a.base as number[]).includes(i.id));
+  return (fuentes.reduce((s, i) => s + (i.mensual ?? 0), 0) * a.pct) / 100;
+};
+const alMes = apartados.reduce((s, a) => s + mensualDe(a), 0);
+const pendienteTotal = apartados.reduce((s, a) => s + (a.pendiente ?? 0), 0);
+const baseTexto = (a: Apartado) =>
+  a.base === 'todas'
+    ? 'de todo lo que te entra'
+    : `de ${ingresos.filter((i) => (a.base as number[]).includes(i.id)).map((i) => i.nombre).join(', ') || 'ingresos que ya no tienes'}`;
+const destinoTexto = (a: Apartado) => {
+  if (a.destino_tipo === 'meta') return `a la meta ${metas.find((m) => m.id === a.id_destino)?.nombre ?? 'principal'}`;
+  if (a.destino_tipo === 'cuenta') return `a ${cuentas.find((c) => c.id === a.id_destino)?.nombre ?? 'otra cuenta'}`;
+  return `en ${cap(deGasto.find((c) => c.id === a.id_destino)?.nombre) || 'su categoría'}`;
+};
+---
+
+<Cuenta title="Apartados" section="apartados">
+  <Head titulo="Apartados (%)" sub="Un porcentaje de lo que te entra que separas para algo. Cada vez que te llega dinero, TelMoney te dice cuánto apartar.">
+    {
+      r.ok && (
+        <button class="act act--main" type="button" data-dialog="dlg-apartado" data-title="Nuevo apartado" data-accion="crear" data-values={JSON.stringify({ base: 'todas', destino_tipo: 'meta' })}>
+          <Icon name="mas" size={16} /> Nuevo apartado
+        </button>
+      )
+    }
+  </Head>
+  <Flash />
+
+  {
+    pendiente(r) && (
+      <Pronto
+        icon="apartados"
+        titulo="Tus apartados van a aparecer aquí"
+        texto="El porcentaje de lo que te entra que quieres separar, y cuánto te falta apartar. Estamos conectándolo con TelMoney."
+        frases={['aparta el 10% de lo que me entra para ahorro', 'mis apartados']}
+      />
+    )
+  }
+  {!r.ok && !pendiente(r) && <p class="flash flash--error">{r.detail}</p>}
+
+  {
+    r.ok && (
+      <>
+        <div class="cards">
+          <div class="card">
+            <p class="stat__label">Apartas al mes</p>
+            <p class="stat__value">{usd(alMes)}</p>
+            <p class="stat__note">con lo que esperas que te entre</p>
+          </div>
+          <div class="card">
+            <p class="stat__label">Te falta apartar</p>
+            <p class="stat__value">{usd(pendienteTotal)}</p>
+            <p class="stat__note">{pendienteTotal > 0 ? 'no cuenta en lo que puedes gastar' : 'vas al día'}</p>
+          </div>
+        </div>
+
+        {apartados.length ? (
+          <div class="mod-grid section">
+            {apartados.map((a) => (
+              <article class="card tile">
+                <div class="tile__top">
+                  <div>
+                    <p class="tile__name">{cap(a.nombre)}</p>
+                    <p class="tile__meta">
+                      {baseTexto(a)} · {destinoTexto(a)}
+                    </p>
+                  </div>
+                  <span class="badge badge--accent">{a.pct}%</span>
+                </div>
+                <p class="tile__amount">{usd(mensualDe(a))}<small class="muted"> al mes</small></p>
+                <div class="row-split">
+                  <span>{a.pendiente > 0 ? `te falta apartar ${usd(a.pendiente)}` : 'al día'}</span>
+                </div>
+                <div class="acts">
+                  {a.pendiente > 0 && (
+                    <>
+                      <button class="act act--main" type="button" data-dialog="dlg-hecho" data-title={`Apartaste para ${a.nombre}`}
+                        data-values={JSON.stringify({ id: a.id, monto: '' })} data-pendiente={a.pendiente.toFixed(2)}>
+                        Ya lo aparté
+                      </button>
+                      <button class="act" type="button" data-dialog="dlg-omitir" data-title={`¿Esta vez no apartas para ${a.nombre}?`} data-values={JSON.stringify({ id: a.id })}>
+                        Esta vez no
+                      </button>
+                    </>
+                  )}
+                  <button class="act" type="button" data-dialog="dlg-apartado" data-title="Editar apartado" data-accion="editar"
+                    data-values={JSON.stringify({
+                      id: a.id, nombre: a.nombre, pct: a.pct, base: a.base === 'todas' ? 'todas' : 'algunas',
+                      fuente: a.base === 'todas' ? [] : a.base, destino_tipo: a.destino_tipo,
+                      [`destino_${a.destino_tipo}`]: a.id_destino ?? '',
+                    })}>
+                    Editar
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p class="card empty section">
+            Todavía no tienes apartados. Por ejemplo: el 10% de todo lo que te entra para ahorro, o el 5% de tu salario para emergencias.
+          </p>
+        )}
+        {!ingresos.length && (
+          <p class="note">
+            Los apartados salen de tus ingresos: <a href="/cuenta/ingresos">agrega tus ingresos</a> para que TelMoney sepa cuánto te toca apartar.
+          </p>
+        )}
+        <Pide frases={['aparta el 10% de lo que me entra para ahorro', 'de mi salario aparta 5% para emergencias', 'mis apartados']} />
+
+        <Dialog id="dlg-apartado" titulo="Nuevo apartado" accion="crear" borrar={{ accion: 'borrar', texto: 'Se borra el apartado. Lo que ya apartaste no se mueve.' }}>
+          <div class="fld-row">
+            <label class="fld">
+              Para qué
+              <input class="field" name="nombre" required maxlength="40" placeholder="Ahorro, emergencias…" />
+            </label>
+            <label class="fld">
+              Qué porcentaje
+              <input class="field" name="pct" inputmode="decimal" required placeholder="10" />
+            </label>
+          </div>
+          <fieldset class="fld">
+            <legend>De qué ingresos</legend>
+            <div class="opts">
+              <label class="opt"><input type="radio" name="base" value="todas" data-base /> De todo lo que me entra</label>
+              <label class="opt"><input type="radio" name="base" value="algunas" data-base disabled={!ingresos.length} /> Solo de algunos</label>
+            </div>
+          </fieldset>
+          <fieldset class="fld" data-fuentes hidden>
+            <legend>Cuáles</legend>
+            <div class="opts">
+              {ingresos.map((i) => (
+                <label class="opt"><input type="checkbox" name="fuente" value={i.id} /> {cap(i.nombre)}</label>
+              ))}
+            </div>
+          </fieldset>
+          <label class="fld">
+            Qué haces con eso
+            <select class="field" name="destino_tipo" data-destino>
+              {Object.entries(DESTINOS).map(([v, l]) => <option value={v}>{l}</option>)}
+            </select>
+          </label>
+          <label class="fld" data-si-destino="meta">
+            Qué meta
+            <select class="field" name="destino_meta">
+              <option value="">Mi meta principal</option>
+              {metas.map((m) => <option value={m.id}>{m.nombre}</option>)}
+            </select>
+          </label>
+          <label class="fld" data-si-destino="cuenta" hidden>
+            A qué cuenta
+            <select class="field" name="destino_cuenta">
+              <option value="">Elige una cuenta</option>
+              {cuentas.map((c) => <option value={c.id}>{c.nombre}</option>)}
+            </select>
+          </label>
+          <label class="fld" data-si-destino="gasto" hidden>
+            En qué categoría se anota
+            <select class="field" name="destino_gasto">
+              <option value="">Elige una categoría</option>
+              {deGasto.map((c) => <option value={c.id}>{cap(c.nombre)}</option>)}
+            </select>
+          </label>
+        </Dialog>
+
+        <Dialog id="dlg-hecho" titulo="Ya lo aparté" accion="hecho" enviar="Anotar">
+          <p class="stat__note" style="margin:0">Se anota según a dónde va: en tu meta, como paso a la otra cuenta o como gasto.</p>
+          <label class="fld">
+            Cuánto <small data-hecho-nota>(vacío = lo que te falta)</small>
+            <input class="field" name="monto" inputmode="decimal" placeholder="Lo que te falta" />
+          </label>
+          <label class="fld">
+            De qué cuenta sale
+            <select class="field" name="cuenta_id">
+              <option value="">La de siempre</option>
+              {cuentas.map((c) => <option value={c.id}>{c.nombre}</option>)}
+            </select>
+          </label>
+        </Dialog>
+
+        <Dialog id="dlg-omitir" titulo="Esta vez no" accion="omitir" enviar="Esta vez no">
+          <p class="stat__note" style="margin:0">TelMoney deja de restar lo pendiente de tu disponible. La próxima vez que te entre dinero, te vuelve a decir.</p>
+        </Dialog>
+      </>
+    )
+  }
+</Cuenta>
+
+<script>
+  // Muestra las fuentes si es «solo de algunos» y la lista del destino elegido.
+  const dlg = document.getElementById('dlg-apartado');
+  const sync = () => {
+    if (!dlg) return;
+    const algunas = dlg.querySelector<HTMLInputElement>('[data-base][value=algunas]')?.checked ?? false;
+    dlg.querySelector<HTMLElement>('[data-fuentes]')!.hidden = !algunas;
+    const destino = dlg.querySelector<HTMLSelectElement>('[data-destino]')?.value;
+    dlg.querySelectorAll<HTMLElement>('[data-si-destino]').forEach((el) => (el.hidden = el.dataset.siDestino !== destino));
+  };
+  dlg?.addEventListener('change', (e) => (e.target as HTMLElement).matches('[data-base], [data-destino]') && sync());
+  new MutationObserver(() => dlg?.hasAttribute('open') && sync()).observe(dlg ?? document.body, { attributes: true, attributeFilter: ['open'] });
+
+  // «Ya lo aparté»: el placeholder dice cuánto falta.
+  document.addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLElement>('[data-dialog="dlg-hecho"]');
+    const monto = document.querySelector<HTMLInputElement>('#dlg-hecho input[name=monto]');
+    if (b && monto) monto.placeholder = `$${b.dataset.pendiente}`;
+  });
+</script>
+
