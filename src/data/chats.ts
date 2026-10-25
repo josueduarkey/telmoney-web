@@ -57,7 +57,7 @@ export const salario: Msg[] = [
   {
     from: 'bot',
     text:
-      '💵 *¡Día de pago!* Entraron $650.00.\nHasta tu próximo ingreso (31/10, en 16 días):\n💰 En tus cuentas: $650.00\n📌 Gastos fijos por pagar: $300.00\n🐷 Tu 20% de ahorro: $130.00\n🟢 Te quedan *$13.75 por día* para todo lo demás.\n💪 ¿Apartas tu 20% (*$130.00*) para *moto*?',
+      '💵 *¡Día de pago!* Recibiste $650.00.\nHasta tu próximo ingreso (31/10, en 16 días):\n💰 En tus cuentas: $650.00\n📌 Gastos fijos por pagar: $300.00\n🐷 Tu 20% de ahorro: $130.00\n🟢 Te quedan *$13.75 por día* para todo lo demás.\n💪 ¿Apartas tu 20% (*$130.00*) para *moto*?',
     time: '07:48',
     buttons: ['✅ Sí, apartar', '✏️ Otro monto'],
   },
