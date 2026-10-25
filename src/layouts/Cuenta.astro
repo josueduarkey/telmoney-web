@@ -26,8 +26,7 @@ export type Seccion =
   | 'fijos'
   | 'reportes'
   | 'correo'
-  | 'ajustes'
-  | 'plan';
+  | 'ajustes';
 
 interface Props {
   title: string;
@@ -66,8 +65,7 @@ const groups: { label: string; items: Item[] }[] = [
     items: [
       { id: 'reportes', label: 'Reportes', href: '/cuenta/reportes', icon: 'reportes' },
       { id: 'correo', label: 'Correo del banco', href: '/cuenta/correo', icon: 'correo' },
-      { id: 'ajustes', label: 'Ajustes', href: '/cuenta/ajustes', icon: 'ajustes' },
-      { id: 'plan', label: 'Mi plan', href: '/cuenta/plan', icon: 'plan' },
+      { id: 'ajustes', label: 'Ajustes y plan', href: '/cuenta/ajustes', icon: 'ajustes' },
     ],
   },
 ];

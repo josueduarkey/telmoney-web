@@ -107,14 +107,14 @@ const waHref = (msg: string) =>
         {datos.plan.estado === 'vencido' ? (
           <p class="flash flash--error">
             Tu plan venció y TelMoney ya no anota lo que le mandas. Tus datos siguen aquí.{' '}
-            <a href="/cuenta/plan">Renuévalo</a>
+            <a href="/cuenta/ajustes#plan">Renuévalo</a>
           </p>
         ) : (
           faltan !== null &&
           faltan <= 3 && (
             <p class="flash flash--error">
               {datos.plan.estado === 'prueba' ? 'Tu prueba' : 'Tu plan'} vence{' '}
-              {faltan <= 0 ? 'hoy' : faltan === 1 ? 'mañana' : `en ${faltan} días`}. <a href="/cuenta/plan">Elige tu plan</a>
+              {faltan <= 0 ? 'hoy' : faltan === 1 ? 'mañana' : `en ${faltan} días`}. <a href="/cuenta/ajustes#plan">Elige tu plan</a>
             </p>
           )
         )}
@@ -145,7 +145,7 @@ const waHref = (msg: string) =>
               <p class="stat__label">Tu plan</p>
               <p class="stat__value">{planLabel(datos.plan.plan, datos.plan.nivel)}</p>
               <p class="stat__note">
-                <a href="/cuenta/plan">Pasa a Plus o Pro</a> para usarlo sin límite diario
+                <a href="/cuenta/ajustes#plan">Pasa a Plus o Pro</a> para usarlo sin límite diario
               </p>
             </div>
           ) : (
@@ -153,7 +153,7 @@ const waHref = (msg: string) =>
               <p class="stat__label">{datos.plan.estado === 'prueba' ? 'Tu prueba termina' : 'Tu plan vence'}</p>
               <p class="stat__value">{vence ? date(vence) : '—'}</p>
               <p class="stat__note">
-                <a href="/cuenta/plan">{datos.plan.estado === 'pagando' ? 'Ver mi plan' : 'Elegir plan'}</a>
+                <a href="/cuenta/ajustes#plan">{datos.plan.estado === 'pagando' ? 'Ver mi plan' : 'Elegir plan'}</a>
               </p>
             </div>
           )}

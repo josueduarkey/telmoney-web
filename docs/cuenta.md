@@ -71,7 +71,7 @@ Un panel con barra lateral (en el celular se abre desde la izquierda), al estilo
 - `/cuenta/ajustes`: solo el nombre (`/me/perfil`). El ingreso, los días de pago y el % de ahorro ya no se escriben ahí (el bot responde 422): salen de Ingresos y Apartados.
 - `/cuenta/reportes`: Excel, CSV o PDF del mes; la descarga pasa por `/cuenta/reporte`, que se la pide al bot (`/me/reporte`) con el token de la persona.
 - `/cuenta/correo`: conectar el correo del banco (docs/correo.md).
-- `/cuenta/plan`: tu plan, cuándo vence, pasar a Pro o renovar (Wompi), historial de pagos.
+- `/cuenta/ajustes` (Ajustes y plan, una sola página): cómo te llama (`/me/perfil`), tu plan, cuándo vence, pasar a Pro o renovar (Wompi), historial de pagos y tu WhatsApp. `/cuenta/plan` redirige aquí (`#plan`) con su `?pago=listo`, para los enlaces viejos y la vuelta de Wompi.
 - Botón "Entrar" en el menú de la página. `/chat`: enlace corto que abre el bot en WhatsApp (para compartir). `/pago`: a donde vuelve Wompi.
 - Fuera de Google (`noindex`, `robots.txt`), sin caché.
 

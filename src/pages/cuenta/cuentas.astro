@@ -1,6 +1,7 @@
 ---
 // Cuentas y tarjetas: cuánto tiene en cada banco, billetera y efectivo, y cuánto debe en tarjetas;
-// agregar una cuenta, renombrarla, ajustar su saldo y reservarla (🔒 no cuenta para el disponible).
+// agregar una cuenta, renombrarla, ajustar su saldo, reservarla (🔒 no cuenta para el disponible) y
+// eliminarla (el bot la cierra, como «cerré la cuenta de…»: sus movimientos siguen en los reportes).
 // Lee /me/cuentas; mientras el bot no la tenga, usa las cuentas del resumen (sin poder editarlas).
 import Cuenta from '../../layouts/Cuenta.astro';
 import Head from '../../components/cuenta/Head.astro';
@@ -50,6 +51,7 @@ if (Astro.request.method === 'POST') {
       const body = { nombre, reservada: f.get('reservada') === 'on', saldo_actual };
       return { path: `/me/cuentas/${id}`, method: 'PATCH', body, ok: 'Cuenta actualizada.' };
     }
+    if (accion === 'borrar' && id) return { path: `/me/cuentas/${id}`, method: 'DELETE', ok: nombre ? `Cuenta «${nombre}» eliminada.` : 'Cuenta eliminada.' };
     return 'Acción no válida.';
   });
 }
@@ -208,7 +210,7 @@ const valores = (c: CuentaItem) => JSON.stringify({ id: c.id, nombre: c.nombre, 
             </label>
           </div>
         </Dialog>
-        <Dialog id="dlg-editar" titulo="Editar cuenta" accion="editar">
+        <Dialog id="dlg-editar" titulo="Editar cuenta" accion="editar" borrar={{ accion: 'borrar', texto: 'Se elimina la cuenta y deja de contar en tu dinero. Sus movimientos siguen en tus reportes y, si vuelves a nombrarla por WhatsApp, regresa.' }}>
           <input type="hidden" name="saldo_antes" />
           <label class="fld">
             Nombre
