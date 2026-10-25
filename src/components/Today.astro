@@ -198,7 +198,7 @@ const dayLabels = Array.from({ length: days }, (_, i) => `${4 + i}`);
           noBody: (s: string) => `You'd be <strong>${s}</strong> short of reaching ${PAY} with your bills covered.`,
         }
       : {
-          ok: `<strong>🟢 Sí, entra en lo de hoy.</strong>`,
+          ok: `<strong>🟢 Sí, te alcanza para hoy.</strong>`,
           okBody: (l: string, d: string) => `Te quedarían <strong>${l}</strong> de ${d} para el resto del día.`,
           warn: (d: string) => `<strong>🟡 Puedes, pero se sale de lo de hoy</strong> (${d}).`,
           warnBody: (d: string, a: string) => `Si lo compras, tu disponible baja de ${d} a <strong>${a} por día</strong> hasta el ${PAY}.`,

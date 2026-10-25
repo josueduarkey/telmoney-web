@@ -68,7 +68,7 @@ const L = EN
       thanks: '¡Para eso estoy! 💚',
       nothingUndo: 'No hay nada que deshacer todavía.',
       undone: (a: string, c: string, left: string, d: string) => `↩️ Listo, borré ${a} · ${c}.\n🟢 Hoy te quedan *${left}* de ${d}.`,
-      buyOk: (left: string, d: string) => `🟢 *Sí, entra en lo de hoy.*\nTe quedarían *${left}* de ${d} para el resto del día.`,
+      buyOk: (left: string, d: string) => `🟢 *Sí, te alcanza para hoy.*\nTe quedarían *${left}* de ${d} para el resto del día.`,
       buyWarn: (d: string, after: string) => `🟡 *Puedes, pero se sale de lo de hoy* (${d}).\nSi lo compras, tu disponible baja de ${d} a *${after} por día* hasta el ${PAYDAY}.`,
       buyNo: (short: string) => `🔴 *Hoy no te alcanza.*\nTe faltarían *${short}* para llegar al ${PAYDAY} con tus pagos fijos cubiertos.`,
       status: (left: string, d: string, bal: string) =>
