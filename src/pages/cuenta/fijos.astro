@@ -246,12 +246,15 @@ const dias = (iso: string | null) => (iso ? Math.ceil((new Date(iso).getTime() -
 </Cuenta>
 
 <script>
-  // Las cuotas piden cuántas faltan; un gasto de todos los meses, no.
-  const dlg = document.getElementById('dlg-fijo');
-  const sync = () => {
-    const cuota = dlg?.querySelector<HTMLSelectElement>('[data-fijo-tipo]')?.value === 'cuota';
-    dlg?.querySelector<HTMLElement>('[data-cuotas]')?.toggleAttribute('hidden', !cuota);
-  };
-  dlg?.addEventListener('change', (e) => (e.target as HTMLElement).matches('[data-fijo-tipo]') && sync());
-  new MutationObserver(() => dlg?.hasAttribute('open') && sync()).observe(dlg ?? document.body, { attributes: true, attributeFilter: ['open'] });
+  // Las cuotas piden cuántas faltan; un gasto de todos los meses, no. En cada carga (sin recargar).
+  document.addEventListener('astro:page-load', () => {
+    const dlg = document.getElementById('dlg-fijo');
+    if (!dlg) return;
+    const sync = () => {
+      const cuota = dlg?.querySelector<HTMLSelectElement>('[data-fijo-tipo]')?.value === 'cuota';
+      dlg?.querySelector<HTMLElement>('[data-cuotas]')?.toggleAttribute('hidden', !cuota);
+    };
+    dlg?.addEventListener('change', (e) => (e.target as HTMLElement).matches('[data-fijo-tipo]') && sync());
+    new MutationObserver(() => dlg?.hasAttribute('open') && sync()).observe(dlg, { attributes: true, attributeFilter: ['open'] });
+  });
 </script>

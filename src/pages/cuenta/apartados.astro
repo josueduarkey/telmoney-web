@@ -269,16 +269,19 @@ const destinoTexto = (a: Apartado) => {
 
 <script>
   // Muestra las fuentes si es «solo de algunos» y la lista del destino elegido.
-  const dlg = document.getElementById('dlg-apartado');
-  const sync = () => {
+  // En cada carga (se navega sin recargar): la ventana es otra cada vez.
+  document.addEventListener('astro:page-load', () => {
+    const dlg = document.getElementById('dlg-apartado');
     if (!dlg) return;
-    const algunas = dlg.querySelector<HTMLInputElement>('[data-base][value=algunas]')?.checked ?? false;
-    dlg.querySelector<HTMLElement>('[data-fuentes]')!.hidden = !algunas;
-    const destino = dlg.querySelector<HTMLSelectElement>('[data-destino]')?.value;
-    dlg.querySelectorAll<HTMLElement>('[data-si-destino]').forEach((el) => (el.hidden = el.dataset.siDestino !== destino));
-  };
-  dlg?.addEventListener('change', (e) => (e.target as HTMLElement).matches('[data-base], [data-destino]') && sync());
-  new MutationObserver(() => dlg?.hasAttribute('open') && sync()).observe(dlg ?? document.body, { attributes: true, attributeFilter: ['open'] });
+    const sync = () => {
+      const algunas = dlg.querySelector<HTMLInputElement>('[data-base][value=algunas]')?.checked ?? false;
+      dlg.querySelector<HTMLElement>('[data-fuentes]')!.hidden = !algunas;
+      const destino = dlg.querySelector<HTMLSelectElement>('[data-destino]')?.value;
+      dlg.querySelectorAll<HTMLElement>('[data-si-destino]').forEach((el) => (el.hidden = el.dataset.siDestino !== destino));
+    };
+    dlg?.addEventListener('change', (e) => (e.target as HTMLElement).matches('[data-base], [data-destino]') && sync());
+    new MutationObserver(() => dlg?.hasAttribute('open') && sync()).observe(dlg, { attributes: true, attributeFilter: ['open'] });
+  });
 
   // «Ya lo aparté»: el placeholder dice cuánto falta.
   document.addEventListener('click', (e) => {

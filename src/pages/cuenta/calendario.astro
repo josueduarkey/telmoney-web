@@ -305,10 +305,11 @@ const errores = [rm.ok ? null : rm.detail, ri.ok ? null : ri.detail].filter(Bool
 
 <script>
   // Tocar un día muestra su detalle sin recargar; el enlace queda para quien no tenga JavaScript.
-  const grid = document.querySelector<HTMLElement>('.cal__grid');
-  grid?.addEventListener('click', (ev) => {
-    const a = (ev.target as HTMLElement).closest<HTMLAnchorElement>('a[data-dia]');
-    if (!a || ev.metaKey || ev.ctrlKey || ev.shiftKey) return;
+  // En captura, para ganarle al ClientRouter (que si no lo trataría como otra página).
+  document.addEventListener('click', (ev) => {
+    const a = (ev.target as HTMLElement).closest<HTMLAnchorElement>('.cal__grid a[data-dia]');
+    const grid = a?.closest<HTMLElement>('.cal__grid');
+    if (!a || !grid || ev.metaKey || ev.ctrlKey || ev.shiftKey) return;
     ev.preventDefault();
     const dia = a.dataset.dia!;
     grid.querySelectorAll('a[data-dia]').forEach((x) => x.removeAttribute('aria-current'));
@@ -317,7 +318,7 @@ const errores = [rm.ok ? null : rm.detail, ri.ok ? null : ri.detail].filter(Bool
     history.replaceState(null, '', a.href);
     const det = document.querySelector<HTMLElement>(`[data-detalle="${dia}"]`);
     if (det && det.getBoundingClientRect().top > innerHeight - 80) det.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
+  }, true);
 </script>
 
 <style>

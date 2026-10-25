@@ -307,22 +307,26 @@ const ESTADO = { esperado: '', atrasado: 'Atrasado', recibido: 'Ya llegó', no_l
 
 <script>
   // El formulario muestra los días según la frecuencia, y el texto del monto según sea fijo o variable.
-  const dlg = document.getElementById('dlg-ingreso');
-  const sync = () => {
-    const frec = dlg?.querySelector<HTMLSelectElement>('[data-ing-frec]')?.value ?? '';
-    const tipo = dlg?.querySelector<HTMLSelectElement>('[data-ing-tipo]')?.value ?? '';
-    dlg?.querySelectorAll<HTMLElement>('[data-frec]').forEach((el) => (el.hidden = !el.dataset.frec!.split(' ').includes(frec)));
-    dlg?.querySelectorAll<HTMLElement>('[data-solo-tipo]').forEach((el) => (el.hidden = el.dataset.soloTipo !== tipo));
-    const monto = dlg?.querySelector<HTMLInputElement>('input[name=monto]');
-    if (monto) monto.required = tipo === 'fijo';
-  };
-  dlg?.addEventListener('change', (e) => (e.target as HTMLElement).matches('[data-ing-frec], [data-ing-tipo]') && sync());
-  new MutationObserver(() => dlg?.hasAttribute('open') && sync()).observe(dlg ?? document.body, { attributes: true, attributeFilter: ['open'] });
+  // En cada carga (se navega sin recargar): la ventana es otra cada vez.
+  document.addEventListener('astro:page-load', () => {
+    const dlg = document.getElementById('dlg-ingreso');
+    if (!dlg) return;
+    const sync = () => {
+      const frec = dlg?.querySelector<HTMLSelectElement>('[data-ing-frec]')?.value ?? '';
+      const tipo = dlg?.querySelector<HTMLSelectElement>('[data-ing-tipo]')?.value ?? '';
+      dlg?.querySelectorAll<HTMLElement>('[data-frec]').forEach((el) => (el.hidden = !el.dataset.frec!.split(' ').includes(frec)));
+      dlg?.querySelectorAll<HTMLElement>('[data-solo-tipo]').forEach((el) => (el.hidden = el.dataset.soloTipo !== tipo));
+      const monto = dlg?.querySelector<HTMLInputElement>('input[name=monto]');
+      if (monto) monto.required = tipo === 'fijo';
+    };
+    dlg?.addEventListener('change', (e) => (e.target as HTMLElement).matches('[data-ing-frec], [data-ing-tipo]') && sync());
+    new MutationObserver(() => dlg?.hasAttribute('open') && sync()).observe(dlg, { attributes: true, attributeFilter: ['open'] });
+  });
 
   // «Me llegó»: si la fuente es variable, el monto es obligatorio.
-  const rec = document.getElementById('dlg-recibido');
   document.addEventListener('click', (e) => {
     const b = (e.target as HTMLElement).closest<HTMLElement>('[data-dialog="dlg-recibido"]');
+    const rec = document.getElementById('dlg-recibido');
     if (!b || !rec) return;
     const variable = b.hasAttribute('data-variable');
     const monto = rec.querySelector<HTMLInputElement>('input[name=monto]')!;

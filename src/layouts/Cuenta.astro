@@ -3,12 +3,16 @@
 // con los módulos (al estilo del sidebar de shadcn/ui); en el celular se abre como un panel desde la
 // izquierda. Usa los estilos del panel (admin.css) para tarjetas y tablas, y cuenta.css para el marco.
 // Fuera de Google y sin caché (lo pone src/middleware.ts).
+// Se navega sin recargar (ClientRouter de Astro): solo cambia el contenido y la barra lateral se queda
+// (transition:persist). Por eso los scripts de aquí y de cada página escuchan en `document` o se
+// vuelven a enganchar en `astro:page-load`; lo que sale del sitio o descarga lleva data-astro-reload.
 import '../styles/global.css';
 import '../styles/admin.css';
 import '../styles/cuenta.css';
 import Logo from '../components/Logo.astro';
 import ThemeToggle from '../components/ThemeToggle.astro';
 import Icon from '../components/cuenta/Icon.astro';
+import { ClientRouter } from 'astro:transitions';
 import { WHATSAPP_NUMBER } from '../config';
 import { esAdmin } from '../lib/admin/clerk';
 import { NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, PUBLIC_CLERK_PUBLISHABLE_KEY } from 'astro:env/server';
@@ -86,27 +90,35 @@ const equipo = !bare && Astro.locals.cuenta ? await esAdmin(Astro.locals.cuenta.
     <title>{`${title} · TelMoney`}</title>
     <script is:inline>
       (function () {
-        var saved = null;
-        try {
-          saved = localStorage.getItem('tm-theme');
-        } catch (e) {}
-        document.documentElement.dataset.theme =
-          saved === 'light' || saved === 'dark'
-            ? saved
-            : window.matchMedia('(prefers-color-scheme: light)').matches
-              ? 'light'
-              : 'dark';
+        // Al cambiar de página sin recargar, <html> llega sin el tema: se vuelve a poner en la nueva.
+        function tema(root) {
+          var saved = null;
+          try {
+            saved = localStorage.getItem('tm-theme');
+          } catch (e) {}
+          root.dataset.theme =
+            saved === 'light' || saved === 'dark'
+              ? saved
+              : window.matchMedia('(prefers-color-scheme: light)').matches
+                ? 'light'
+                : 'dark';
+        }
+        tema(document.documentElement);
+        document.addEventListener('astro:before-swap', function (e) {
+          e.newDocument.documentElement.dataset.theme = document.documentElement.dataset.theme;
+        });
       })();
     </script>
+    <ClientRouter />
   </head>
   <body class:list={['admin', 'app', { 'app--bare': bare }]} data-clerk-key={clerkKey}>
     <a class="skip-link" href="#main">Saltar al contenido</a>
 
     {
       !bare && (
-        <aside class="sb" id="sb" aria-label="Menú de tu cuenta" data-sb>
+        <aside class="sb" id="sb" aria-label="Menú de tu cuenta" data-sb transition:persist="sb" transition:animate="none">
           <div class="sb__head">
-            <a class="sb__brand" href="/" aria-label="TelMoney, inicio">
+            <a class="sb__brand" href="/" aria-label="TelMoney, inicio" data-astro-reload>
               <Logo size={28} />
             </a>
             <button class="sb__close" type="button" aria-label="Cerrar menú" data-sb-close>
@@ -128,7 +140,7 @@ const equipo = !bare && Astro.locals.cuenta ? await esAdmin(Astro.locals.cuenta.
                 <ul role="list">
                   {g.items.map((n) => (
                     <li>
-                      <a href={n.href} aria-current={section === n.id ? 'page' : undefined}>
+                      <a href={n.href} aria-current={section === n.id ? 'page' : undefined} data-astro-prefetch>
                         <Icon name={n.icon} />
                         <span>{n.label}</span>
                       </a>
@@ -140,7 +152,7 @@ const equipo = !bare && Astro.locals.cuenta ? await esAdmin(Astro.locals.cuenta.
           </nav>
 
           {equipo && (
-            <a class="sb__admin" href="/admin">
+            <a class="sb__admin" href="/admin" data-astro-reload>
               <Icon name="puntaje" />
               Panel de admin
             </a>
@@ -148,7 +160,7 @@ const equipo = !bare && Astro.locals.cuenta ? await esAdmin(Astro.locals.cuenta.
 
           <div class="sb__foot">
             <ThemeToggle />
-            <form method="post" action="/cuenta/salir">
+            <form method="post" action="/cuenta/salir" data-astro-reload>
               <button class="sb__out" type="submit">
                 <Icon name="salir" />
                 Salir
@@ -168,7 +180,7 @@ const equipo = !bare && Astro.locals.cuenta ? await esAdmin(Astro.locals.cuenta.
               <Icon name="menu" size={20} />
             </button>
           ) : (
-            <a class="sb__brand" href="/" aria-label="TelMoney, inicio">
+            <a class="sb__brand" href="/" aria-label="TelMoney, inicio" data-astro-reload>
               <Logo size={28} />
             </a>
           )
@@ -178,7 +190,7 @@ const equipo = !bare && Astro.locals.cuenta ? await esAdmin(Astro.locals.cuenta.
           bare && (
             <div class="app-top__end">
               <ThemeToggle />
-              <form method="post" action="/cuenta/salir">
+              <form method="post" action="/cuenta/salir" data-astro-reload>
                 <button class="btn-quiet" type="submit">
                   Salir
                 </button>
@@ -195,22 +207,37 @@ const equipo = !bare && Astro.locals.cuenta ? await esAdmin(Astro.locals.cuenta.
     <div class="tip" role="tooltip" hidden data-tip-box></div>
     <script>
       // Menú en el celular: se abre desde la izquierda, se cierra con la X, tocando fuera o con Escape.
-      const sb = document.querySelector<HTMLElement>('[data-sb]');
-      const scrim = document.querySelector<HTMLElement>('.sb-scrim');
-      const opener = document.querySelector<HTMLButtonElement>('[data-sb-open]');
-      const setOpen = (open: boolean) => {
+      // Todo se busca al momento: al cambiar de página, el botón y el fondo son otros.
+      const sbEl = () => document.querySelector<HTMLElement>('[data-sb]');
+      const setOpen = (open: boolean, foco = true) => {
+        const sb = sbEl();
+        const scrim = document.querySelector<HTMLElement>('.sb-scrim');
+        const opener = document.querySelector<HTMLButtonElement>('[data-sb-open]');
         if (!sb || !scrim || !opener) return;
         sb.classList.toggle('is-open', open);
         scrim.hidden = !open;
         opener.setAttribute('aria-expanded', String(open));
         document.body.classList.toggle('sb-locked', open);
+        if (!foco) return;
         if (open) sb.querySelector<HTMLElement>('[aria-current="page"], a')?.focus();
         else opener.focus();
       };
-      opener?.addEventListener('click', () => setOpen(true));
-      document.querySelectorAll('[data-sb-close]').forEach((el) => el.addEventListener('click', () => setOpen(false)));
+      document.addEventListener('click', (e) => {
+        const t = e.target as HTMLElement;
+        if (t.closest('[data-sb-open]')) setOpen(true);
+        else if (t.closest('[data-sb-close]')) setOpen(false);
+      });
       document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && sb?.classList.contains('is-open')) setOpen(false);
+        if (e.key === 'Escape' && sbEl()?.classList.contains('is-open')) setOpen(false);
+      });
+      // La barra se queda entre páginas: se cierra (en el celular) y se marca la sección nueva.
+      document.addEventListener('astro:before-swap', (e) => {
+        const actual = e.newDocument.querySelector('[data-sb] [aria-current="page"]')?.getAttribute('href');
+        sbEl()?.querySelectorAll('.sb__nav a').forEach((a) => {
+          if (a.getAttribute('href') === actual) a.setAttribute('aria-current', 'page');
+          else a.removeAttribute('aria-current');
+        });
+        sbEl()?.classList.remove('is-open');
       });
 
       // Ventanas de edición (components/cuenta/Dialog.astro): se abren con [data-dialog], se llenan con
@@ -278,6 +305,7 @@ const equipo = !bare && Astro.locals.cuenta ? await esAdmin(Astro.locals.cuenta.
         } catch {}
       };
       const renovados = new WeakSet<HTMLFormElement>();
+      // En captura, para correr antes que el ClientRouter (que manda el formulario sin recargar).
       document.addEventListener('submit', (e) => {
         const form = e.target as HTMLFormElement;
         const btn = (e as SubmitEvent).submitter as HTMLButtonElement | null;
@@ -298,11 +326,13 @@ const equipo = !bare && Astro.locals.cuenta ? await esAdmin(Astro.locals.cuenta.
           // requestSubmit con el mismo botón: así va su `accion` (p. ej. «Sí, borrar»).
           form.requestSubmit(btn && btn.form === form ? btn : undefined);
         });
-      });
+      }, true);
 
       // Tooltip de las gráficas (igual que en el panel): primera línea en negrita, texto con textContent.
-      const box = document.querySelector<HTMLElement>('[data-tip-box]')!;
+      const tipBox = () => document.querySelector<HTMLElement>('[data-tip-box]');
       const show = (el: Element, x: number, y: number) => {
+        const box = tipBox();
+        if (!box) return;
         const [value, ...rest] = (el.getAttribute('data-tip') ?? '').split('\n');
         const strong = document.createElement('strong');
         strong.textContent = value;
@@ -314,16 +344,16 @@ const equipo = !bare && Astro.locals.cuenta ? await esAdmin(Astro.locals.cuenta.
       document.addEventListener('pointermove', (e) => {
         const el = (e.target as Element).closest?.('[data-tip]');
         if (el) show(el, e.clientX, e.clientY);
-        else box.hidden = true;
+        else tipBox()?.setAttribute('hidden', '');
       });
       document.addEventListener('focusin', (e) => {
         const el = (e.target as Element).closest?.('[data-tip]');
-        if (!el) return void (box.hidden = true);
+        if (!el) return void tipBox()?.setAttribute('hidden', '');
         const r = el.getBoundingClientRect();
         show(el, r.left + r.width / 2, r.top);
       });
-      document.addEventListener('focusout', () => (box.hidden = true));
-      document.addEventListener('scroll', () => (box.hidden = true), { passive: true });
+      document.addEventListener('focusout', () => tipBox()?.setAttribute('hidden', ''));
+      document.addEventListener('scroll', () => tipBox()?.setAttribute('hidden', ''), { passive: true });
     </script>
   </body>
 </html>

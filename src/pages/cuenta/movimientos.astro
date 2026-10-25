@@ -300,19 +300,23 @@ const KIND = { expense: 'Gasto', income: 'Ingreso', transfer: 'Transferencia' } 
 
 <script>
   // En la ventana de movimientos: una transferencia pide la cuenta de destino y no lleva categoría.
-  const dlg = document.getElementById('dlg-mov');
-  const sync = () => {
-    const tipo = dlg?.querySelector<HTMLSelectElement>('[data-tipo]')?.value;
-    const t = tipo === 'transfer';
-    dlg?.querySelector<HTMLElement>('[data-no-transfer]')?.toggleAttribute('hidden', t);
-    dlg?.querySelector<HTMLElement>('[data-solo-transfer]')?.toggleAttribute('hidden', !t);
-    const label = dlg?.querySelector('[data-cuenta-label]');
-    if (label) label.textContent = t ? 'De qué cuenta' : 'Cuenta';
-    // Al editar una transferencia no se puede cambiar el tipo.
-    const sel = dlg?.querySelector<HTMLSelectElement>('[data-tipo]');
-    if (sel) sel.disabled = false;
-  };
-  dlg?.addEventListener('change', (e) => (e.target as HTMLElement).matches('[data-tipo]') && sync());
-  // Se llama cuando la ventana se abre (el layout ya llenó los campos).
-  new MutationObserver(() => dlg?.hasAttribute('open') && sync()).observe(dlg ?? document.body, { attributes: true, attributeFilter: ['open'] });
+  // En cada carga (se navega sin recargar): la ventana es otra cada vez.
+  document.addEventListener('astro:page-load', () => {
+    const dlg = document.getElementById('dlg-mov');
+    if (!dlg) return;
+    const sync = () => {
+      const tipo = dlg?.querySelector<HTMLSelectElement>('[data-tipo]')?.value;
+      const t = tipo === 'transfer';
+      dlg?.querySelector<HTMLElement>('[data-no-transfer]')?.toggleAttribute('hidden', t);
+      dlg?.querySelector<HTMLElement>('[data-solo-transfer]')?.toggleAttribute('hidden', !t);
+      const label = dlg?.querySelector('[data-cuenta-label]');
+      if (label) label.textContent = t ? 'De qué cuenta' : 'Cuenta';
+      // Al editar una transferencia no se puede cambiar el tipo.
+      const sel = dlg?.querySelector<HTMLSelectElement>('[data-tipo]');
+      if (sel) sel.disabled = false;
+    };
+    dlg?.addEventListener('change', (e) => (e.target as HTMLElement).matches('[data-tipo]') && sync());
+    // Se llama cuando la ventana se abre (el layout ya llenó los campos).
+    new MutationObserver(() => dlg?.hasAttribute('open') && sync()).observe(dlg, { attributes: true, attributeFilter: ['open'] });
+  });
 </script>

@@ -124,7 +124,7 @@ const nivelDe = (plan: string) => (plan.startsWith('starter') ? 'starter' : 'pro
           <h3 class="ajustes__sub">{datos.plan.estado === 'pagando' ? 'Renovar o cambiar de plan' : 'Elige tu plan'}</h3>
           <div class="plans">
             {(datos.precios ?? []).filter((x) => x.monto > 0).map((x) => (
-              <form method="post" class:list={['card', 'plan-card', { 'plan-card--pro': nivelDe(x.plan) === 'pro' }]}>
+              <form method="post" data-astro-reload class:list={['card', 'plan-card', { 'plan-card--pro': nivelDe(x.plan) === 'pro' }]}>
                 <input type="hidden" name="accion" value="pagar" />
                 <input type="hidden" name="plan" value={x.plan} />
                 <h3>{x.nombre}</h3>

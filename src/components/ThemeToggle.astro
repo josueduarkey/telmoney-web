@@ -26,7 +26,8 @@
   const root = document.documentElement;
   const system = window.matchMedia('(prefers-color-scheme: light)');
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const buttons = document.querySelectorAll<HTMLButtonElement>('[data-theme-toggle]');
+  // Se buscan al momento: en Mi cuenta se cambia de página sin recargar (ClientRouter) y los botones pueden ser otros.
+  const botones = () => document.querySelectorAll<HTMLButtonElement>('[data-theme-toggle]');
 
   const systemTheme = () => (system.matches ? 'light' : 'dark');
   const current = () => (root.dataset.theme === 'light' ? 'light' : 'dark');
@@ -35,7 +36,7 @@
     const t = current();
     const en = root.lang === 'en';
     const next = en ? (t === 'dark' ? 'light' : 'dark') : t === 'dark' ? 'claro' : 'oscuro';
-    buttons.forEach((b) => {
+    botones().forEach((b) => {
       b.setAttribute('aria-label', en ? `Switch to ${next} mode` : `Cambiar a modo ${next}`);
       b.title = en ? `${next[0].toUpperCase()}${next.slice(1)} mode` : `Modo ${next}`;
       b.dataset.cursor = b.title;
@@ -77,7 +78,9 @@
   type ViewTransition = { ready: Promise<void>; finished: Promise<void> };
   const doc = document as Document & { startViewTransition?: (cb: () => void) => ViewTransition };
 
-  buttons.forEach((button) =>
+  const enganchar = (button: HTMLButtonElement) => {
+    if (button.dataset.themeListo) return;
+    button.dataset.themeListo = '1';
     button.addEventListener('click', () => {
       const next = current() === 'dark' ? 'light' : 'dark';
       save(next);
@@ -120,8 +123,13 @@
       });
       // El estilo se recalcula una sola vez más, al terminar (no a mitad de la animación)
       vt.finished.finally(endSwitch);
-    }),
-  );
+    });
+  };
+  botones().forEach(enganchar);
+  document.addEventListener('astro:page-load', () => {
+    botones().forEach(enganchar);
+    sync();
+  });
 
   // Si no hay elección guardada, la página sigue los cambios del sistema en vivo
   system.addEventListener('change', () => {

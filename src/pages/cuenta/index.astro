@@ -264,11 +264,16 @@ const waHref = (msg: string) =>
 
 <script>
   // Mientras espera que mande el código por WhatsApp, se revisa cada 3 s y se recarga al quedar conectada.
-  if (document.querySelector('[data-esperando]')) {
+  // En cada carga (se navega sin recargar); se detiene sola si ya no está en esa pantalla.
+  let corriendo = false;
+  document.addEventListener('astro:page-load', () => {
+    if (corriendo || !document.querySelector('[data-esperando]')) return;
+    corriendo = true;
     let attempts = 0;
     const maxAttempts = 200; // 10 minutos (200 * 3s)
     let timer: ReturnType<typeof setTimeout> | null = null;
     const tick = async () => {
+      if (!document.querySelector('[data-esperando]')) return void (corriendo = false);
       if (document.hidden) return;
       attempts++;
       if (attempts > maxAttempts) {
@@ -284,12 +289,12 @@ const waHref = (msg: string) =>
     };
     timer = setTimeout(tick, 3000);
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && attempts <= maxAttempts) {
+      if (corriendo && !document.hidden && attempts <= maxAttempts) {
         if (timer) clearTimeout(timer);
         tick();
       }
     });
-  }
+  });
 </script>
 
 <style>

@@ -196,10 +196,14 @@ const CHIP = { pendiente: 'warn', anotado: 'ok', descartado: 'muted', ignorado: 
   });
 
   // Mientras Google no manda el código, se revisa cada 4 s (hasta 15 min) y se recarga cuando llega.
-  if (document.querySelector('[data-esperando-codigo]')) {
+  // En cada carga (se navega sin recargar); se detiene sola si ya no está en esa pantalla.
+  let revisando = false;
+  document.addEventListener('astro:page-load', () => {
+    if (revisando || !document.querySelector('[data-esperando-codigo]')) return;
+    revisando = true;
     let attempts = 0;
     const tick = async () => {
-      if (++attempts > 225) return;
+      if (++attempts > 225 || !document.querySelector('[data-esperando-codigo]')) return void (revisando = false);
       if (!document.hidden) {
         try {
           const r = await fetch('/cuenta/correo/estado', { cache: 'no-store' });
@@ -209,7 +213,7 @@ const CHIP = { pendiente: 'warn', anotado: 'ok', descartado: 'muted', ignorado: 
       setTimeout(tick, 4000);
     };
     setTimeout(tick, 4000);
-  }
+  });
 </script>
 
 <style>
