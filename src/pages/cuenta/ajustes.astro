@@ -1,5 +1,5 @@
 ---
-// Ajustes: cómo lo llama TelMoney. Lo que le entra y lo que aparta ya no se escribe aquí: sale de sus
+// Ajustes: cómo lo llama TelMoney. Lo que recibe y lo que aparta ya no se escribe aquí: sale de sus
 // fuentes de ingreso (/cuenta/ingresos) y sus apartados (/cuenta/apartados), y aquí solo se resume.
 // Lee y guarda /me/perfil.
 import Cuenta from '../../layouts/Cuenta.astro';
@@ -65,14 +65,14 @@ const p = r.ok ? (r.data?.perfil ?? null) : null;
           <a class="card tile tile--link" href="/cuenta/ingresos">
             <p class="tile__name">Ingresos</p>
             <p class="tile__amount">{p.ingreso_mensual ? usd(p.ingreso_mensual) : '—'}<small class="muted"> al mes</small></p>
-            <p class="tile__meta">De dónde te entra dinero y cada cuánto. Con esto se calcula cuánto puedes gastar al día.</p>
+            <p class="tile__meta">De dónde recibes dinero y cada cuánto. Con esto se calcula cuánto puedes gastar al día.</p>
           </a>
           <a class="card tile tile--link" href="/cuenta/apartados">
             <p class="tile__name">Apartados (%)</p>
-            <p class="tile__meta">El porcentaje de lo que te entra que separas para ahorro u otra cosa que tú elijas.</p>
+            <p class="tile__meta">El porcentaje de lo que recibes que separas para ahorro u otra cosa que tú elijas.</p>
           </a>
         </div>
-        {p.cuenta_cobro && <p class="stat__note">Tu dinero entra en: <b>{p.cuenta_cobro}</b></p>}
+        {p.cuenta_cobro && <p class="stat__note">Tu dinero llega a: <b>{p.cuenta_cobro}</b></p>}
       </div>
     )
   }

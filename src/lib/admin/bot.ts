@@ -243,7 +243,7 @@ export type Fijo = {
   id_cuenta?: number | null;
   id_categoria?: number | null;
 };
-/** Una fuente de ingreso: lo que le entra a la persona, fijo o variable, y cada cuánto. */
+/** Una fuente de ingreso: lo que recibe la persona, fijo o variable, y cada cuánto. */
 export type Ingreso = {
   id: number;
   nombre: string;
@@ -255,7 +255,7 @@ export type Ingreso = {
   dias: number[];
   id_cuenta: number | null;
   id_categoria: number | null;
-  /** Dinero con destino: lo que entra se aparta para esta categoría (un sobre). */
+  /** Dinero con destino: lo que llega se aparta para esta categoría (un sobre). */
   id_sobre_categoria: number | null;
   activa: boolean;
   principal: boolean;
@@ -265,7 +265,7 @@ export type Ingreso = {
   mensual: number | null;
   recibido_mes: number;
 };
-/** Un porcentaje de lo que entra que la persona aparta para algo (ahorro, emergencias…). */
+/** Un porcentaje de lo que recibe que la persona aparta para algo (ahorro, emergencias…). */
 export type Apartado = {
   id: number;
   nombre: string;
@@ -274,7 +274,7 @@ export type Apartado = {
   base: 'todas' | number[];
   destino_tipo: 'gasto' | 'meta' | 'cuenta';
   id_destino: number | null;
-  /** Lo que falta apartar de lo que ya entró. */
+  /** Lo que falta apartar de lo que ya llegó. */
   pendiente: number;
 };
 /** El plan del mes y la línea de lo que viene hasta el próximo ingreso fijo. */

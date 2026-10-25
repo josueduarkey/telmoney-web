@@ -125,7 +125,7 @@ const waHref = (msg: string) =>
             <p class="stat__value">{datos.hoy.disponible === null ? '—' : usd(datos.hoy.disponible)}</p>
             <p class="stat__note">
               {datos.hoy.disponible === null ? (
-                <>Dile a TelMoney cuánto tienes y <a href="/cuenta/ingresos">de dónde te entra dinero</a>, y aquí sale tu número del día.</>
+                <>Dile a TelMoney cuánto tienes y <a href="/cuenta/ingresos">de dónde recibes dinero</a>, y aquí sale tu número del día.</>
               ) : (
                 <>
                   hoy llevas <b>{usd(datos.hoy.gastado)}</b>

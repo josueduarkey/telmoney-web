@@ -1,5 +1,5 @@
 ---
-// Ingresos: de dónde le entra dinero a la persona (fijo o variable, cada cuánto y en qué cuenta), si ya le
+// Ingresos: de dónde recibe dinero a la persona (fijo o variable, cada cuánto y en qué cuenta), si ya le
 // llegó el de esta vez y cuánto suma al mes. Con esto el bot calcula el disponible del día y el plan del
 // mes. Lee /me/ingresos; agregar, editar, quitar, «me llegó» y «no llegó».
 import Cuenta from '../../layouts/Cuenta.astro';
@@ -86,7 +86,7 @@ const ESTADO = { esperado: '', atrasado: 'Atrasado', recibido: 'Ya llegó', no_l
 ---
 
 <Cuenta title="Ingresos" section="ingresos">
-  <Head titulo="Ingresos" sub="De dónde te entra dinero y cada cuánto. Con esto TelMoney sabe cuánto puedes gastar hasta que te llegue el siguiente.">
+  <Head titulo="Ingresos" sub="De dónde recibes dinero y cada cuánto. Con esto TelMoney sabe cuánto puedes gastar hasta que te llegue el siguiente.">
     {
       r.ok && (
         <button class="act act--main" type="button" data-dialog="dlg-ingreso" data-title="Agregar ingreso" data-accion="crear" data-values={JSON.stringify({ tipo: 'fijo', frecuencia: 'mensual' })}>
@@ -114,7 +114,7 @@ const ESTADO = { esperado: '', atrasado: 'Atrasado', recibido: 'Ya llegó', no_l
       <>
         <div class="cards">
           <div class="card">
-            <p class="stat__label">Te entra al mes</p>
+            <p class="stat__label">Recibes al mes</p>
             <p class="stat__value">{usd(totalMes)}</p>
             <p class="stat__note">sumando {ingresos.length} {ingresos.length === 1 ? 'fuente' : 'fuentes'} (las variables, en promedio)</p>
           </div>
@@ -252,7 +252,7 @@ const ESTADO = { esperado: '', atrasado: 'Atrasado', recibido: 'Ya llegó', no_l
           </label>
           <div class="fld-row">
             <label class="fld">
-              A qué cuenta entra
+              A qué cuenta llega
               <select class="field" name="cuenta_id">
                 <option value="">La de siempre</option>
                 {cuentas.map((c) => <option value={c.id}>{c.nombre}</option>)}
@@ -288,7 +288,7 @@ const ESTADO = { esperado: '', atrasado: 'Atrasado', recibido: 'Ya llegó', no_l
             </label>
           </div>
           <label class="fld">
-            A qué cuenta entró
+            A qué cuenta llegó
             <select class="field" name="cuenta_id">
               <option value="">La de siempre</option>
               {cuentas.map((c) => <option value={c.id}>{c.nombre}</option>)}

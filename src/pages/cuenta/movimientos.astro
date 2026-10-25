@@ -35,7 +35,7 @@ if (Astro.request.method === 'POST') {
     const descripcion = texto(f.get('descripcion')).slice(0, 120) || undefined;
     if (accion === 'crear') {
       if (!['expense', 'income', 'transfer'].includes(tipoF)) return 'Elige si es gasto, ingreso o transferencia.';
-      if (tipoF === 'transfer' && (!num('cuenta_id') || !num('a_cuenta_id'))) return 'Elige de qué cuenta sale y a cuál entra.';
+      if (tipoF === 'transfer' && (!num('cuenta_id') || !num('a_cuenta_id'))) return 'Elige de qué cuenta sale y a cuál va.';
       const body = { tipo: tipoF, monto, descripcion, categoria_id: tipoF === 'transfer' ? undefined : num('categoria_id'), cuenta_id: num('cuenta_id'), a_cuenta_id: tipoF === 'transfer' ? num('a_cuenta_id') : undefined, fecha };
       return { path: '/me/movimientos', method: 'POST', body, ok: 'Movimiento anotado.' };
     }

@@ -65,8 +65,8 @@ Un panel con barra lateral (en el celular se abre desde la izquierda), al estilo
 - **Categorías con íconos** (`CatIcon`), no emojis: se eligen por el nombre (o el emoji, si la categoría es propia).
 - `/cuenta/fijos`: agregar, editar, quitar y «ya pagué» (Pro; sin Pro, invita a ver los planes). Los de tarjeta solo se ven (el pago sí se marca).
 - `/cuenta/ingresos` (`/me/ingresos`): sus fuentes de ingreso, fijas o variables, cada una con su frecuencia (semanal, quincenal, mensual o ciertos días), su cuenta y, si quiere, un sobre («solo para» una categoría). Agregar, editar, quitar, «me llegó» y «no llegó» (cuando es hoy o está atrasado).
-- `/cuenta/apartados` (`/me/apartados`): porcentajes de lo que entra que la persona separa para lo que ella nombre, de todos sus ingresos o de algunos, hacia una meta, una cuenta o una categoría de gasto. «Ya lo aparté» y «Esta vez no». Nada viene puesto: cada quien crea los suyos.
-- Inicio muestra el plan del mes (`/me/plan`, viene en `{plan}`): lo que entra − fijos − apartados − dinero con destino = libre, y el límite semanal; y la línea de lo que viene hasta el próximo ingreso fijo.
+- `/cuenta/apartados` (`/me/apartados`): porcentajes de lo que recibe que la persona separa para lo que ella nombre, de todos sus ingresos o de algunos, hacia una meta, una cuenta o una categoría de gasto. «Ya lo aparté» y «Esta vez no». Nada viene puesto: cada quien crea los suyos.
+- Inicio muestra el plan del mes (`/me/plan`, viene en `{plan}`): ingresos − fijos − apartados − dinero con destino = libre, y el límite semanal; y la línea de lo que viene hasta el próximo ingreso fijo.
 - `/cuenta/ajustes`: solo el nombre (`/me/perfil`). El ingreso, los días de pago y el % de ahorro ya no se escriben ahí (el bot responde 422): salen de Ingresos y Apartados.
 - `/cuenta/reportes`: Excel, CSV o PDF del mes; la descarga pasa por `/cuenta/reporte`, que se la pide al bot (`/me/reporte`) con el token de la persona.
 - `/cuenta/correo`: conectar el correo del banco (docs/correo.md).

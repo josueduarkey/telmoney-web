@@ -1,5 +1,5 @@
 ---
-// Apartados: el porcentaje de lo que entra que la persona separa para algo (ahorro, emergencias, lo que
+// Apartados: el porcentaje de lo que recibe que la persona separa para algo (ahorro, emergencias, lo que
 // ella decida), de todos sus ingresos o solo de algunos, y a dónde va (un gasto, una meta o una cuenta).
 // Cada vez que le llega dinero, lo pendiente se resta del disponible hasta que lo aparta. Lee /me/apartados.
 import Cuenta from '../../layouts/Cuenta.astro';
@@ -47,7 +47,7 @@ if (Astro.request.method === 'POST') {
       if (destino_tipo === 'cuenta' && !destino) return 'Elige a qué cuenta lo pasas.';
       if (destino_tipo === 'gasto' && !destino) return 'Elige en qué categoría lo gastas.';
       const body = { nombre, pct: Math.round(pct * 100) / 100, base, destino_tipo, id_destino: destino ? Number(destino) : null };
-      if (accion === 'crear') return { path: '/me/apartados', method: 'POST', body, ok: `Listo: cada vez que te entre dinero, te digo cuánto apartar para «${nombre}».` };
+      if (accion === 'crear') return { path: '/me/apartados', method: 'POST', body, ok: `Listo: cada vez que recibas dinero, te digo cuánto apartar para «${nombre}».` };
       if (!id) return 'No encontramos ese apartado.';
       return { path: `/me/apartados/${id}`, method: 'PATCH', body, ok: 'Apartado actualizado.' };
     }
@@ -78,7 +78,7 @@ const metas = rm.ok ? (rm.data?.metas ?? []).filter((m) => m.id && !m.cumplida) 
 const { cuentas } = ops;
 const deGasto = ops.categorias.filter((c) => c.tipo !== 'income');
 
-// Lo que da al mes cada apartado, con lo que entra de su base.
+// Lo que da al mes cada apartado, con lo que recibe de su base.
 const mensualDe = (a: Apartado) => {
   const fuentes = a.base === 'todas' ? ingresos : ingresos.filter((i) => (a.base as number[]).includes(i.id));
   return (fuentes.reduce((s, i) => s + (i.mensual ?? 0), 0) * a.pct) / 100;
@@ -87,7 +87,7 @@ const alMes = apartados.reduce((s, a) => s + mensualDe(a), 0);
 const pendienteTotal = apartados.reduce((s, a) => s + (a.pendiente ?? 0), 0);
 const baseTexto = (a: Apartado) =>
   a.base === 'todas'
-    ? 'de todo lo que te entra'
+    ? 'de todo lo que recibes'
     : `de ${ingresos.filter((i) => (a.base as number[]).includes(i.id)).map((i) => i.nombre).join(', ') || 'ingresos que ya no tienes'}`;
 const destinoTexto = (a: Apartado) => {
   if (a.destino_tipo === 'meta') return `a la meta ${metas.find((m) => m.id === a.id_destino)?.nombre ?? 'principal'}`;
@@ -97,7 +97,7 @@ const destinoTexto = (a: Apartado) => {
 ---
 
 <Cuenta title="Apartados" section="apartados">
-  <Head titulo="Apartados (%)" sub="Un porcentaje de lo que te entra que separas para algo. Cada vez que te llega dinero, TelMoney te dice cuánto apartar.">
+  <Head titulo="Apartados (%)" sub="Un porcentaje de lo que recibes que separas para algo. Cada vez que te llega dinero, TelMoney te dice cuánto apartar.">
     {
       r.ok && (
         <button class="act act--main" type="button" data-dialog="dlg-apartado" data-title="Nuevo apartado" data-accion="crear" data-values={JSON.stringify({ base: 'todas', destino_tipo: 'meta' })}>
@@ -113,8 +113,8 @@ const destinoTexto = (a: Apartado) => {
       <Pronto
         icon="apartados"
         titulo="Tus apartados van a aparecer aquí"
-        texto="El porcentaje de lo que te entra que quieres separar, y cuánto te falta apartar. Estamos conectándolo con TelMoney."
-        frases={['aparta el 10% de lo que me entra para ahorro', 'mis apartados']}
+        texto="El porcentaje de lo que recibes que quieres separar, y cuánto te falta apartar. Estamos conectándolo con TelMoney."
+        frases={['aparta el 10% de lo que recibo para ahorro', 'mis apartados']}
       />
     )
   }
@@ -127,7 +127,7 @@ const destinoTexto = (a: Apartado) => {
           <div class="card">
             <p class="stat__label">Apartas al mes</p>
             <p class="stat__value">{usd(alMes)}</p>
-            <p class="stat__note">con lo que esperas que te entre</p>
+            <p class="stat__note">con lo que esperas recibir</p>
           </div>
           <div class="card">
             <p class="stat__label">Te falta apartar</p>
@@ -179,7 +179,7 @@ const destinoTexto = (a: Apartado) => {
           </div>
         ) : (
           <p class="card empty section">
-            Todavía no tienes apartados. Por ejemplo: el 10% de todo lo que te entra para ahorro, o el 5% de tu salario para emergencias.
+            Todavía no tienes apartados. Por ejemplo: el 10% de todo lo que recibes para ahorro, o el 5% de tu salario para emergencias.
           </p>
         )}
         {!ingresos.length && (
@@ -187,7 +187,7 @@ const destinoTexto = (a: Apartado) => {
             Los apartados salen de tus ingresos: <a href="/cuenta/ingresos">agrega tus ingresos</a> para que TelMoney sepa cuánto te toca apartar.
           </p>
         )}
-        <Pide frases={['aparta el 10% de lo que me entra para ahorro', 'de mi salario aparta 5% para emergencias', 'mis apartados']} />
+        <Pide frases={['aparta el 10% de lo que recibo para ahorro', 'de mi salario aparta 5% para emergencias', 'mis apartados']} />
 
         <Dialog id="dlg-apartado" titulo="Nuevo apartado" accion="crear" borrar={{ accion: 'borrar', texto: 'Se borra el apartado. Lo que ya apartaste no se mueve.' }}>
           <div class="fld-row">
@@ -203,7 +203,7 @@ const destinoTexto = (a: Apartado) => {
           <fieldset class="fld">
             <legend>De qué ingresos</legend>
             <div class="opts">
-              <label class="opt"><input type="radio" name="base" value="todas" data-base /> De todo lo que me entra</label>
+              <label class="opt"><input type="radio" name="base" value="todas" data-base /> De todo lo que recibo</label>
               <label class="opt"><input type="radio" name="base" value="algunas" data-base disabled={!ingresos.length} /> Solo de algunos</label>
             </div>
           </fieldset>
@@ -260,7 +260,7 @@ const destinoTexto = (a: Apartado) => {
         </Dialog>
 
         <Dialog id="dlg-omitir" titulo="Esta vez no" accion="omitir" enviar="Esta vez no">
-          <p class="stat__note" style="margin:0">TelMoney deja de restar lo pendiente de tu disponible. La próxima vez que te entre dinero, te vuelve a decir.</p>
+          <p class="stat__note" style="margin:0">TelMoney deja de restar lo pendiente de tu disponible. La próxima vez que recibas dinero, te vuelve a decir.</p>
         </Dialog>
       </>
     )
