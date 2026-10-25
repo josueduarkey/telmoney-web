@@ -1,0 +1,520 @@
+---
+// Calendario: el mes día por día. Lo que gastó y recibió (de /me/movimientos), lo que viene (fijos,
+// ingresos esperados y deudas que vencen) y el color de cada día contra lo que puede gastar al día.
+// Tocar un día muestra su detalle debajo; sin JavaScript, el enlace lleva a ?dia= y sale igual.
+import Cuenta from '../../layouts/Cuenta.astro';
+import Head from '../../components/cuenta/Head.astro';
+import Flash from '../../components/cuenta/Flash.astro';
+import CatIcon from '../../components/cuenta/CatIcon.astro';
+import { me, sinVincular, type Deudas, type Fijo, type Ingreso, type Limite, type Movimiento, type PlanMes } from '../../lib/admin/bot';
+import { sesion } from '../../lib/cuenta/pagina';
+import { diaSemana, diasDelMes, esPagoFijo, eventos, hoyIso, isoDe, ritmoDiario, salud, type Evento, type Salud } from '../../lib/cuenta/calendario';
+import { usd, usdShort } from '../../lib/admin/format';
+
+export const prerender = false;
+
+const ses = await sesion(Astro);
+if ('salir' in ses) return ses.salir;
+const { token } = ses;
+
+const hoy = hoyIso();
+const [hy, hm] = hoy.split('-').map(Number);
+// El mes que se ve: de 2 años atrás a 1 adelante.
+const pedido = Astro.url.searchParams.get('mes') ?? '';
+const desplaz = (y: number, m: number, n: number) => {
+  const t = y * 12 + (m - 1) + n;
+  return [Math.floor(t / 12), (t % 12) + 1] as const;
+};
+const valido = /^\d{4}-(0[1-9]|1[0-2])$/.test(pedido);
+const tIdx = (y: number, m: number) => y * 12 + m;
+let [y, m] = valido ? (pedido.split('-').map(Number) as [number, number]) : [hy, hm];
+if (tIdx(y, m) < tIdx(hy, hm) - 24 || tIdx(y, m) > tIdx(hy, hm) + 12) [y, m] = [hy, hm];
+const mes = `${y}-${String(m).padStart(2, '0')}`;
+const fin = diasDelMes(y, m);
+const desde = `${mes}-01`;
+const hasta = `${mes}-${String(fin).padStart(2, '0')}`;
+const [py, pm] = desplaz(y, m, -1);
+const [ny, nm] = desplaz(y, m, 1);
+const mesStr = (a: number, b: number) => `${a}-${String(b).padStart(2, '0')}`;
+const anterior = tIdx(py, pm) >= tIdx(hy, hm) - 24 ? mesStr(py, pm) : null;
+const siguiente = tIdx(ny, nm) <= tIdx(hy, hm) + 12 ? mesStr(ny, nm) : null;
+
+// Los movimientos del mes, de 200 en 200 (hasta 1,000; un mes normal trae mucho menos).
+async function movimientosDelMes() {
+  if (desde > hoy) return { ok: true as const, lista: [] as Movimiento[] };
+  const lista: Movimiento[] = [];
+  let antes: number | undefined;
+  for (let i = 0; i < 5; i++) {
+    const p = new URLSearchParams({ limite: '200', desde, hasta });
+    if (antes) p.set('antes', String(antes));
+    const r = await me<{ movimientos: Movimiento[]; hay_mas: boolean }>(`/me/movimientos?${p}`, token);
+    if (!r.ok) return r;
+    lista.push(...(r.data?.movimientos ?? []));
+    if (!r.data?.hay_mas || !lista.length) break;
+    antes = lista[lista.length - 1].id;
+  }
+  return { ok: true as const, lista };
+}
+
+const [rm, rf, ri, rd, rp, rl] = await Promise.all([
+  movimientosDelMes(),
+  me<{ fijos: Fijo[] }>('/me/fijos', token),
+  me<{ ingresos: Ingreso[] }>('/me/ingresos', token),
+  me<Deudas>('/me/deudas', token),
+  me<{ plan: PlanMes }>('/me/plan', token),
+  me<{ limites: Limite[] }>('/me/limites', token),
+]);
+if ((!rm.ok && sinVincular(rm)) || sinVincular(ri)) return Astro.redirect('/cuenta');
+
+const movs = rm.ok ? rm.lista : [];
+// Los gastos fijos son de Pro: sin Pro, el calendario sale sin ellos.
+const fijos = rf.ok ? (rf.data?.fijos ?? []) : [];
+const sinFijos = !rf.ok && rf.status === 403;
+const ingresos = ri.ok ? (ri.data?.ingresos ?? []) : [];
+const deudas = rd.ok ? (rd.data ?? null) : null;
+const plan = rp.ok ? (rp.data?.plan ?? null) : null;
+const limites = rl.ok ? (rl.data?.limites ?? []) : [];
+
+const ritmo = ritmoDiario(plan, limites, fin);
+const porDia = new Map<string, Movimiento[]>();
+for (const mv of movs) {
+  const f = isoDe(mv.fecha);
+  porDia.set(f, [...(porDia.get(f) ?? []), mv]);
+}
+const proximos = eventos(y, m, hoy, fijos, ingresos, deudas);
+
+type Dia = {
+  iso: string;
+  n: number;
+  movs: Movimiento[];
+  gasto: number;
+  /** Lo gastado sin contar el pago de fijos: con esto sale el color. */
+  gastoDia: number;
+  ingreso: number;
+  eventos: Evento[];
+  salud: Salud;
+  futuro: boolean;
+};
+const dias: Dia[] = Array.from({ length: fin }, (_, i) => {
+  const f = `${mes}-${String(i + 1).padStart(2, '0')}`;
+  const lista = (porDia.get(f) ?? []).slice().sort((a, b) => a.fecha.localeCompare(b.fecha));
+  const gastos = lista.filter((x) => x.tipo === 'expense');
+  const gasto = gastos.reduce((s, x) => s + x.monto, 0);
+  const gastoDia = gastos.filter((x) => !esPagoFijo(x, fijos)).reduce((s, x) => s + x.monto, 0);
+  const ingreso = lista.filter((x) => x.tipo === 'income').reduce((s, x) => s + x.monto, 0);
+  const futuro = f > hoy;
+  return { iso: f, n: i + 1, movs: lista, gasto, gastoDia, ingreso, eventos: proximos.get(f) ?? [], salud: futuro ? null : salud(gastoDia, ritmo?.monto ?? null), futuro };
+});
+const huecos = diaSemana(desde) - 1;
+
+const pasados = dias.filter((d) => !d.futuro);
+const totalGasto = pasados.reduce((s, d) => s + d.gasto, 0);
+const totalIngreso = pasados.reduce((s, d) => s + d.ingreso, 0);
+const cuenta = (s: Salud) => pasados.filter((d) => d.salud === s).length;
+const enVerde = cuenta('bien') + cuenta('sin_gastos');
+const porVenir = dias.filter((d) => d.iso >= hoy).flatMap((d) => d.eventos);
+const salePorVenir = porVenir.filter((e) => e.tipo === 'fijo' || e.tipo === 'debo').reduce((s, e) => s + (e.monto ?? 0), 0);
+const entraPorVenir = porVenir.filter((e) => e.tipo === 'ingreso' || e.tipo === 'me_deben').reduce((s, e) => s + (e.monto ?? 0), 0);
+
+const pedidoDia = Astro.url.searchParams.get('dia') ?? '';
+const elegido = dias.find((d) => d.iso === pedidoDia)?.iso ?? (hoy.startsWith(mes) ? hoy : desde);
+
+const titulo = new Date(`${desde}T12:00:00Z`).toLocaleDateString('es-SV', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+const fechaLarga = (f: string) => new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+const SEM = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+const SALUD: Record<Exclude<Salud, null>, string> = {
+  sin_gastos: 'Sin gastos',
+  bien: 'Dentro de lo que puedes gastar',
+  cuidado: 'Un poco arriba',
+  pasado: 'Te pasaste',
+};
+const SALE = new Set<Evento['tipo']>(['fijo', 'debo']);
+const hora = (f: string) => new Date(f).toLocaleTimeString('es-SV', { hour: 'numeric', minute: '2-digit', timeZone: 'America/El_Salvador' });
+const errores = [rm.ok ? null : rm.detail, ri.ok ? null : ri.detail].filter(Boolean);
+---
+
+<Cuenta title="Calendario" section="calendario">
+  <Head titulo="Calendario" sub="Tu mes día por día: lo que gastaste, lo que recibiste y lo que viene. Cada día tiene el color de cómo te fue." />
+  <Flash />
+  {errores.map((e) => <p class="flash flash--error">{e}</p>)}
+
+  <div class="cards">
+    <div class="card">
+      <p class="stat__label">Gastaste</p>
+      <p class="stat__value">{usd(totalGasto)}</p>
+      <p class="stat__note">{desde > hoy ? 'este mes todavía no empieza' : `en ${cap(titulo)}`}</p>
+    </div>
+    <div class="card">
+      <p class="stat__label">Recibiste</p>
+      <p class="stat__value kind-income">{usd(totalIngreso)}</p>
+      <p class="stat__note">{entraPorVenir > 0 ? <>y esperas <b>{usd(entraPorVenir)}</b> más</> : 'anotado en el mes'}</p>
+    </div>
+    <div class="card">
+      <p class="stat__label">Por pagar</p>
+      <p class="stat__value">{usd(salePorVenir)}</p>
+      <p class="stat__note">{sinFijos ? 'en deudas (los gastos fijos son de Pro)' : 'en gastos fijos y deudas, de hoy al fin de mes'}</p>
+    </div>
+    <div class="card">
+      <p class="stat__label">Días en verde</p>
+      <p class="stat__value">{ritmo && pasados.length ? `${enVerde} de ${pasados.length}` : '—'}</p>
+      <p class="stat__note">
+        {ritmo ? <>gastando hasta <b>{usd(ritmo.monto)}</b> al día ({ritmo.de})</> : <><a href="/cuenta/ingresos">Agrega tus ingresos</a> o un <a href="/cuenta/presupuesto">límite</a> para ver los colores</>}
+      </p>
+    </div>
+  </div>
+
+  <section class="card section cal" aria-labelledby="t-cal">
+    <div class="cal__head">
+      {anterior ? <a class="btn-quiet" href={`?mes=${anterior}`} aria-label="Mes anterior">‹</a> : <span />}
+      <h2 id="t-cal">{cap(titulo)}</h2>
+      {siguiente ? <a class="btn-quiet" href={`?mes=${siguiente}`} aria-label="Mes siguiente">›</a> : <span />}
+    </div>
+    {
+      !hoy.startsWith(mes) && (
+        <p class="cal__hoy">
+          <a href="/cuenta/calendario">Volver a hoy</a>
+        </p>
+      )
+    }
+    <div class="cal__grid" role="grid" aria-labelledby="t-cal">
+      {SEM.map((s) => <div class="cal__sem" role="columnheader">{s}</div>)}
+      {Array.from({ length: huecos }, () => <div class="cal__vacio" aria-hidden="true" />)}
+      {
+        dias.map((d) => {
+          const sale = d.eventos.some((e) => SALE.has(e.tipo));
+          const entra = d.eventos.some((e) => !SALE.has(e.tipo));
+          const etiqueta = [
+            fechaLarga(d.iso),
+            d.salud ? SALUD[d.salud] : '',
+            d.gasto ? `gastaste ${usd(d.gasto)}` : '',
+            d.ingreso ? `recibiste ${usd(d.ingreso)}` : '',
+            d.eventos.length ? `${d.eventos.length} ${d.eventos.length === 1 ? 'pendiente' : 'pendientes'}` : '',
+          ].filter(Boolean).join(', ');
+          return (
+            <a
+              class:list={['cal__dia', d.salud && `is-${d.salud}`, { 'is-hoy': d.iso === hoy, 'is-futuro': d.futuro }]}
+              href={`?mes=${mes}&dia=${d.iso}`}
+              data-dia={d.iso}
+              aria-current={d.iso === elegido ? 'date' : undefined}
+              aria-label={etiqueta}
+              role="gridcell"
+            >
+              <span class="cal__n">{d.n}</span>
+              {d.gasto > 0 && <span class="cal__monto">−{usdShort(d.gasto)}</span>}
+              {d.ingreso > 0 && <span class="cal__monto kind-income">+{usdShort(d.ingreso)}</span>}
+              <span class="cal__puntos" aria-hidden="true">
+                {sale && <i class="p-sale" />}
+                {entra && <i class="p-entra" />}
+              </span>
+              {d.eventos.slice(0, 2).map((e) => (
+                <span class:list={['cal__ev', SALE.has(e.tipo) ? 'ev-sale' : 'ev-entra']}>{e.nombre}</span>
+              ))}
+              {d.eventos.length > 2 && <span class="cal__ev">+{d.eventos.length - 2}</span>}
+            </a>
+          );
+        })
+      }
+    </div>
+    <ul class="cal__leyenda" aria-label="Qué significa cada color">
+      <li><i class="sw is-sin_gastos" /> Sin gastos</li>
+      <li><i class="sw is-bien" /> Dentro de lo que puedes gastar</li>
+      <li><i class="sw is-cuidado" /> Hasta 50% arriba</li>
+      <li><i class="sw is-pasado" /> Te pasaste</li>
+      <li><i class="dot p-sale" /> Te toca pagar</li>
+      <li><i class="dot p-entra" /> Te llega dinero</li>
+    </ul>
+  </section>
+
+  {
+    dias.map((d) => (
+      <section class="card section cal__detalle" data-detalle={d.iso} hidden={d.iso !== elegido} aria-live="polite">
+        <div class="card__head">
+          <div>
+            <h2>{cap(fechaLarga(d.iso))}</h2>
+            <p class="card__sub">
+              {d.salud && d.salud !== 'sin_gastos' && ritmo ? (
+                <>
+                  {SALUD[d.salud]}: {usd(d.gastoDia)} de {usd(ritmo.monto)}
+                  {d.gasto > d.gastoDia && <> (más {usd(d.gasto - d.gastoDia)} de gastos fijos)</>}
+                </>
+              ) : d.futuro ? (
+                'Lo que viene ese día'
+              ) : (
+                'Lo que anotaste ese día'
+              )}
+            </p>
+          </div>
+          {!d.futuro && d.movs.length > 0 && <a class="card__sub" href={`/cuenta/movimientos?mes=${mes}`}>Movimientos</a>}
+        </div>
+        {d.eventos.length > 0 && (
+          <table class="table table--card">
+            <tbody>
+              {d.eventos.map((e) => (
+                <tr>
+                  <td>
+                    <span class:list={['dot', SALE.has(e.tipo) ? 'p-sale' : 'p-entra']} aria-hidden="true" /> {e.nombre}
+                    {e.nota && <span class="badge badge--danger">{e.nota}</span>}
+                  </td>
+                  <td class:list={['r nowrap', { 'kind-income': !SALE.has(e.tipo) }]}>
+                    {e.monto === null ? <span class="muted">{e.tipo === 'ingreso' ? 'variable' : '—'}</span> : <>{SALE.has(e.tipo) ? '−' : '+'}{usd(e.monto)}</>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        {d.movs.length > 0 && (
+          <table class="table table--card">
+            <tbody>
+              {d.movs.map((mv) => (
+                <tr>
+                  <td class="nowrap muted">{hora(mv.fecha)}</td>
+                  <td>
+                    {mv.tipo === 'transfer' ? (
+                      <>{mv.cuenta} → {mv.a_cuenta}</>
+                    ) : (
+                      <>
+                        <CatIcon name={mv.categoria} emoji={mv.emoji} /> {mv.descripcion || mv.categoria || 'Sin descripción'}
+                      </>
+                    )}
+                    {esPagoFijo(mv, fijos) && <span class="badge">fijo</span>}
+                  </td>
+                  <td class:list={['r nowrap', { 'kind-income': mv.tipo === 'income', muted: mv.tipo === 'transfer' }]}>
+                    {mv.tipo === 'income' ? '+' : mv.tipo === 'expense' ? '−' : ''}
+                    {usd(mv.monto)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        {!d.eventos.length && !d.movs.length && <p class="empty">{d.futuro ? 'Nada programado para ese día.' : 'No anotaste nada ese día.'}</p>}
+      </section>
+    ))
+  }
+  {
+    (porVenir.length > 0 || sinFijos) && (
+      <p class="stat__note">
+        Lo que viene sale de tus <a href="/cuenta/ingresos">ingresos</a>
+        {!sinFijos && <>, tus <a href="/cuenta/fijos">gastos fijos</a></>} y tus <a href="/cuenta/deudas">deudas</a> con fecha.
+      </p>
+    )
+  }
+</Cuenta>
+
+<script>
+  // Tocar un día muestra su detalle sin recargar; el enlace queda para quien no tenga JavaScript.
+  const grid = document.querySelector<HTMLElement>('.cal__grid');
+  grid?.addEventListener('click', (ev) => {
+    const a = (ev.target as HTMLElement).closest<HTMLAnchorElement>('a[data-dia]');
+    if (!a || ev.metaKey || ev.ctrlKey || ev.shiftKey) return;
+    ev.preventDefault();
+    const dia = a.dataset.dia!;
+    grid.querySelectorAll('a[data-dia]').forEach((x) => x.removeAttribute('aria-current'));
+    a.setAttribute('aria-current', 'date');
+    document.querySelectorAll<HTMLElement>('[data-detalle]').forEach((s) => (s.hidden = s.dataset.detalle !== dia));
+    history.replaceState(null, '', a.href);
+    const det = document.querySelector<HTMLElement>(`[data-detalle="${dia}"]`);
+    if (det && det.getBoundingClientRect().top > innerHeight - 80) det.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+</script>
+
+<style>
+  .cal__head {
+    display: grid;
+    grid-template-columns: 40px 1fr 40px;
+    align-items: center;
+    text-align: center;
+    margin-bottom: var(--s-3);
+  }
+  .cal__head h2 {
+    margin: 0;
+  }
+  .cal__head .btn-quiet {
+    font-size: 1.4rem;
+    line-height: 1;
+    padding: 4px 0;
+    text-align: center;
+  }
+  .cal__hoy {
+    text-align: center;
+    margin: calc(-1 * var(--s-2)) 0 var(--s-3);
+    font-size: var(--fs-small);
+  }
+  .cal__grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .cal__sem {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-align: center;
+    padding-bottom: 2px;
+  }
+  .cal__dia {
+    --tint: transparent;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-height: 92px;
+    min-width: 0;
+    padding: 6px 8px;
+    border-radius: var(--r-md);
+    border: 1px solid var(--hairline);
+    background: var(--tint);
+    color: var(--text);
+    text-decoration: none;
+    overflow: hidden;
+  }
+  .cal__dia:hover {
+    border-color: var(--hairline-strong);
+  }
+  .cal__dia[aria-current='date'] {
+    outline: 2px solid var(--focus);
+    outline-offset: 1px;
+  }
+  .cal__dia.is-futuro {
+    border-style: dashed;
+  }
+  .cal__n {
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+  .is-hoy .cal__n {
+    display: inline-grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    margin: -2px 0 0 -4px;
+    border-radius: var(--r-full);
+    background: var(--accent);
+    color: var(--bg);
+  }
+  .cal__monto {
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .cal__ev {
+    font-size: 0.7rem;
+    line-height: 1.25;
+    padding: 1px 5px;
+    border-radius: var(--r-xs);
+    background: var(--fill);
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cal__ev.ev-sale {
+    background: var(--danger-soft);
+    color: var(--danger);
+  }
+  .cal__ev.ev-entra {
+    background: var(--check-bg);
+    color: var(--accent);
+  }
+  .cal__puntos {
+    display: none;
+    gap: 3px;
+  }
+  .p-sale,
+  .p-entra {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: var(--r-full);
+    background: var(--danger);
+    vertical-align: middle;
+  }
+  .p-entra {
+    background: var(--accent-graphic);
+  }
+  /* El color del día: verde suave sin gastos, verde dentro, oro un poco arriba, coral si se pasó. */
+  .is-sin_gastos {
+    --tint: color-mix(in srgb, var(--accent-graphic) 6%, transparent);
+  }
+  .is-bien {
+    --tint: color-mix(in srgb, var(--accent-graphic) 18%, transparent);
+  }
+  .is-cuidado {
+    --tint: var(--gold-soft);
+  }
+  .is-pasado {
+    --tint: var(--danger-soft);
+  }
+  .cal__dia.is-cuidado {
+    border-color: color-mix(in srgb, var(--gold-text) 40%, transparent);
+  }
+  .cal__dia.is-pasado {
+    border-color: color-mix(in srgb, var(--danger) 45%, transparent);
+  }
+  .cal__dia.is-bien {
+    border-color: color-mix(in srgb, var(--accent-graphic) 35%, transparent);
+  }
+  .cal__leyenda {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2) var(--s-4);
+    margin: var(--s-4) 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--fs-small);
+    color: var(--text-muted);
+  }
+  .cal__leyenda li {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .sw {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: var(--r-xs);
+    border: 1px solid var(--hairline-strong);
+    background: var(--tint);
+  }
+  .sw.is-cuidado {
+    border-color: var(--gold-text);
+  }
+  .sw.is-pasado {
+    border-color: var(--danger);
+  }
+  .sw.is-bien {
+    border-color: var(--accent-graphic);
+  }
+  .cal__detalle .badge {
+    margin-left: 6px;
+  }
+  /* Celular: cada día es un cuadrito con su número, su color y unos puntos; el detalle va abajo. */
+  @media (max-width: 720px) {
+    .cal__grid {
+      gap: 4px;
+    }
+    .cal__dia {
+      min-height: 52px;
+      padding: 4px;
+      align-items: center;
+    }
+    .is-hoy .cal__n {
+      margin: 0;
+    }
+    .cal__ev {
+      display: none;
+    }
+    .cal__puntos {
+      display: flex;
+    }
+    .cal__monto {
+      font-size: 0.62rem;
+    }
+    .cal__monto.kind-income {
+      display: none;
+    }
+  }
+</style>

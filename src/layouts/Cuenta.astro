@@ -16,6 +16,7 @@ import { NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, PUBLIC_CLERK_PUBLISHABLE_KEY } from 
 export type Seccion =
   | 'resumen'
   | 'movimientos'
+  | 'calendario'
   | 'ingresos'
   | 'apartados'
   | 'cuentas'
@@ -45,6 +46,7 @@ const groups: { label: string; items: Item[] }[] = [
     items: [
       { id: 'resumen', label: 'Inicio', href: '/cuenta', icon: 'inicio' },
       { id: 'movimientos', label: 'Movimientos', href: '/cuenta/movimientos', icon: 'movimientos' },
+      { id: 'calendario', label: 'Calendario', href: '/cuenta/calendario', icon: 'calendario' },
     ],
   },
   {
