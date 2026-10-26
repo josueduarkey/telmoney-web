@@ -130,6 +130,9 @@ const valores = (c: CuentaItem) => JSON.stringify({ id: c.id, nombre: c.nombre, 
                 <button class="act" type="button" data-dialog="dlg-editar" data-title={`Editar ${c.nombre}`} data-values={valores(c)}>
                   Editar
                 </button>
+                <button class="act act--danger" type="button" data-dialog="dlg-borrar" data-title={`Eliminar ${c.nombre}`} data-values={JSON.stringify({ id: c.id, nombre: c.nombre })}>
+                  Eliminar
+                </button>
               </div>
             )}
           </article>
@@ -177,6 +180,9 @@ const valores = (c: CuentaItem) => JSON.stringify({ id: c.id, nombre: c.nombre, 
                     <button class="act" type="button" data-dialog="dlg-editar" data-title={`Editar ${c.nombre}`} data-values={valores(c)}>
                       Editar
                     </button>
+                    <button class="act act--danger" type="button" data-dialog="dlg-borrar" data-title={`Eliminar ${c.nombre}`} data-values={JSON.stringify({ id: c.id, nombre: c.nombre })}>
+                      Eliminar
+                    </button>
                   </div>
                 )}
               </article>
@@ -210,6 +216,24 @@ const valores = (c: CuentaItem) => JSON.stringify({ id: c.id, nombre: c.nombre, 
             </label>
           </div>
         </Dialog>
+        <dialog class="dlg" id="dlg-borrar" aria-labelledby="dlg-borrar-t">
+          <form method="post" class="dlg__form">
+            <div class="dlg__head">
+              <h2 id="dlg-borrar-t" data-dlg-title data-default="Eliminar cuenta">Eliminar cuenta</h2>
+              <button type="button" class="dlg__x" aria-label="Cerrar" data-close>×</button>
+            </div>
+            <input type="hidden" name="accion" value="borrar" data-default="borrar" />
+            <input type="hidden" name="id" />
+            <input type="hidden" name="nombre" />
+            <div class="dlg__body">
+              <p>Se elimina la cuenta y deja de contar en tu dinero. Sus movimientos siguen en tus reportes y, si vuelves a nombrarla por WhatsApp, regresa.</p>
+            </div>
+            <div class="dlg__foot">
+              <button type="button" class="btn-quiet" data-close>Cancelar</button>
+              <button class="btn btn--danger" type="submit">Sí, eliminar</button>
+            </div>
+          </form>
+        </dialog>
         <Dialog id="dlg-editar" titulo="Editar cuenta" accion="editar" borrar={{ accion: 'borrar', texto: 'Se elimina la cuenta y deja de contar en tu dinero. Sus movimientos siguen en tus reportes y, si vuelves a nombrarla por WhatsApp, regresa.' }}>
           <input type="hidden" name="saldo_antes" />
           <label class="fld">

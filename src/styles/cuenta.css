@@ -2,7 +2,9 @@
    Al estilo del sidebar de shadcn/ui: grupos con etiqueta chica, ítems con ícono, el activo con
    fondo suave. Tarjetas y tablas siguen saliendo de admin.css. */
 
-.app {
+/* .admin.app y no .app: en producción admin.css puede quedar después en el CSS y su `.admin`
+   (columna) le ganaba, y el contenido caía debajo de la barra lateral. */
+.admin.app {
   --sb-w: 252px;
   flex-direction: row;
 }
@@ -510,6 +512,12 @@
 }
 .act:hover {
   background: var(--fill-strong);
+}
+.act--danger {
+  color: var(--danger);
+}
+.act--danger:hover {
+  border-color: var(--danger);
 }
 .act--main {
   background: var(--accent);
