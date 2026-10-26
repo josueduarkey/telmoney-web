@@ -217,6 +217,9 @@ export type Meta = {
   fecha: string | null;
   ritmo_semanal?: number | null;
   cumplida?: boolean;
+  /** Cuenta vinculada: el avance de la meta es su saldo, y abonar es transferir a ella. */
+  id_cuenta?: number | null;
+  cuenta?: string | null;
 };
 export type Limite = {
   id: number;

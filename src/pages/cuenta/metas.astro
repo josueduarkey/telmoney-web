@@ -1,6 +1,8 @@
 ---
 // Metas de ahorro: cuánto lleva de cada una y el ritmo para llegar; crear, editar, abonar (o sacar) y
 // borrar. Lee /me/metas; mientras el bot no la tenga, usa las metas del resumen (sin poder editarlas).
+// Una meta puede ir vinculada a una cuenta (la de ahorro, por ejemplo): su avance es el saldo de esa
+// cuenta, y abonar o sacar es pasar dinero entre esa cuenta y otra (lo hace el bot).
 import Cuenta from '../../layouts/Cuenta.astro';
 import Head from '../../components/cuenta/Head.astro';
 import Flash from '../../components/cuenta/Flash.astro';
@@ -8,7 +10,7 @@ import Dialog from '../../components/cuenta/Dialog.astro';
 import Icon from '../../components/cuenta/Icon.astro';
 import Pide from '../../components/cuenta/Pide.astro';
 import { me, pendiente, sinVincular, type Meta, type Resumen } from '../../lib/admin/bot';
-import { sesion } from '../../lib/cuenta/pagina';
+import { opciones, sesion } from '../../lib/cuenta/pagina';
 import { dinero, ejecutar, idDe, texto } from '../../lib/cuenta/acciones';
 import { date, usd } from '../../lib/admin/format';
 
@@ -25,17 +27,26 @@ if (Astro.request.method === 'POST') {
     if (accion === 'crear' || accion === 'editar') {
       const nombre = texto(f.get('nombre')).slice(0, 60);
       const meta = dinero(f.get('meta'));
+      // Vacío = sin cuenta (al editar, la desvincula).
+      const cid = idDe(f.get('cuenta_id'));
+      const cuenta_id = cid ? Number(cid) : null;
       if (!nombre) return 'Ponle un nombre a la meta.';
       if (!meta || meta <= 0) return 'Escribe cuánto quieres juntar.';
-      if (accion === 'crear') return { path: '/me/metas', method: 'POST', body: { nombre, meta, fecha }, ok: `Meta «${nombre}» creada.` };
+      const body = { nombre, meta, fecha, cuenta_id };
+      if (accion === 'crear') return { path: '/me/metas', method: 'POST', body, ok: `Meta «${nombre}» creada.` };
       if (!id) return 'No encontramos esa meta.';
-      return { path: `/me/metas/${id}`, method: 'PATCH', body: { nombre, meta, fecha }, ok: 'Meta actualizada.' };
+      return { path: `/me/metas/${id}`, method: 'PATCH', body, ok: 'Meta actualizada.' };
     }
     if (accion === 'abonar' || accion === 'sacar') {
       const monto = dinero(f.get('monto'));
       if (!id) return 'No encontramos esa meta.';
       if (!monto || monto <= 0) return 'Escribe un monto mayor que cero.';
-      const body = { monto: accion === 'sacar' ? -monto : monto, confirmar: f.get('confirmar') === 'on' };
+      const desde = idDe(f.get('desde_cuenta_id'));
+      const body = {
+        monto: accion === 'sacar' ? -monto : monto,
+        confirmar: f.get('confirmar') === 'on',
+        ...(desde ? { desde_cuenta_id: Number(desde) } : {}),
+      };
       return { path: `/me/metas/${id}/abono`, method: 'POST', body, ok: accion === 'sacar' ? `Sacaste ${usd(monto)}.` : `Abonaste ${usd(monto)}.` };
     }
     if (accion === 'borrar' && id) return { path: `/me/metas/${id}`, method: 'DELETE', ok: 'Meta borrada.' };
@@ -43,7 +54,7 @@ if (Astro.request.method === 'POST') {
   });
 }
 
-const r = await me<{ metas: Meta[] }>('/me/metas', token);
+const [r, op] = await Promise.all([me<{ metas: Meta[] }>('/me/metas', token), opciones(token, { categorias: false })]);
 if (sinVincular(r)) return Astro.redirect('/cuenta');
 let metas: Meta[] = r.ok ? (r.data?.metas ?? []) : [];
 let error = !r.ok && !pendiente(r) ? r.detail : '';
@@ -53,6 +64,9 @@ if (pendiente(r)) {
   if (res.ok) metas = res.data.metas ?? [];
   else error = res.detail;
 }
+// Se vincula a cuentas de dinero, no a tarjetas. Las que ya tiene otra meta no se ofrecen para otra.
+const cuentas = op.cuentas.filter((c) => c.tipo !== 'card');
+const ocupadas = new Map(metas.filter((m) => m.id_cuenta).map((m) => [m.id_cuenta, m.id]));
 const ahorrado = metas.reduce((s, m) => s + m.actual, 0);
 const objetivo = metas.reduce((s, m) => s + m.meta, 0);
 const semanasA = (iso: string | null) =>
@@ -95,6 +109,8 @@ const semanasA = (iso: string | null) =>
           const semanas = semanasA(m.fecha);
           const ritmo = m.ritmo_semanal ?? (semanas && falta ? falta / semanas : null);
           const lista = m.cumplida || falta === 0;
+          const vinculada = !!m.id_cuenta;
+          const abono = JSON.stringify({ id: m.id, vinculada: vinculada ? '1' : '' });
           return (
             <article class="card tile">
               <div class="tile__top">
@@ -112,16 +128,21 @@ const semanasA = (iso: string | null) =>
                 <span>{lista ? 'Llegaste' : `faltan ${usd(falta)}`}</span>
                 <span>meta {usd(m.meta)}</span>
               </div>
+              {vinculada && (
+                <p class="tile__meta meta-cuenta">
+                  <Icon name="cuentas" size={14} /> Va con tu cuenta <b>{m.cuenta}</b>: lo que entra o sale de ella cuenta aquí.
+                </p>
+              )}
               {!lista && ritmo && <p class="tile__meta">Guarda unos {usd(ritmo)} por semana para llegar a tiempo.</p>}
               {editable && m.id && (
                 <div class="acts">
-                  <button class="act act--main" type="button" data-dialog="dlg-abono" data-title={`Abonar a ${m.nombre}`} data-accion="abonar" data-values={JSON.stringify({ id: m.id })}>
+                  <button class="act act--main" type="button" data-dialog="dlg-abono" data-title={`Abonar a ${m.nombre}`} data-accion="abonar" data-values={abono}>
                     Abonar
                   </button>
-                  <button class="act" type="button" data-dialog="dlg-abono" data-title={`Sacar de ${m.nombre}`} data-accion="sacar" data-values={JSON.stringify({ id: m.id })}>
+                  <button class="act" type="button" data-dialog="dlg-abono" data-title={`Sacar de ${m.nombre}`} data-accion="sacar" data-values={abono}>
                     Sacar
                   </button>
-                  <button class="act" type="button" data-dialog="dlg-meta" data-title="Editar meta" data-accion="editar" data-values={JSON.stringify({ id: m.id, nombre: m.nombre, meta: m.meta, fecha: m.fecha?.slice(0, 10) ?? '' })}>
+                  <button class="act" type="button" data-dialog="dlg-meta" data-title="Editar meta" data-accion="editar" data-values={JSON.stringify({ id: m.id, nombre: m.nombre, meta: m.meta, fecha: m.fecha?.slice(0, 10) ?? '', cuenta_id: m.id_cuenta ?? '' })}>
                     Editar
                   </button>
                 </div>
@@ -135,7 +156,7 @@ const semanasA = (iso: string | null) =>
     )
   }
 
-  <Pide frases={['quiero ahorrar 500 para diciembre', 'guardé 25 para la moto', '¿cuánto me falta?']} />
+  <Pide frases={['quiero ahorrar 500 para diciembre', 'guardé 25 para la moto', 'la meta moto va con mi cuenta de ahorro']} />
 
   {
     editable && (
@@ -155,11 +176,31 @@ const semanasA = (iso: string | null) =>
               <input class="field" name="fecha" type="date" />
             </label>
           </div>
+          <label class="fld">
+            Cuenta donde la guardas <small>(opcional)</small>
+            <select class="field" name="cuenta_id" data-meta-cuenta>
+              <option value="">Ninguna: la llevo aparte</option>
+              {cuentas.map((c) => (
+                <option value={c.id} data-ocupada={ocupadas.get(c.id) ?? ''}>
+                  {c.nombre} · {usd(c.saldo)}
+                </option>
+              ))}
+            </select>
+            <small class="fld__hint">Si eliges una, la meta muestra el saldo de esa cuenta: lo que le abonas a la cuenta sube la meta, y abonar a la meta pasa dinero a la cuenta.</small>
+          </label>
         </Dialog>
         <Dialog id="dlg-abono" titulo="Abonar" accion="abonar" enviar="Listo">
+          <input type="hidden" name="vinculada" />
           <label class="fld">
             Monto
             <input class="field" name="monto" inputmode="decimal" required placeholder="25" />
+          </label>
+          <label class="fld" data-solo-vinculada hidden>
+            <span data-desde-label>Desde qué cuenta</span>
+            <select class="field" name="desde_cuenta_id">
+              <option value="">La de siempre</option>
+              {op.cuentas.map((c) => <option value={c.id}>{c.nombre} · {usd(c.saldo)}</option>)}
+            </select>
           </label>
           <label class="check">
             <input type="checkbox" name="confirmar" /> Si se pasa de la meta, abonar igual
@@ -169,3 +210,50 @@ const semanasA = (iso: string | null) =>
     )
   }
 </Cuenta>
+
+<script>
+  // Al abrir los diálogos (el layout los llena con data-values): en una meta vinculada se elige de qué
+  // cuenta sale (o a cuál vuelve) el dinero; y una cuenta que ya va con otra meta no se ofrece.
+  document.addEventListener(
+    'click',
+    (e) => {
+      const btn = (e.target as Element).closest<HTMLElement>('[data-dialog]');
+      if (!btn) return;
+      requestAnimationFrame(() => {
+        if (btn.dataset.dialog === 'dlg-abono') {
+          const dlg = document.getElementById('dlg-abono');
+          const vinc = dlg?.querySelector<HTMLInputElement>('[name=vinculada]')?.value === '1';
+          const campo = dlg?.querySelector<HTMLElement>('[data-solo-vinculada]');
+          if (campo) campo.hidden = !vinc;
+          const label = dlg?.querySelector('[data-desde-label]');
+          if (label) label.textContent = btn.dataset.accion === 'sacar' ? 'A qué cuenta vuelve' : 'Desde qué cuenta';
+        }
+        if (btn.dataset.dialog === 'dlg-meta') {
+          const dlg = document.getElementById('dlg-meta');
+          const id = dlg?.querySelector<HTMLInputElement>('[name=id]')?.value ?? '';
+          dlg?.querySelectorAll<HTMLOptionElement>('[data-meta-cuenta] option[data-ocupada]').forEach((o) => {
+            o.disabled = !!o.dataset.ocupada && o.dataset.ocupada !== id;
+          });
+        }
+      });
+    },
+    true,
+  );
+</script>
+
+<style>
+  .meta-cuenta {
+    display: flex;
+    gap: 6px;
+    align-items: flex-start;
+  }
+  .meta-cuenta :global(svg) {
+    flex: none;
+    margin-top: 2px;
+  }
+  .fld__hint {
+    color: var(--text-muted);
+    font-size: var(--fs-small);
+    font-weight: 400;
+  }
+</style>
