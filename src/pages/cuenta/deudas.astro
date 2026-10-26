@@ -1,6 +1,6 @@
 ---
 // Deudas: quién le debe (y cuánto falta) y a quién le debe; anotar una, abonar y saldar. Abonar y saldar
-// mueven el dinero en la cuenta que elija, igual que por WhatsApp. Lee /me/deudas.
+// mueven el dinero en la cuenta que elija, igual que por WhatsApp; el nombre se puede cambiar. Lee /me/deudas.
 import Cuenta from '../../layouts/Cuenta.astro';
 import Head from '../../components/cuenta/Head.astro';
 import Flash from '../../components/cuenta/Flash.astro';
@@ -38,6 +38,11 @@ if (Astro.request.method === 'POST') {
       const monto = dinero(f.get('monto'));
       if (!monto || monto <= 0) return 'Escribe un monto mayor que cero.';
       return { path: `/me/deudas/${id}/abono`, method: 'POST', body: { monto, cuenta_id }, ok: `Abono de ${usd(monto)} anotado.` };
+    }
+    if (accion === 'renombrar') {
+      const persona = texto(f.get('persona')).slice(0, 60);
+      if (!persona) return 'Escribe el nombre.';
+      return { path: `/me/deudas/${id}`, method: 'PATCH', body: { persona }, ok: `Ahora se llama ${persona}.` };
     }
     if (accion === 'saldar') return { path: `/me/deudas/${id}/saldar`, method: 'POST', body: { cuenta_id }, ok: 'Deuda saldada.' };
     return 'Acción no válida.';
@@ -138,6 +143,10 @@ const grupos = d
                           data-values={JSON.stringify({ id: x.id })}>
                           Saldar {usd(x.pendiente)}
                         </button>
+                        <button class="act" type="button" data-dialog="dlg-nombre" data-title="Cambiar nombre"
+                          data-values={JSON.stringify({ id: x.id, persona: x.persona })}>
+                          Cambiar nombre
+                        </button>
                       </div>
                     </article>
                   );
@@ -176,6 +185,14 @@ const grupos = d
             Para cuándo <small>(opcional)</small>
             <input class="field" name="vence" type="date" />
           </label>
+        </Dialog>
+
+        <Dialog id="dlg-nombre" titulo="Cambiar nombre" accion="renombrar">
+          <label class="fld">
+            Nombre
+            <input class="field" name="persona" required maxlength="60" placeholder="tía Veraliz" />
+          </label>
+          <p class="tile__meta">Si guardaste su número o correo para cobrarle, se mantiene.</p>
         </Dialog>
 
         {[
