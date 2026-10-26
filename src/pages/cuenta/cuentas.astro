@@ -127,12 +127,10 @@ const valores = (c: CuentaItem) => JSON.stringify({ id: c.id, nombre: c.nombre, 
             <p class:list={['tile__amount', { 'tile__amount--neg': c.saldo < 0 }]}>{usd(c.saldo)}</p>
             {editable && c.id && (
               <div class="acts">
-                <button class="act" type="button" data-dialog="dlg-editar" data-title={`Editar ${c.nombre}`} data-values={valores(c)}>
-                  Editar
+                <button class="act act--icon act--end" aria-label="Editar" data-tip="Editar" type="button" data-dialog="dlg-editar" data-title={`Editar ${c.nombre}`} data-values={valores(c)}>
+                  <Icon name="lapiz" size={16} />
                 </button>
-                <button class="act act--danger" type="button" data-dialog="dlg-borrar" data-title={`Eliminar ${c.nombre}`} data-values={JSON.stringify({ id: c.id, nombre: c.nombre })}>
-                  Eliminar
-                </button>
+                <button class="act act--icon act--danger" aria-label="Eliminar" data-tip="Eliminar" type="button" data-dialog="dlg-borrar" data-title={`Eliminar ${c.nombre}`} data-values={JSON.stringify({ id: c.id, nombre: c.nombre })}><Icon name="basura" size={16} /></button>
               </div>
             )}
           </article>
@@ -177,12 +175,10 @@ const valores = (c: CuentaItem) => JSON.stringify({ id: c.id, nombre: c.nombre, 
                 )}
                 {editable && c.id && (
                   <div class="acts">
-                    <button class="act" type="button" data-dialog="dlg-editar" data-title={`Editar ${c.nombre}`} data-values={valores(c)}>
-                      Editar
+                    <button class="act act--icon act--end" aria-label="Editar" data-tip="Editar" type="button" data-dialog="dlg-editar" data-title={`Editar ${c.nombre}`} data-values={valores(c)}>
+                      <Icon name="lapiz" size={16} />
                     </button>
-                    <button class="act act--danger" type="button" data-dialog="dlg-borrar" data-title={`Eliminar ${c.nombre}`} data-values={JSON.stringify({ id: c.id, nombre: c.nombre })}>
-                      Eliminar
-                    </button>
+                    <button class="act act--icon act--danger" aria-label="Eliminar" data-tip="Eliminar" type="button" data-dialog="dlg-borrar" data-title={`Eliminar ${c.nombre}`} data-values={JSON.stringify({ id: c.id, nombre: c.nombre })}><Icon name="basura" size={16} /></button>
                   </div>
                 )}
               </article>

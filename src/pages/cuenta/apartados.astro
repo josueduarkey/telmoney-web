@@ -158,20 +158,20 @@ const destinoTexto = (a: Apartado) => {
                     <>
                       <button class="act act--main" type="button" data-dialog="dlg-hecho" data-title={`Apartaste para ${a.nombre}`}
                         data-values={JSON.stringify({ id: a.id, monto: '' })} data-pendiente={a.pendiente.toFixed(2)}>
-                        Ya lo aparté
+                        <Icon name="check" size={16} /> Ya lo aparté
                       </button>
                       <button class="act" type="button" data-dialog="dlg-omitir" data-title={`¿Esta vez no apartas para ${a.nombre}?`} data-values={JSON.stringify({ id: a.id })}>
-                        Esta vez no
+                        <Icon name="saltar" size={16} /> Esta vez no
                       </button>
                     </>
                   )}
-                  <button class="act" type="button" data-dialog="dlg-apartado" data-title="Editar apartado" data-accion="editar"
+                  <button class="act act--icon act--end" aria-label="Editar" data-tip="Editar" type="button" data-dialog="dlg-apartado" data-title="Editar apartado" data-accion="editar"
                     data-values={JSON.stringify({
                       id: a.id, nombre: a.nombre, pct: a.pct, base: a.base === 'todas' ? 'todas' : 'algunas',
                       fuente: a.base === 'todas' ? [] : a.base, destino_tipo: a.destino_tipo,
                       [`destino_${a.destino_tipo}`]: a.id_destino ?? '',
                     })}>
-                    Editar
+                    <Icon name="lapiz" size={16} />
                   </button>
                 </div>
               </article>

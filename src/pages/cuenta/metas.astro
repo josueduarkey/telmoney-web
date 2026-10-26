@@ -137,13 +137,13 @@ const semanasA = (iso: string | null) =>
               {editable && m.id && (
                 <div class="acts">
                   <button class="act act--main" type="button" data-dialog="dlg-abono" data-title={`Abonar a ${m.nombre}`} data-accion="abonar" data-values={abono}>
-                    Abonar
+                    <Icon name="mas" size={16} /> Abonar
                   </button>
                   <button class="act" type="button" data-dialog="dlg-abono" data-title={`Sacar de ${m.nombre}`} data-accion="sacar" data-values={abono}>
-                    Sacar
+                    <Icon name="menos" size={16} /> Sacar
                   </button>
-                  <button class="act" type="button" data-dialog="dlg-meta" data-title="Editar meta" data-accion="editar" data-values={JSON.stringify({ id: m.id, nombre: m.nombre, meta: m.meta, fecha: m.fecha?.slice(0, 10) ?? '', cuenta_id: m.id_cuenta ?? '' })}>
-                    Editar
+                  <button class="act act--icon act--end" aria-label="Editar" data-tip="Editar" type="button" data-dialog="dlg-meta" data-title="Editar meta" data-accion="editar" data-values={JSON.stringify({ id: m.id, nombre: m.nombre, meta: m.meta, fecha: m.fecha?.slice(0, 10) ?? '', cuenta_id: m.id_cuenta ?? '' })}>
+                    <Icon name="lapiz" size={16} />
                   </button>
                 </div>
               )}

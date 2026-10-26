@@ -136,16 +136,16 @@ const grupos = d
                         <button class="act act--main" type="button" data-dialog="dlg-abono" data-accion="abonar"
                           data-title={g.recibe ? `${x.persona} te abonó` : `Le abonaste a ${x.persona}`}
                           data-values={JSON.stringify({ id: x.id })}>
-                          Abonar
+                          <Icon name="mas" size={16} /> Abonar
                         </button>
                         <button class="act" type="button" data-dialog="dlg-saldar"
                           data-title={g.recibe ? `${x.persona} te pagó todo` : `Le pagaste todo a ${x.persona}`}
                           data-values={JSON.stringify({ id: x.id })}>
-                          Saldar {usd(x.pendiente)}
+                          <Icon name="check" size={16} /> Saldar {usd(x.pendiente)}
                         </button>
-                        <button class="act" type="button" data-dialog="dlg-nombre" data-title="Cambiar nombre"
+                        <button class="act act--icon act--end" aria-label="Cambiar nombre" data-tip="Cambiar nombre" type="button" data-dialog="dlg-nombre" data-title="Cambiar nombre"
                           data-values={JSON.stringify({ id: x.id, persona: x.persona })}>
-                          Cambiar nombre
+                          <Icon name="lapiz" size={16} />
                         </button>
                       </div>
                     </article>

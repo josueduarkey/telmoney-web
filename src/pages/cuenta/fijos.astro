@@ -159,13 +159,13 @@ const dias = (iso: string | null) => (iso ? Math.ceil((new Date(iso).getTime() -
                       <td class="r nowrap">
                         {pagable && (
                           <button class="row-act" type="button" data-dialog="dlg-pagado" data-title={`Ya pagaste ${f.nombre}`} data-values={JSON.stringify({ id: f.id, cuenta_id: f.id_cuenta ?? '' })}>
-                            Ya pagué
+                            <Icon name="check" size={14} /> Ya pagué
                           </button>
                         )}
                         {editable && (
                             <button class="row-act" type="button" data-dialog="dlg-fijo" data-title="Editar pago fijo" data-accion="editar"
                               data-values={JSON.stringify({ id: f.id, nombre: f.nombre, monto: f.monto ?? '', dia: f.dia, tipo: f.tipo, cuotas_restantes: f.cuotas_restantes ?? '', cuenta_id: f.id_cuenta ?? '', categoria_id: f.id_categoria ?? '' })}>
-                              Editar
+                              <Icon name="lapiz" size={14} /> Editar
                             </button>
                         )}
                       </td>

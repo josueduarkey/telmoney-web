@@ -513,6 +513,14 @@
 .act:hover {
   background: var(--fill-strong);
 }
+.act--icon {
+  justify-content: center;
+  width: 34px;
+  padding: 0;
+}
+.act--end {
+  margin-left: auto;
+}
 .act--danger {
   color: var(--danger);
 }
@@ -529,6 +537,9 @@
   filter: brightness(1.08);
 }
 .row-act {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   border: 0;
   background: none;
   color: var(--text-muted);

@@ -182,11 +182,11 @@ const ESTADO = { esperado: '', atrasado: 'Atrasado', recibido: 'Ya llegó', no_l
                       <button class="row-act" type="button" data-dialog="dlg-recibido" data-title={`Te llegó: ${i.nombre}`}
                         data-values={JSON.stringify({ id: i.id, cuenta_id: i.id_cuenta ?? '', fecha: hoy, monto: '' })}
                         data-variable={i.tipo === 'variable' ? '' : undefined}>
-                        Me llegó
+                        <Icon name="check" size={14} /> Me llegó
                       </button>
                       {i.proximo && ((i.proximo.estado === 'esperado' && i.proximo.fecha === hoy) || i.proximo.estado === 'atrasado') && (
                         <button class="row-act" type="button" data-dialog="dlg-nollego" data-title={`¿No te llegó ${i.nombre}?`} data-values={JSON.stringify({ id: i.id, fecha: i.proximo.fecha })}>
-                          No llegó
+                          <Icon name="saltar" size={14} /> No llegó
                         </button>
                       )}
                       <button class="row-act" type="button" data-dialog="dlg-ingreso" data-title="Editar ingreso" data-accion="editar"
@@ -196,7 +196,7 @@ const ESTADO = { esperado: '', atrasado: 'Atrasado', recibido: 'Ya llegó', no_l
                           dias_mes: i.frecuencia === 'semanal' ? '' : i.dias.join(' y '),
                           cuenta_id: i.id_cuenta ?? '', categoria_id: i.id_categoria ?? '', sobre_categoria_id: i.id_sobre_categoria ?? '',
                         })}>
-                        Editar
+                        <Icon name="lapiz" size={14} /> Editar
                       </button>
                     </td>
                   </tr>
