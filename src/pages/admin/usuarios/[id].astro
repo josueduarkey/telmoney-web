@@ -1,12 +1,11 @@
 ---
-// Una persona: su actividad, lo que le cuesta a TelMoney, sus cuentas y sus movimientos.
+// Una persona: su actividad, lo que le cuesta a TelMoney, datos de cuenta y pagos.
 import CostBreakdown from '../../../components/admin/CostBreakdown.astro';
 import Admin from '../../../layouts/Admin.astro';
 import StatusChip from '../../../components/admin/StatusChip.astro';
 import DailyColumns from '../../../components/admin/DailyColumns.astro';
-import CategoryBars from '../../../components/admin/CategoryBars.astro';
 import DbError from '../../../components/admin/DbError.astro';
-import { messagesPerDay, spendingByCategory, user, userSavings } from '../../../lib/admin/queries';
+import { messagesPerDay, user, userSavings } from '../../../lib/admin/queries';
 import { ago, date, dateTime, int, phone, planName, usd, usdCost, waLink } from '../../../lib/admin/format';
 
 export const prerender = false;
@@ -17,26 +16,22 @@ if (!Astro.locals.admin) return new Response('No autorizado', { status: 401 });
 const id = Number(Astro.params.id);
 if (!Number.isInteger(id) || id <= 0) return Astro.redirect('/admin/usuarios');
 
-let data: [Awaited<ReturnType<typeof user>>, Awaited<ReturnType<typeof messagesPerDay>>, Awaited<ReturnType<typeof spendingByCategory>>] | null = null;
+let data: [Awaited<ReturnType<typeof user>>, Awaited<ReturnType<typeof messagesPerDay>>] | null = null;
 let error = '';
 let ahorro: Awaited<ReturnType<typeof userSavings>> = null;
 try {
-  data = await Promise.all([user(id), messagesPerDay(30, id), spendingByCategory(30, id)]);
+  data = await Promise.all([user(id), messagesPerDay(30, id)]);
   ahorro = await userSavings(id);
 } catch (e) {
   error = e instanceof Error ? e.message : String(e);
 }
-const [detail, perDay, cats] = data ?? [];
+const [detail, perDay] = data ?? [];
 if (data && !detail) {
   Astro.response.status = 404;
 }
 const u = detail?.user;
 const t = detail?.totals;
 
-const KIND: Record<string, string> = { expense: 'Gasto', income: 'Ingreso', transfer: 'Transferencia' };
-const SOURCE: Record<string, string> = { text: 'texto', audio: 'audio', image: 'foto', manual: 'botón' };
-const ACCOUNT: Record<string, string> = { cash: 'Efectivo', bank: 'Banco', card: 'Tarjeta', savings: 'Ahorro', wallet: 'Prora' };
-const PAY: Record<string, string> = { quincena: 'Quincena', fin_de_mes: 'Fin de mes', otro: 'Otro' };
 const PAYMENT: Record<string, string> = { approved: 'Aprobado', pending: 'Pendiente', failed: 'Falló' };
 ---
 
@@ -45,7 +40,7 @@ const PAYMENT: Record<string, string> = { approved: 'Aprobado', pending: 'Pendie
   {error && <DbError error={error} />}
   {data && !detail && <div class="notice"><h1>No existe ese usuario</h1><p>Puede que haya borrado sus datos.</p></div>}
   {
-    u && t && perDay && cats && (
+    u && t && perDay && (
       <>
         <div class="admin-head">
           <div>
@@ -66,10 +61,10 @@ const PAYMENT: Record<string, string> = { approved: 'Aprobado', pending: 'Pendie
 
         <div class="cards">
           <div class="card">
-            <p class="stat__label">Gastó (30 días)</p>
-            <p class="stat__value">{usd(t.spent30)}</p>
+            <p class="stat__label">Movimientos</p>
+            <p class="stat__value">{int(t.movements)}</p>
             <p class="stat__note">
-              ingresos <b>{usd(t.income30)}</b> · {int(t.movements)} movimientos desde que empezó
+              registrados desde que empezó
             </p>
           </div>
           <div class="card">
@@ -112,98 +107,28 @@ const PAYMENT: Record<string, string> = { approved: 'Aprobado', pending: 'Pendie
             </div>
             <DailyColumns data={perDay} unit="mensajes" />
           </section>
-          <section class="card" aria-labelledby="t-cats">
-            <div class="card__head">
-              <h2 id="t-cats">Gasto por categoría</h2>
-              <p class="card__sub">Últimos 30 días</p>
-            </div>
-            <CategoryBars data={cats} />
-          </section>
-        </div>
 
-        <div class="grid-2">
           <section class="card" aria-labelledby="t-data">
-            <h2 id="t-data" class="card__head">Datos</h2>
+            <div class="card__head">
+              <h2 id="t-data">Datos de la cuenta</h2>
+              <p class="card__sub">Información técnica y plan</p>
+            </div>
             <dl class="kv">
-              <dt>WhatsApp</dt>
-              <dd>{phone(u.whatsapp_number)}</dd>
+              <dt>Canal</dt>
+              <dd>{u.whatsapp_number ? `WhatsApp (${phone(u.whatsapp_number)})` : 'Telegram'}</dd>
+              <dt>Plan actual</dt>
+              <dd>{planName(u.plan)}</dd>
               <dt>Prueba hasta</dt>
               <dd>{date(u.trial_ends_at)}</dd>
               <dt>Pagado hasta</dt>
               <dd>{date(u.paid_until)}</dd>
-              <dt>Ingreso mensual que dijo</dt>
-              <dd>{u.monthly_income ? usd(u.monthly_income) : '—'}</dd>
-              <dt>Le pagan</dt>
-              <dd>{u.pay_schedule ? (PAY[u.pay_schedule] ?? u.pay_schedule) : '—'}</dd>
-              <dt>Terminó la configuración</dt>
+              <dt>Terminó configuración</dt>
               <dd>{u.onboarded_at ? date(u.onboarded_at) : 'No'}</dd>
+              <dt>Zona horaria</dt>
+              <dd>{u.timezone || 'America/El_Salvador'}</dd>
             </dl>
           </section>
-          <section class="card" aria-labelledby="t-acc">
-            <h2 id="t-acc" class="card__head">Cuentas</h2>
-            {detail.accounts.length ? (
-              <table class="table table--card">
-                <thead>
-                  <tr>
-                    <th>Cuenta</th>
-                    <th>Tipo</th>
-                    <th class="r">Saldo</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {detail.accounts.map((a) => (
-                    <tr>
-                      <td>{a.name}</td>
-                      <td class="muted">{ACCOUNT[a.type] ?? a.type}</td>
-                      <td class="r">{usd(a.balance)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <p class="empty">Sin cuentas.</p>
-            )}
-          </section>
         </div>
-
-        <section class="section" aria-labelledby="t-mov">
-          <div class="card__head">
-            <h2 id="t-mov" class="section-title">Últimos movimientos</h2>
-            <p class="card__sub">Los 100 más recientes</p>
-          </div>
-          <div class="table-wrap">
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Fecha</th>
-                  <th>Tipo</th>
-                  <th class="r">Monto</th>
-                  <th>Categoría</th>
-                  <th>Cuenta</th>
-                  <th>Descripción</th>
-                  <th>Por</th>
-                </tr>
-              </thead>
-              <tbody>
-                {detail.movements.map((m) => (
-                  <tr>
-                    <td class="nowrap muted">{dateTime(m.occurred_at)}</td>
-                    <td class:list={['nowrap', { 'kind-income': m.kind === 'income' }]}>{KIND[m.kind] ?? m.kind}</td>
-                    <td class="r">{usd(m.amount)}</td>
-                    <td class="nowrap">{m.category ? `${m.emoji ?? ''} ${m.category}`.trim() : '—'}</td>
-                    <td class="nowrap">{m.to_account ? `${m.account ?? 'afuera'} → ${m.to_account}` : (m.account ?? '—')}</td>
-                    <td>
-                      {m.description ?? ''}
-                      {m.needs_review && <span class="pill" style="margin-left: 6px">por revisar</span>}
-                    </td>
-                    <td class="muted">{SOURCE[m.source] ?? m.source}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {!detail.movements.length && <p class="empty">Todavía no anota nada.</p>}
-          </div>
-        </section>
 
         <section class="section" aria-labelledby="t-pay">
           <div class="card__head">

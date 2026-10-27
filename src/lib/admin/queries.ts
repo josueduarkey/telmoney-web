@@ -165,7 +165,7 @@ export type UserRow = {
   createdAt: string;
   lastSeen: string | null;
   msgs30: number;
-  spent30: number;
+  movs30: number;
   paidTotal: number;
 };
 
@@ -178,8 +178,8 @@ export async function users({ q = '', status = '' }: { q?: string; status?: stri
               ${STATUS_SQL} as status,
               (select count(m.id)::int from message_log m
                 where m.user_id = u.id and m.role = 'user' and m.created_at >= now() - interval '30 days') as msgs30,
-              (select coalesce(sum(t.amount), 0)::float8 from transactions t
-                where t.user_id = u.id and t.kind = 'expense' and t.occurred_at >= now() - interval '30 days') as spent30,
+              (select count(t.id)::int from transactions t
+                where t.user_id = u.id and t.occurred_at >= now() - interval '30 days') as movs30,
               (select coalesce(sum(p.amount), 0)::float8 from payments p
                 where p.user_id = u.id and p.status = 'approved') as paid_total
          from users u
@@ -202,7 +202,7 @@ export async function users({ q = '', status = '' }: { q?: string; status?: stri
     createdAt: r.created_at,
     lastSeen: r.last_seen,
     msgs30: r.msgs30,
-    spent30: r.spent30,
+    movs30: r.movs30,
     paidTotal: r.paid_total,
   }));
 }
@@ -211,7 +211,7 @@ export async function user(id: number) {
   const sql = db();
   const [u] = await sql.query(
     `select u.id::int, u.name, u.whatsapp_number, u.telegram_id::text, u.plan, u.created_at, u.timezone,
-            u.trial_ends_at, u.paid_until, u.onboarded_at, u.monthly_income::float8, u.pay_schedule,
+            u.trial_ends_at, u.paid_until, u.onboarded_at,
             u.last_inbound_at, ${STATUS_SQL} as status
        from users u where u.id = $2`,
     [freeNumbers, id],
@@ -219,8 +219,6 @@ export async function user(id: number) {
   if (!u) return null;
 
   type Totals = {
-    spent30: number;
-    income30: number;
     movements: number;
     msgs_in: number;
     msgs_out: number;
@@ -229,10 +227,6 @@ export async function user(id: number) {
   };
   const [totals] = (await sql.query(
     `select
-       (select coalesce(sum(amount), 0)::float8 from transactions
-         where user_id = $1 and kind = 'expense' and occurred_at >= now() - interval '30 days') as spent30,
-       (select coalesce(sum(amount), 0)::float8 from transactions
-         where user_id = $1 and kind = 'income' and occurred_at >= now() - interval '30 days')  as income30,
        (select count(*)::int from transactions where user_id = $1)                               as movements,
        (select count(m.id) filter (where m.role = 'user')::int from message_log m
          where m.user_id = $1 and m.created_at >= now() - interval '30 days')                     as msgs_in,
@@ -243,25 +237,6 @@ export async function user(id: number) {
        (select coalesce(sum(amount), 0)::float8 from payments where user_id = $1 and status = 'approved') as paid_total`,
     [id],
   )) as Totals[];
-
-  const movements = await sql.query(
-    `select t.id::int, t.occurred_at, t.kind, t.amount::float8, t.description, t.source, t.needs_review,
-            c.name as category, c.emoji, a.name as account, ta.name as to_account
-       from transactions t
-       left join categories c on c.id = t.category_id
-       left join accounts a on a.id = t.account_id
-       left join accounts ta on ta.id = t.to_account_id
-      where t.user_id = $1
-      order by t.occurred_at desc, t.id desc
-      limit 100`,
-    [id],
-  );
-
-  const accounts = await sql.query(
-    `select name, type, balance::float8 from account_balances
-      where user_id = $1 and is_active order by balance desc`,
-    [id],
-  );
 
   const payments = await sql.query(
     `select plan, amount::float8, status, created_at, approved_at
@@ -276,7 +251,7 @@ export async function user(id: number) {
     tgIn: wa ? 0 : totals.msgs_in,
   });
 
-  return { user: u, totals: { ...totals, cost }, movements, accounts, payments };
+  return { user: u, totals: { ...totals, cost }, payments };
 }
 
 // ─────────────────────────────────────────────────────────── interesados

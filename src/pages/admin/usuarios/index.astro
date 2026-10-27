@@ -28,7 +28,7 @@ try {
   <div class="admin-head">
     <div>
       <h1>Usuarios</h1>
-      <p>{int(rows.length)} {rows.length === 1 ? 'persona' : 'personas'}{rows.length === 500 && ' (se muestran las 500 más recientes)'}. Mensajes y gasto: últimos 30 días.</p>
+      <p>{int(rows.length)} {rows.length === 1 ? 'persona' : 'personas'}{rows.length === 500 && ' (se muestran las 500 más recientes)'}. Mensajes y movimientos: últimos 30 días.</p>
     </div>
   </div>
 
@@ -59,7 +59,7 @@ try {
               <th>Estado</th>
               <th>Plan</th>
               <th class="r">Mensajes</th>
-              <th class="r">Gastó</th>
+              <th class="r">Movimientos</th>
               <th class="r">Pagó en total</th>
               <th>Última vez</th>
               <th>Desde</th>
@@ -77,7 +77,7 @@ try {
                 </td>
                 <td class="nowrap">{planName(u.plan)}</td>
                 <td class="r">{int(u.msgs30)}</td>
-                <td class="r">{usd(u.spent30)}</td>
+                <td class="r">{int(u.movs30)}</td>
                 <td class="r">{u.paidTotal ? usd(u.paidTotal) : '—'}</td>
                 <td class="nowrap muted">{ago(u.lastSeen)}</td>
                 <td class="nowrap muted">{date(u.createdAt)}</td>
