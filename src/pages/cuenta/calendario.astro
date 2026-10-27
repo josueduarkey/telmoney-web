@@ -1,14 +1,16 @@
 ---
 // Calendario: el mes día por día. Lo que gastó y recibió (de /me/movimientos), lo que viene (fijos,
-// ingresos esperados y deudas que vencen) y el color de cada día contra lo que puede gastar al día.
+// ingresos esperados y deudas que vencen) y el color de cada día contra lo que el bot dijo que podía
+// gastar ese día (/me/disponible: los mismos números de «Hoy te quedan X de Y»). Un día sin esa cifra
+// queda sin color: no se inventa una.
 // Tocar un día muestra su detalle debajo; sin JavaScript, el enlace lleva a ?dia= y sale igual.
 import Cuenta from '../../layouts/Cuenta.astro';
 import Head from '../../components/cuenta/Head.astro';
 import Flash from '../../components/cuenta/Flash.astro';
 import CatIcon from '../../components/cuenta/CatIcon.astro';
-import { me, sinVincular, type Deudas, type Fijo, type Ingreso, type Limite, type Movimiento, type PlanMes } from '../../lib/admin/bot';
+import { me, sinVincular, type Deudas, type Disponible, type DisponibleDia, type Fijo, type Ingreso, type Movimiento } from '../../lib/admin/bot';
 import { sesion } from '../../lib/cuenta/pagina';
-import { diaSemana, diasDelMes, esPagoFijo, eventos, hoyIso, isoDe, ritmoDiario, salud, type Evento, type Salud } from '../../lib/cuenta/calendario';
+import { diaSemana, diasDelMes, esPagoFijo, eventos, hoyIso, isoDe, salud, type Evento, type Salud } from '../../lib/cuenta/calendario';
 import { usd, usdShort } from '../../lib/admin/format';
 
 export const prerender = false;
@@ -56,13 +58,12 @@ async function movimientosDelMes() {
   return { ok: true as const, lista };
 }
 
-const [rm, rf, ri, rd, rp, rl] = await Promise.all([
+const [rm, rf, ri, rd, rdisp] = await Promise.all([
   movimientosDelMes(),
   me<{ fijos: Fijo[] }>('/me/fijos', token),
   me<{ ingresos: Ingreso[] }>('/me/ingresos', token),
   me<Deudas>('/me/deudas', token),
-  me<{ plan: PlanMes }>('/me/plan', token),
-  me<{ limites: Limite[] }>('/me/limites', token),
+  me<Disponible>(`/me/disponible?desde=${desde}&hasta=${hasta < hoy ? hasta : hoy}`, token),
 ]);
 if ((!rm.ok && sinVincular(rm)) || sinVincular(ri)) return Astro.redirect('/cuenta');
 
@@ -72,10 +73,10 @@ const fijos = rf.ok ? (rf.data?.fijos ?? []) : [];
 const sinFijos = !rf.ok && rf.status === 403;
 const ingresos = ri.ok ? (ri.data?.ingresos ?? []) : [];
 const deudas = rd.ok ? (rd.data ?? null) : null;
-const plan = rp.ok ? (rp.data?.plan ?? null) : null;
-const limites = rl.ok ? (rl.data?.limites ?? []) : [];
-
-const ritmo = ritmoDiario(plan, limites, fin);
+// Lo que el bot dijo que podía gastar cada día. Hoy, el cálculo del momento.
+const disp = desde <= hoy && rdisp.ok ? (rdisp.data ?? null) : null;
+const delBot = new Map<string, DisponibleDia>((disp?.dias ?? []).map((x) => [x.dia, x]));
+if (disp?.hoy) delBot.set(hoy, disp.hoy);
 const porDia = new Map<string, Movimiento[]>();
 for (const mv of movs) {
   const f = isoDe(mv.fecha);
@@ -88,9 +89,9 @@ type Dia = {
   n: number;
   movs: Movimiento[];
   gasto: number;
-  /** Lo gastado sin contar el pago de fijos: con esto sale el color. */
-  gastoDia: number;
   ingreso: number;
+  /** Lo que el bot dijo ese día (null: no hay cifra, el día queda sin color). */
+  bot: DisponibleDia | null;
   eventos: Evento[];
   salud: Salud;
   futuro: boolean;
@@ -100,10 +101,11 @@ const dias: Dia[] = Array.from({ length: fin }, (_, i) => {
   const lista = (porDia.get(f) ?? []).slice().sort((a, b) => a.fecha.localeCompare(b.fecha));
   const gastos = lista.filter((x) => x.tipo === 'expense');
   const gasto = gastos.reduce((s, x) => s + x.monto, 0);
-  const gastoDia = gastos.filter((x) => !esPagoFijo(x, fijos)).reduce((s, x) => s + x.monto, 0);
   const ingreso = lista.filter((x) => x.tipo === 'income').reduce((s, x) => s + x.monto, 0);
   const futuro = f > hoy;
-  return { iso: f, n: i + 1, movs: lista, gasto, gastoDia, ingreso, eventos: proximos.get(f) ?? [], salud: futuro ? null : salud(gastoDia, ritmo?.monto ?? null), futuro };
+  // El color, con el gastado del bot (sin lo que salió de un sobre) contra su por_dia.
+  const bot = futuro ? null : (delBot.get(f) ?? null);
+  return { iso: f, n: i + 1, movs: lista, gasto, ingreso, bot, eventos: proximos.get(f) ?? [], salud: bot ? salud(bot.gastado, bot.por_dia) : null, futuro };
 });
 const huecos = diaSemana(desde) - 1;
 
@@ -112,6 +114,7 @@ const totalGasto = pasados.reduce((s, d) => s + d.gasto, 0);
 const totalIngreso = pasados.reduce((s, d) => s + d.ingreso, 0);
 const cuenta = (s: Salud) => pasados.filter((d) => d.salud === s).length;
 const enVerde = cuenta('bien') + cuenta('sin_gastos');
+const conCifra = pasados.filter((d) => d.bot).length;
 const porVenir = dias.filter((d) => d.iso >= hoy).flatMap((d) => d.eventos);
 const salePorVenir = porVenir.filter((e) => e.tipo === 'fijo' || e.tipo === 'debo').reduce((s, e) => s + (e.monto ?? 0), 0);
 const entraPorVenir = porVenir.filter((e) => e.tipo === 'ingreso' || e.tipo === 'me_deben').reduce((s, e) => s + (e.monto ?? 0), 0);
@@ -157,9 +160,15 @@ const errores = [rm.ok ? null : rm.detail, ri.ok ? null : ri.detail].filter(Bool
     </div>
     <div class="card">
       <p class="stat__label">Días en verde</p>
-      <p class="stat__value">{ritmo && pasados.length ? `${enVerde} de ${pasados.length}` : '—'}</p>
+      <p class="stat__value">{conCifra ? `${enVerde} de ${conCifra}` : '—'}</p>
       <p class="stat__note">
-        {ritmo ? <>gastando hasta <b>{usd(ritmo.monto)}</b> al día ({ritmo.de})</> : <><a href="/cuenta/ingresos">Agrega tus ingresos</a> o un <a href="/cuenta/presupuesto">límite</a> para ver los colores</>}
+        {disp?.hoy && hoy.startsWith(mes) ? (
+          <>Hoy te quedan <b>{usd(disp.hoy.queda)}</b> de {usd(disp.hoy.por_dia)}</>
+        ) : conCifra ? (
+          'contra lo que TelMoney te dijo que podías gastar cada día'
+        ) : (
+          'Los colores salen de lo que TelMoney te dice que puedes gastar al día: dile tus saldos por WhatsApp'
+        )}
       </p>
     </div>
   </div>
@@ -221,6 +230,7 @@ const errores = [rm.ok ? null : rm.detail, ri.ok ? null : ri.detail].filter(Bool
       <li><i class="sw is-bien" /> Dentro de lo que puedes gastar</li>
       <li><i class="sw is-cuidado" /> Hasta 50% arriba</li>
       <li><i class="sw is-pasado" /> Te pasaste</li>
+      <li><i class="sw" /> Sin cifra de TelMoney ese día</li>
       <li><i class="dot p-sale" /> Te toca pagar</li>
       <li><i class="dot p-entra" /> Te llega dinero</li>
     </ul>
@@ -233,15 +243,14 @@ const errores = [rm.ok ? null : rm.detail, ri.ok ? null : ri.detail].filter(Bool
           <div>
             <h2>{cap(fechaLarga(d.iso))}</h2>
             <p class="card__sub">
-              {d.salud && d.salud !== 'sin_gastos' && ritmo ? (
-                <>
-                  {SALUD[d.salud]}: {usd(d.gastoDia)} de {usd(ritmo.monto)}
-                  {d.gasto > d.gastoDia && <> (más {usd(d.gasto - d.gastoDia)} de gastos fijos)</>}
-                </>
+              {d.bot && d.iso === hoy ? (
+                <>Hoy te quedan <b>{usd(d.bot.queda)}</b> de {usd(d.bot.por_dia)}</>
+              ) : d.bot && d.salud ? (
+                <>{SALUD[d.salud]}: gastaste {usd(d.bot.gastado)} de {usd(d.bot.por_dia)} que podías gastar ese día</>
               ) : d.futuro ? (
                 'Lo que viene ese día'
               ) : (
-                'Lo que anotaste ese día'
+                'Lo que anotaste ese día (TelMoney no calculó cuánto podías gastar)'
               )}
             </p>
           </div>

@@ -1,7 +1,7 @@
 // El calendario de /cuenta/calendario: qué pasó cada día (gastos e ingresos anotados) y qué viene
 // (gastos fijos, ingresos esperados y deudas que vencen), con el color de cómo fue el día contra lo
-// que puede gastar al día. Todo sale de lo que ya devuelve /me; aquí solo se acomoda por fecha.
-import type { Deudas, Fijo, Ingreso, Limite, Movimiento, PlanMes } from '../admin/bot';
+// que el bot dijo que podía gastar ese día (/me/disponible). Aquí solo se acomoda por fecha.
+import type { Deudas, Fijo, Ingreso, Movimiento } from '../admin/bot';
 import { TZ } from '../admin/queries';
 
 /** "2026-10-25" en la hora de El Salvador. Una fecha sin hora ya es el día (new Date la leería en UTC). */
@@ -76,27 +76,13 @@ export function eventos(y: number, m: number, hoy: string, fijos: Fijo[], ingres
   return por;
 }
 
-/**
- * Cuánto puede gastar al día, para darle color a cada día: lo libre del plan del mes entre los días del
- * mes; si no tiene ingresos, su límite general (semanal o del mes). null si no hay con qué comparar.
- */
-export function ritmoDiario(plan: PlanMes | null, limites: Limite[], dias: number): { monto: number; de: string } | null {
-  if (plan && plan.ingresos_mes > 0 && plan.libre_mes > 0) return { monto: plan.libre_mes / dias, de: 'lo libre de tu plan del mes' };
-  const general = limites.filter((l) => !l.id_categoria && !l.categoria);
-  const semana = general.find((l) => l.periodo === 'semana');
-  if (semana) return { monto: semana.limite / 7, de: 'tu límite semanal' };
-  const mes = general.find((l) => l.periodo === 'mes');
-  if (mes) return { monto: mes.limite / dias, de: 'tu límite del mes' };
-  return null;
-}
-
-/** Un gasto que es el pago de un fijo (misma categoría y mismo monto) no cuenta para el color del día. */
+/** Un gasto que es el pago de un fijo (misma categoría y mismo monto): se marca «fijo» en el detalle. */
 export const esPagoFijo = (mov: Movimiento, fijos: Fijo[]) =>
   mov.tipo === 'expense' &&
   fijos.some((f) => f.id_categoria && f.id_categoria === mov.id_categoria && f.monto !== null && Math.abs(f.monto - mov.monto) < 0.005);
 
 export type Salud = 'bien' | 'cuidado' | 'pasado' | 'sin_gastos' | null;
-/** Hasta lo que puede gastar, bien; hasta 1.5 veces, cuidado; más, se pasó. */
+/** Contra lo que el bot dijo que podía gastar ese día: hasta eso, bien; hasta 1.5 veces, cuidado; más, se pasó. */
 export function salud(gasto: number, ritmo: number | null): Salud {
   if (ritmo === null) return null;
   if (gasto < 0.005) return 'sin_gastos';

@@ -131,10 +131,17 @@ export type Me =
       vinculado: true;
       usuario: { nombre: string | null; whatsapp: string | null; zona: string; desde: string };
       plan: Plan;
-      hoy: { disponible: number | null; gastado: number };
+      /** disponible = lo que le queda hoy; por_dia = lo que podía gastar hoy (lo mismo que dice el bot). */
+      hoy: { disponible: number | null; gastado: number; por_dia?: number | null };
       mes: { gastado: number; ingresos: number };
       precios: Precio[];
     };
+/** GET /me/disponible: lo que el bot dijo que podía gastar cada día (queda = por_dia − gastado). */
+export type DisponibleDia = { dia: string; por_dia: number; gastado: number; queda: number };
+export type Disponible = {
+  hoy: (DisponibleDia & { proximo_ingreso: string | null; dias: number }) | null;
+  dias: DisponibleDia[];
+};
 export type Resumen = {
   gastado: number;
   ingresos: number;
