@@ -32,7 +32,7 @@ export const SEO = {
    *  Se genera con "npm run og" (scripts/og.mjs). Si cambia el diseño, sube el número de ?v=
    *  para que WhatsApp y Facebook no sigan mostrando la versión vieja guardada en caché. */
   image: {
-    path: '/og/telmoney-og.jpg?v=4',
+    path: '/og/telmoney-og.jpg?v=5',
     width: 1200,
     height: 630,
     type: 'image/jpeg',
